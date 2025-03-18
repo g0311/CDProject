@@ -1,14 +1,14 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" version="26.1.0">
   <diagram name="Page-1" id="9f46799a-70d6-7492-0946-bef42562c5a5">
-    <mxGraphModel dx="1131" dy="1567" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
+    <mxGraphModel dx="2074" dy="1098" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="eI9wI4SPfCDDGiGvA2EJ-2" value="Character" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="970" y="90" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-3" value="HUD Intergration" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="380" y="625" width="70" height="30" as="geometry" />
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-3" value="&lt;font style=&quot;color: rgb(102, 0, 102);&quot;&gt;HUD Intergration&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#33FF33;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="380" y="610" width="70" height="30" as="geometry" />
         </mxCell>
         <mxCell id="eI9wI4SPfCDDGiGvA2EJ-4" value="Interface" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="1120" y="90" width="120" height="60" as="geometry" />
@@ -17,13 +17,10 @@
           <mxGeometry x="750" y="520" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="eI9wI4SPfCDDGiGvA2EJ-8" value="Controller" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="510" y="90" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-9" value="PickUpItem" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="670" y="90" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-10" value="Structure Type" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="820" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-9" value="&lt;font style=&quot;color: rgb(102, 0, 102);&quot;&gt;PickUpItem&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontColor=#33FF33;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="380" y="645" width="70" height="30" as="geometry" />
         </mxCell>
         <mxCell id="zdLYafCI5JtRFyFmmwGN-5" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(251, 251, 251); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;Weapon&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="200" y="525" width="120" height="60" as="geometry" />
@@ -87,9 +84,6 @@
         </mxCell>
         <mxCell id="zdLYafCI5JtRFyFmmwGN-32" value="Trace&lt;div&gt;Particle&lt;/div&gt;&lt;div&gt;Movement Comp&lt;/div&gt;&lt;div&gt;Collision Box&lt;/div&gt;" style="shape=partialRectangle;whiteSpace=wrap;html=1;top=0;bottom=0;fillColor=none;" vertex="1" parent="1">
           <mxGeometry x="200" y="1020" width="120" height="155" as="geometry" />
-        </mxCell>
-        <mxCell id="zdLYafCI5JtRFyFmmwGN-33" value="Character" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="190" y="90" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="zdLYafCI5JtRFyFmmwGN-35" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
           <mxGeometry x="870" y="362.5" width="50" height="375" as="geometry" />
