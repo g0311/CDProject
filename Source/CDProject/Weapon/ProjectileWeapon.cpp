@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Weapon/ProjectileWeapon.h"
+#include "ProjectileWeapon.h"
 
 // Sets default values
 AProjectileWeapon::AProjectileWeapon()
