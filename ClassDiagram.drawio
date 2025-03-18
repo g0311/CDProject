@@ -1,44 +1,113 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" version="26.1.0">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" version="26.1.0">
   <diagram name="Page-1" id="9f46799a-70d6-7492-0946-bef42562c5a5">
-    <mxGraphModel dx="2074" dy="1098" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
+    <mxGraphModel dx="1131" dy="1567" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-2" value="Character" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-2" value="Character" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="970" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-3" value="HUD Intergration" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="380" y="625" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-4" value="Interface" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1120" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-7" value="GameMode" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="750" y="520" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-8" value="Controller" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="510" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-9" value="PickUpItem" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="670" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-10" value="Structure Type" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="820" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-5" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(251, 251, 251); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;Weapon&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="525" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-8" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="367.5" width="50" height="375" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-9" value="Projectile Weapon" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-10" value="HitScan Weapon" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="520" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-11" value="Special Weapon" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="710" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-13" value="CrossHair&lt;div&gt;FOV&lt;/div&gt;&lt;div&gt;WeaponState&lt;/div&gt;&lt;div&gt;Pick&amp;amp;&amp;amp;Drop Widget&lt;/div&gt;&lt;div&gt;Anim&lt;/div&gt;&lt;div&gt;Casing, Ammo&lt;/div&gt;&lt;div&gt;FireType&lt;/div&gt;&lt;div&gt;Damage&lt;/div&gt;&lt;div&gt;Capacity&lt;/div&gt;&lt;div&gt;Mesh&lt;/div&gt;" style="shape=partialRectangle;whiteSpace=wrap;html=1;top=0;bottom=0;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="200" y="600" width="120" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-14" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="490" y="330" width="50" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-15" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="490" y="460" width="50" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-16" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="490" y="700" width="50" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-17" value="Rocket Launcher" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="310" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-18" value="Sniper" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="430" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-20" value="&lt;div&gt;&lt;b&gt;&lt;font style=&quot;color: rgb(0, 0, 255);&quot;&gt;Character Skill&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;b&gt;&lt;font style=&quot;color: rgb(0, 0, 255);&quot;&gt;Planning&lt;/font&gt;&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="710" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-21" value="Pistol" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="520" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-22" value="Rifle" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="610" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-23" value="Rocket" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="380" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-24" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(251, 251, 251); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;Projectile&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="940" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-25" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="850" width="50" height="257.5" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-26" value="Rocket" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="820" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-27" value="Grenade" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="948.75" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-28" value="Bullet" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="370" y="1080" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-32" value="Trace&lt;div&gt;Particle&lt;/div&gt;&lt;div&gt;Movement Comp&lt;/div&gt;&lt;div&gt;Collision Box&lt;/div&gt;" style="shape=partialRectangle;whiteSpace=wrap;html=1;top=0;bottom=0;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="200" y="1020" width="120" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-33" value="Character" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="190" y="90" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-3" value="HUD" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="540" y="90" width="120" height="60" as="geometry" />
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-35" value="" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.annotation_2;align=left;labelPosition=right;pointerEvents=1;" vertex="1" parent="1">
+          <mxGeometry x="870" y="362.5" width="50" height="375" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-4" value="Interface" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="710" y="90" width="120" height="60" as="geometry" />
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-36" value="Flag Mode" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="920" y="335" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-5" value="Component" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="870" y="90" width="120" height="60" as="geometry" />
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-37" value="Death Match" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="920" y="450" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-6" value="Weapon" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="370" y="90" width="120" height="60" as="geometry" />
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-38" value="Team Match" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="920" y="570" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-7" value="GameMode" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="1030" y="90" width="120" height="60" as="geometry" />
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-40" value="&lt;font color=&quot;#0000ff&quot;&gt;&lt;b&gt;Zombie Mode&lt;/b&gt;&lt;/font&gt;&lt;div&gt;&lt;font color=&quot;#0000ff&quot;&gt;&lt;b&gt;Planning&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="920" y="710" width="120" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-8" value="Controller" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="1190" y="90" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-9" value="PickUpItem" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="1350" y="90" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-10" value="Structure Type" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="1500" y="90" width="120" height="60" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-11" value="Weapon" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="370" y="180" width="120" height="130" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-13" value="Character" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="180" width="120" height="130" as="geometry" />
-        </mxCell>
-        <mxCell id="eI9wI4SPfCDDGiGvA2EJ-14" value="AnimInstance&lt;div&gt;Character 1&lt;/div&gt;&lt;div&gt;Character 2&lt;/div&gt;&lt;div&gt;Character 3&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="eI9wI4SPfCDDGiGvA2EJ-13">
-          <mxGeometry x="10" y="40" width="100" height="70" as="geometry" />
+        <mxCell id="zdLYafCI5JtRFyFmmwGN-41" value="Timer&lt;div&gt;Countdown&lt;br&gt;&lt;div&gt;Player Eliminated&lt;/div&gt;&lt;div&gt;WrapTime&lt;/div&gt;&lt;div&gt;Round&lt;/div&gt;&lt;div&gt;bool TeamsMatch&lt;/div&gt;&lt;div&gt;State&lt;/div&gt;&lt;/div&gt;" style="shape=partialRectangle;whiteSpace=wrap;html=1;top=0;bottom=0;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="750" y="600" width="120" height="155" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
