@@ -11,6 +11,11 @@ AProjectileWeapon::AProjectileWeapon()
 
 }
 
+void AProjectileWeapon::Fire(const FVector& HitTarget)
+{
+	Super::Fire(HitTarget);
+}
+
 // Called when the game starts or when spawned
 void AProjectileWeapon::BeginPlay()
 {
