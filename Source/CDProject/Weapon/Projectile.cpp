@@ -2,6 +2,13 @@
 
 
 #include "Projectile.h"
+<<<<<<< Updated upstream
+=======
+
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
+
+>>>>>>> Stashed changes
 
 // Sets default values
 AProjectile::AProjectile()
@@ -11,17 +18,24 @@ AProjectile::AProjectile()
 
 }
 
-// Called when the game starts or when spawned
+void AProjectile::Destroyed()
+{
+	if (ImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorLocation(), FRotator::ZeroRotator);
+	if (ImpactSound) UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	UE_LOG(LogTemp, Warning, TEXT("Destroyed"));
+	Super::Destroyed();
+}
+
+
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-// Called every frame
-void AProjectile::Tick(float DeltaTime)
+void AProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse, const FHitResult& Hit)
 {
-	Super::Tick(DeltaTime);
-
+	Destroy();//Destroy -> Destroyed
 }
 

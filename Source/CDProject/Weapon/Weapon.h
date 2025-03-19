@@ -4,7 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/SphereComponent.h"
+
 #include "Weapon.generated.h"
+
+
+
+UENUM(BlueprintType)
+enum class EWeaponState:uint8
+{
+	EWS_Initial UMETA(DisplayName = "Initial"),
+	EWS_Dropped UMETA(DisplayName = "Dropped"),
+	EWS_Equipped UMETA(DisplayName = "Equipped"),
+};
 
 UCLASS()
 class CDPROJECT_API AWeapon : public AActor
@@ -12,15 +24,69 @@ class CDPROJECT_API AWeapon : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	AWeapon();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void Fire(const FVector& HitTarget);
+	//Using This function -> ProjectileWeapon
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void Dropped();
+
+	void SetWeaponState(EWeaponState state);
+	
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	class UTexture2D* CrosshairCenter;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	UTexture2D* CrosshairRight;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	UTexture2D* CrosshairLeft;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	UTexture2D* CrosshairBottom;
+
+	UPROPERTY(EditAnywhere, Category=Crosshair)
+	UTexture2D* CrosshairTop;
+
+protected:
+	virtual void BeginPlay() override;
+	
+	UFUNCTION()
+	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+		);
+
+	UPROPERTY(VisibleAnywhere)
+	EWeaponState WeaponState;
+	
+
+
+private:
+	UPROPERTY(EditAnywhere)
+	class USkeletalMeshComponent* WeaponMesh;
+
+	UPROPERTY(EditAnywhere)
+	class USphereComponent* AreaSphere;
+	
+	
+	//PickUp Widget
+
+
+	//etc variable
+	float Damage;
+	int32 Ammo;
+
+	
+	
 
 };
