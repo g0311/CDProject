@@ -6,12 +6,35 @@
 #include "GameFramework/HUD.h"
 #include "CDHUD.generated.h"
 
-/**
- * 
- */
+USTRUCT(BlueprintType)
+struct FHUDPackage
+{
+	GENERATED_BODY()
+public:
+	class UTexture2D* CrosshairCenter;
+	UTexture2D* CrosshairLeft;
+	UTexture2D* CrosshairRight;
+	UTexture2D* CrosshairTop;
+	UTexture2D* CrosshairBottom;
+	float CrosshairSpread;
+	FLinearColor CrosshairColor;
+};
+
+
 UCLASS()
 class CDPROJECT_API ACDHUD : public AHUD
 {
 	GENERATED_BODY()
-	
+public:
+	virtual void DrawHUD() override;
+
+	UPROPERTY(EditAnywhere)
+	class UCharacterOverlay* CharacterOverlay;
+
+protected:
+	virtual void BeginPlay() override;
+private:
+	FHUDPackage HUDPackage;
+
+	void DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor);
 };

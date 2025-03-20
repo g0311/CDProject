@@ -25,12 +25,12 @@ class CDPROJECT_API AWeapon : public AActor
 	
 public:	
 	AWeapon();
-
+	virtual void Tick(float DeltaTime) override;
 	virtual void Fire(const FVector& HitTarget);
 	//Using This function -> ProjectileWeapon
-
 	virtual void Dropped();
-
+	void ShowPickUpWidget(bool bShowWidget);
+	
 	void SetWeaponState(EWeaponState state);
 	
 	UPROPERTY(EditAnywhere, Category=Crosshair)
@@ -52,7 +52,7 @@ protected:
 	virtual void BeginPlay() override;
 	
 	UFUNCTION()
-	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
+	virtual void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex,
@@ -72,11 +72,14 @@ protected:
 
 
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class USkeletalMeshComponent* WeaponMesh;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* AreaSphere;
+
+	UPROPERTY(VisibleAnyWhere)
+	class UWidgetComponent* PickupWidget;
 	
 	
 	//PickUp Widget
