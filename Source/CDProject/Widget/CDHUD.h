@@ -21,6 +21,7 @@ public:
 };
 
 
+
 UCLASS()
 class CDPROJECT_API ACDHUD : public AHUD
 {
@@ -28,9 +29,12 @@ class CDPROJECT_API ACDHUD : public AHUD
 public:
 	virtual void DrawHUD() override;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category="Player State")
+	TSubclassOf<class UUserWidget> CharacterOverlayClass;
+	
 	class UCharacterOverlay* CharacterOverlay;
 
+	void AddCharacterOverlayOverlay();	
 protected:
 	virtual void BeginPlay() override;
 private:

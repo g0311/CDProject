@@ -3,6 +3,9 @@
 
 #include "CDHUD.h"
 
+#include "CharacterOverlay.h"
+#include "Blueprint/UserWidget.h"
+
 void ACDHUD::DrawHUD()
 {
 	Super::DrawHUD();
@@ -19,26 +22,35 @@ void ACDHUD::DrawHUD()
 		if (HUDPackage.CrosshairRight)
 		{
 			FVector2D Spread(0.f,0.f);
-			DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
+			DrawCrosshair(HUDPackage.CrosshairRight, Spread, HUDPackage.CrosshairColor);
 		}
 		if (HUDPackage.CrosshairLeft)
 		{
 			FVector2D Spread(0.f,0.f);
-			DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
+			DrawCrosshair(HUDPackage.CrosshairLeft, Spread, HUDPackage.CrosshairColor);
 		}
 		if (HUDPackage.CrosshairTop)
 		{
 			FVector2D Spread(0.f,0.f);
-			DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
+			DrawCrosshair(HUDPackage.CrosshairTop, Spread, HUDPackage.CrosshairColor);
 		}
 		if (HUDPackage.CrosshairBottom)
 		{
 			FVector2D Spread(0.f,0.f);
-			DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
+			DrawCrosshair(HUDPackage.CrosshairBottom, Spread, HUDPackage.CrosshairColor);
 		}
 
 	}
 	
+}
+
+void ACDHUD::AddCharacterOverlayOverlay()
+{
+	if (APlayerController* PlayerController=GetOwningPlayerController())
+	{
+		CharacterOverlay=CreateWidget<UCharacterOverlay>(PlayerController,CharacterOverlayClass);
+		CharacterOverlay->AddToViewport();
+	}
 }
 
 void ACDHUD::BeginPlay()
@@ -76,3 +88,4 @@ void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor C
 	);
 
 }
+
