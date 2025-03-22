@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "InputActionValue.h"
+#include "AbilitySystemInterface.h"
 #include "CDCharacter.generated.h"
 
 UCLASS()
-class CDPROJECT_API ACDCharacter : public ACharacter
+class CDPROJECT_API ACDCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -25,5 +27,45 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+public:
+	//Component
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class UCameraComponent> _camera;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<USkeletalMeshComponent> _armMesh;
+	
+	UPROPERTY(EditAnywhere, Category = "Components")
+	float _eyeHeight = 50.f;
+	
+private:
+	//Input
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputMappingContext> _inputMappingContext;
+	
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _moveAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _lookAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _jumpAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _crouchAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _fireAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _aimAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _changeWeaponAction;
+	
+	void Move(const FInputActionValue& value);
+	void Look(const FInputActionValue& value);
+
+public:
+	//GAS
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+private:
+	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
+	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
 
 };
