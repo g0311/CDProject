@@ -2,13 +2,9 @@
 
 
 #include "Projectile.h"
-<<<<<<< Updated upstream
-=======
 
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
-
->>>>>>> Stashed changes
 
 // Sets default values
 AProjectile::AProjectile()
