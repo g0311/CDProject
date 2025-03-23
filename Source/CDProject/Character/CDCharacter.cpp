@@ -7,6 +7,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
+#include "CDProject/Anim/CDAnimInstance.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 // Sets default values
 ACDCharacter::ACDCharacter()
@@ -26,6 +28,9 @@ ACDCharacter::ACDCharacter()
 	GetMesh()->SetOwnerNoSee(true);
 	
 	_abilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	_abilitySystemComponent->SetIsReplicated(true);
+	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
 }
 
@@ -47,6 +52,7 @@ void ACDCharacter::BeginPlay()
 	if (_abilitySystemComponent)
 	{
 		_abilitySystemComponent->InitAbilityActorInfo(this, this);
+		InitializeAttributes();
 	}
 }
 
@@ -54,7 +60,20 @@ void ACDCharacter::BeginPlay()
 void ACDCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	if (Controller != nullptr)
+	{
+		FRotator ControlRot = Controller->GetControlRotation();
+		FRotator ActorRot = GetActorRotation();
+		float AimYaw = FMath::UnwindDegrees(ControlRot.Yaw - ActorRot.Yaw);
+		
+		if (AimYaw <= -75.f || AimYaw >= 75.f)
+		{
+			FRotator TargetRotation = FRotator(0.f, ControlRot.Yaw, 0.f);
+			FRotator SmoothRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), 2.5f); // 회전 속도 조절
+			SetActorRotation(SmoothRotation);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -69,6 +88,10 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_lookAction, ETriggerEvent::Triggered, this, &ACDCharacter::Look);
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Triggered, this, &ACDCharacter::Jump);
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Completed, this, &ACDCharacter::StopJumping);
+		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
+		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
+		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::Aim);
+		enhancedInputComponent->BindAction(_changeWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon);
 	}
 }
 
@@ -85,7 +108,6 @@ void ACDCharacter::Move(const FInputActionValue& value)
 	AddMovementInput(forwardDir, inputVal.Y);
 	AddMovementInput(rightDir, inputVal.X);
 }
-
 void ACDCharacter::Look(const FInputActionValue& value)
 {
 	FVector2D LookAxisVector = value.Get<FVector2D>();
@@ -96,9 +118,36 @@ void ACDCharacter::Look(const FInputActionValue& value)
 		AddControllerPitchInput(-LookAxisVector.Y);
 	}
 }
+void ACDCharacter::Fire(const FInputActionValue& value)
+{
+	
+}
+void ACDCharacter::Aim(const FInputActionValue& value)
+{
+	UCDAnimInstance* anim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	anim->_isAiming = !anim->_isAiming;
+}
+void ACDCharacter::ChangeWeapon(const FInputActionValue& value)
+{
+	UCDAnimInstance* anim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	anim->_isPistol = !anim->_isPistol;
+}
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
 {
 	return _abilitySystemComponent;
+}
+
+void ACDCharacter::InitializeAttributes()
+{
+	FGameplayEffectContextHandle EffectContext = _abilitySystemComponent->MakeEffectContext();
+	EffectContext.AddSourceObject(this);
+
+	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributes, 0, EffectContext);
+	if(NewHandle.IsValid())
+	{
+		FActiveGameplayEffectHandle ActiveHandle = 
+			_abilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), _abilitySystemComponent.Get());
+	}
 }
 

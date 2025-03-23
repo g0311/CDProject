@@ -60,12 +60,18 @@ private:
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
-
+	void Fire(const FInputActionValue& value);
+	void Aim(const FInputActionValue& value);
+	void ChangeWeapon(const FInputActionValue& value);
 public:
 	//GAS
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Abilities")
+	TSubclassOf<class UGameplayEffect> _defaultAttributes;
 private:
 	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
 	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
-
+	
+	void InitializeAttributes();
 };
