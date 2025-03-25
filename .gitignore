@@ -75,4 +75,10 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 # BinaryFile
-*.uasset
+Content/Asset/PrivateAsset
+/Content/Characters/Mannequin_UE4
+/Content/__ExternalObjects__
+/Content/Characters/Mannequins
+/Content/LevelPrototyping
+/Content/__ExternalActors__
+/Content/ThirdPerson
