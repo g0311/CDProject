@@ -3,7 +3,9 @@
 
 #include "Weapon.h"
 
+#include "Cartridge.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -64,12 +66,35 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 
 void AWeapon::Fire(const FVector& HitTarget)
 {
-	//Play Fire Animation
+	if (FireAnimation)
+	{
+		WeaponMesh->PlayAnimation(FireAnimation, false);
+	}
+	if (CartridgeClass)
+	{
+		const USkeletalMeshSocket* AmmoEjectSocket=WeaponMesh->GetSocketByName("AmmoEject");
+		if (AmmoEjectSocket)
+		{
+			FTransform AmmoEjectTransform=AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				World->SpawnActor<ACartridge>(
+					ACartridge::StaticClass(),
+					AmmoEjectTransform.GetLocation(),
+					AmmoEjectTransform.GetRotation().Rotator()
+					);
+			}//Edit Need
+		}
+	}
 }
 
 void AWeapon::Dropped()
 {
 	SetWeaponState(EWeaponState::EWS_Dropped);
+	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+	WeaponMesh->DetachFromComponent(DetachRules);
+	SetOwner(nullptr);
 }
 
 void AWeapon::ShowPickUpWidget(bool bShowWidget)
@@ -78,6 +103,11 @@ void AWeapon::ShowPickUpWidget(bool bShowWidget)
 	{
 		PickupWidget->SetVisibility(bShowWidget);
 	}
+}
+
+void AWeapon::SetHUDAmmo()
+{
+	
 }
 
 void AWeapon::SetWeaponState(EWeaponState state)
