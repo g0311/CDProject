@@ -18,6 +18,8 @@ enum class EWeaponState:uint8
 	EWS_Dropped UMETA(DisplayName = "Dropped"),
 	EWS_Equipped UMETA(DisplayName = "Equipped"),
 };
+
+UENUM(BlueprintType)
 enum class EWeaponType:uint8
 {
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
@@ -40,8 +42,9 @@ public:
 	//* Widget Set function
 	void ShowPickUpWidget(bool bShowWidget);
 	void SetHUDAmmo();
+	
 	void SetWeaponState(EWeaponState state);
-
+	void AddAmmo(int32 AmmoToAdd);
 
 	void Dropped();
 	void Picked();
@@ -70,9 +73,22 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Weapon")
 	bool bAutomatic=true;
+	
 	UPROPERTY(EditAnywhere, Category="Weapon")
 	float FireDelay=10.f;
-	
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* EquipSound;
+
+	bool AmmoIsEmpty();
+
+	//FORCEINLINE
+	FORCEINLINE USkeletalMeshComponent* GetSkeletalMeshComponent() const {return WeaponMesh;}
+	FORCEINLINE USphereComponent* GetSphereComponent() const {return AreaSphere;}
+	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
+	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
+	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
+	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
 
 protected:
 	virtual void BeginPlay() override;
@@ -118,15 +134,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
 	EWeaponType WeaponType;
-
-	//FORCEINLINE
-	FORCEINLINE USkeletalMeshComponent* GetSkeletalMeshComponent() const {return WeaponMesh;}
-	FORCEINLINE USphereComponent* GetSphereComponent() const {return AreaSphere;}
-	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
-	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
-	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
-	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
-
+	
 	//etc variable
 	float Damage;
 

@@ -4,6 +4,7 @@
 #include "Weapon.h"
 
 #include "Cartridge.h"
+#include "CDProject/Character/CDCharacter.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 
@@ -28,6 +29,11 @@ void AWeapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+bool AWeapon::AmmoIsEmpty()
+{
+	return true;
+}
+
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay()
 {
@@ -50,9 +56,11 @@ void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ShowPickUpWidget(true);
-	UE_LOG(LogTemp, Display, TEXT("Weapon Collision"));
-	
-	//PickUpSystem, Widget Open
+	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
+	if (CDCharacter)
+	{
+		//CDCharacter->SetWeapon(this);
+	}
 }
 
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -125,5 +133,9 @@ void AWeapon::SetWeaponState(EWeaponState state)
 		//Collision Enable(true)
 		break;
 	}
+}
+
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
 }
 

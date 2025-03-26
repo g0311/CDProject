@@ -35,6 +35,10 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	class UCharacterOverlay* CharacterOverlay;
 
+	UPROPERTY(VisibleAnywhere)
+	class UCharacterStateOverlay* StateOverlay;
+
+
 	void AddCharacterOverlayOverlay();	
 protected:
 	virtual void BeginPlay() override;

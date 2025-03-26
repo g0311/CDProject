@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "GameFramework/PlayerState.h"
 #include "CDPlayerState.generated.h"
 

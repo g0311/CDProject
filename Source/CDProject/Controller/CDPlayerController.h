@@ -3,16 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
-class CDPROJECT_API ACDPlayerController : public AController
+class CDPROJECT_API ACDPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
 public:
 	ACDPlayerController();
+
+	bool EnsureHUD();
+	void SetHUD();
 
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDKill(float killcount);
@@ -23,13 +26,18 @@ public:
 	
 
 protected:
-
 	virtual void BeginPlay() override;
 
-	private:
+private:
 	UPROPERTY()
 	class ACDHUD* CDHUD;
+
+	UPROPERTY()
+	class UCharacterStateOverlay* StateOverlay;
+	
 	UPROPERTY()
 	class UCharacterOverlay* Overlay;
+
+	ACDCharacter* CachedCharacter;
 
 };
