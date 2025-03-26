@@ -15,7 +15,7 @@ public:
 	ACDPlayerController();
 
 	bool EnsureHUD();
-	void SetHUD();
+	//void SetHUD();
 
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDKill(float killcount);
@@ -38,6 +38,6 @@ private:
 	UPROPERTY()
 	class UCharacterOverlay* Overlay;
 
-	ACDCharacter* CachedCharacter;
+	//ACDCharacter* CachedCharacter;
 
 };

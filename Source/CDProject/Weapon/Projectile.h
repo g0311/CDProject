@@ -31,21 +31,23 @@ protected:
 	float Damage=10.f;
 	//be Adjusted by Weapon's Damage
 
-	
-private:
-
-	
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* Movement;
+	
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
 
-	class UParticleSystemComponent* TracerComponent;
+
+	
+private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* Tracer;
-
-	UParticleSystemComponent* ImpactParticleComponent;
+	class UParticleSystemComponent* TracerComponent;
+	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticle;
-
+	UParticleSystemComponent* ImpactParticleComponent;
+	
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound;
 };

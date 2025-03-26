@@ -98,13 +98,13 @@ void ACDPlayerController::OnPossess(APawn* InPawn)
 	ACDCharacter* CDCharacter=Cast<ACDCharacter>(InPawn);
 	if (CDCharacter)
 	{
-		CachedCharacter=CDCharacter;
+		//CachedCharacter=CDCharacter;
 		if (CDCharacter)
 		{
 			//SetHUDHealth(CDCharacter->GetHealth(), CDCharacter->GetMaxHealth());
 			//Character Edit Need
 		}
-		SetHUD();
+		//SetHUD();
 	}
 }
 
