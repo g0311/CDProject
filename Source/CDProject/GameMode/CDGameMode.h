@@ -14,4 +14,10 @@ class CDPROJECT_API ACDGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+public:
+	virtual void PlayerEliminated(class ACDCharacter* ElimmedCharacter,
+		class ACDPlayerController* VictimController,
+		ACDPlayerController* AttackerController
+		);
+	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
 };
