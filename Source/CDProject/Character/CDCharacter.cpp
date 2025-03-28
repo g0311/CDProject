@@ -8,7 +8,9 @@
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
 #include "CDProject/Anim/CDAnimInstance.h"
-#include "GameFramework/PawnMovementComponent.h"
+#include "CDProject/Anim/FootIKComponent.h"
+#include "CDProject/Component/CombatComponent.h"
+#include "CDProject/Weapon/Weapon.h"
 
 // Sets default values
 ACDCharacter::ACDCharacter()
@@ -26,12 +28,21 @@ ACDCharacter::ACDCharacter()
 	_armMesh->CastShadow = false;
 	_armMesh->SetOnlyOwnerSee(true);
 	GetMesh()->SetOwnerNoSee(true);
+
+	_combat = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
+	
+	_footIK = CreateDefaultSubobject<UFootIKComponent>(TEXT("FootIK"));
 	
 	_abilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	_abilitySystemComponent->SetIsReplicated(true);
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
+}
+
+void ACDCharacter::RespawnPlayer()
+{
+	
 }
 
 // Called when the game starts or when spawned
@@ -53,6 +64,14 @@ void ACDCharacter::BeginPlay()
 	{
 		_abilitySystemComponent->InitAbilityActorInfo(this, this);
 		InitializeAttributes();
+	}
+
+	if (_combat)
+	{
+		_combat->GetCurWeapon()->SetWeaponState(EWeaponState::EWS_Equipped);
+		//SetVisibility(true)
+		if (_combat->GetCurWeapon())
+			_combat->GetCurWeapon()->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("hand_r"));
 	}
 }
 
@@ -91,7 +110,13 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::Aim);
-		enhancedInputComponent->BindAction(_changeWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon);
+		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::Reload);
+		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 1);
+		enhancedInputComponent->BindAction(_changeWeaponActions[1], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 2);
+		enhancedInputComponent->BindAction(_changeWeaponActions[2], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 3);
+		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 4);
+		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 5);
+		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::DropWeapon);
 	}
 }
 
@@ -108,29 +133,72 @@ void ACDCharacter::Move(const FInputActionValue& value)
 	AddMovementInput(forwardDir, inputVal.Y);
 	AddMovementInput(rightDir, inputVal.X);
 }
+
 void ACDCharacter::Look(const FInputActionValue& value)
 {
 	FVector2D LookAxisVector = value.Get<FVector2D>();
-
+	
 	if (Controller != nullptr)
 	{
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(-LookAxisVector.Y);
 	}
 }
-void ACDCharacter::Fire(const FInputActionValue& value)
+
+void ACDCharacter::Fire()
 {
-	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
+
+	if (_combat->IsAmmoEmpty())
+	{
+		Reload();
+		bodyAnim->Montage_Play(_reLoadMontage);
+		armAnim->Montage_Play(_reLoadMontage);
+	}
+	else
+	{
+		_combat->Fire();
+		bodyAnim->Montage_Play(_fireMontage);
+		armAnim->Montage_Play(_fireMontage);
+	}
 }
-void ACDCharacter::Aim(const FInputActionValue& value)
+
+void ACDCharacter::Aim()
 {
-	UCDAnimInstance* anim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	anim->_isAiming = !anim->_isAiming;
+	_combat->Aim(true);
 }
-void ACDCharacter::ChangeWeapon(const FInputActionValue& value)
+
+void ACDCharacter::Reload()
 {
-	UCDAnimInstance* anim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	anim->_isPistol = !anim->_isPistol;
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* arnAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
+
+	_combat->Reload();
+	bodyAnim->Montage_Play(_reLoadMontage);
+	arnAnim->Montage_Play(_reLoadMontage);
+}
+
+void ACDCharacter::ChangeWeapon(int weaponIndex)
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* arnAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
+
+	if (_combat->ChangeWeapon(weaponIndex))
+	{
+		bodyAnim->Montage_Play(_equipMontage);
+		arnAnim->Montage_Play(_equipMontage);	
+	}
+}
+
+void ACDCharacter::GetWeapon(AWeapon* weapon)
+{
+	//
+}
+
+void ACDCharacter::DropWeapon()
+{
+	_combat->DropWeapon();
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
@@ -150,4 +218,3 @@ void ACDCharacter::InitializeAttributes()
 			_abilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), _abilitySystemComponent.Get());
 	}
 }
-

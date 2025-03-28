@@ -19,16 +19,24 @@ struct FST_IK_AnimValue
 	GENERATED_BODY()
 
 	public :
-		UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float		m_fEffectorLocation_Left;
+	FST_IK_AnimValue() 
+		: _effectorLocation_Left(0.0f)
+		, _effectorLocation_Right(0.0f)
+		, _footRotation_Left(FRotator::ZeroRotator)
+		, _footRotation_Right(FRotator::ZeroRotator)
+		, _hipOffset(0.0f)
+	{
+	}
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float		m_fEffectorLocation_Right;
+	float		_effectorLocation_Left;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FRotator	m_pFootRotation_Left;
+	float		_effectorLocation_Right;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FRotator	m_pFootRotation_Right;
+	FRotator	_footRotation_Left;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float		m_fHipOffset;
+	FRotator	_footRotation_Right;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float		_hipOffset;
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -43,17 +51,16 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void IK_Update(float deltaTime);
+	void IK_Debug();
 	IK_TraceInfo IK_FootTrace(float traceDistance, FName socket);
+	void IK_Update_FootOffset(float deltaTime, float targetValue, float* effectorValue, float interpSpeed);
+	void IK_Update_FootRotation(float fDeltaTime, FRotator pTargetValue, FRotator * pFootRotatorValue, float fInterpSpeed);
+	void IK_Update_CapsuleHalfHeight(float deltaTime, float hipsShifts, bool resetDefault);
+	FRotator NormalToRotator(FVector pVector);
 
-private :
+	FST_IK_AnimValue _outValue;
+private:
 	UPROPERTY()
 	class ACharacter* _playerPawn;
-	
-	//! Owner Characters capsule height
-	float	playerCapsuleHeight;
-	//! IK Anim Instance Value struct
-	FST_IK_AnimValue m_stIKAnimValuse;
-	//! IK Active state
-	bool m_bActive = false;
-	float m_fDeltaTime = 0.0f;
 };

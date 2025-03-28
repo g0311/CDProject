@@ -11,18 +11,43 @@ UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CDPROJECT_API UCombatComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
 public:	
-	// Sets default values for this component's properties
 	UCombatComponent();
-
-protected:
-	// Called when the game starts
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void Reset();
+	
+	void Fire();
+	void Reload();
+	void Aim(bool tf);
+	bool ChangeWeapon(int idx);
+	void GetWeapon(class AWeapon* weapon);
+	void DropWeapon();
+	
+	bool IsAmmoEmpty();
+	AWeapon* GetCurWeapon();
+	uint8 GetCurWeaponType();
+	bool IsAimng();
+private:
 	virtual void BeginPlay() override;
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class AWeapon> _curWeapon;
+	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	int _weaponIndex;
+	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TArray<class AWeapon*> _weapons;
 
-		
+	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class AWeapon> _subWeapon;
+	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class AWeapon> _meleeWeapon;
+	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	bool _isAiming;
+
+	void SetHUDCrosshairs();
 };

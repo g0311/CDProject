@@ -16,7 +16,7 @@ class CDPROJECT_API ACDCharacter : public ACharacter, public IAbilitySystemInter
 public:
 	// Sets default values for this character's properties
 	ACDCharacter();
-
+	void RespawnPlayer();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -28,12 +28,24 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+private:
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UAnimMontage> _reLoadMontage;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UAnimMontage> _fireMontage;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<UAnimMontage> _equipMontage;
+	
 public:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UCameraComponent> _camera;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USkeletalMeshComponent> _armMesh;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class UCombatComponent> _combat;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class UFootIKComponent> _footIK;
 	
 	UPROPERTY(EditAnywhere, Category = "Components")
 	float _eyeHeight = 50.f;
@@ -56,13 +68,20 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _aimAction;
 	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<class UInputAction> _changeWeaponAction;
+	TObjectPtr<class UInputAction> _reloadAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TArray<TObjectPtr<class UInputAction>> _changeWeaponActions;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _dropWeaponAction;
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
-	void Fire(const FInputActionValue& value);
-	void Aim(const FInputActionValue& value);
-	void ChangeWeapon(const FInputActionValue& value);
+	void Fire();
+	void Aim();
+	void Reload();
+	void ChangeWeapon(int weaponIndex);
+	void GetWeapon(class AWeapon* weapon);
+	void DropWeapon();
 public:
 	//GAS
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
