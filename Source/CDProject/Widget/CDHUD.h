@@ -31,8 +31,13 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Player State")
 	TSubclassOf<class UUserWidget> CharacterOverlayClass;
-	
+
+	UPROPERTY(VisibleAnywhere)
 	class UCharacterOverlay* CharacterOverlay;
+
+	UPROPERTY(VisibleAnywhere)
+	class UCharacterStateOverlay* StateOverlay;
+
 
 	void AddCharacterOverlayOverlay();	
 protected:
@@ -41,4 +46,6 @@ private:
 	FHUDPackage HUDPackage;
 
 	void DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor);
+
+	//FORCEINLINE void SetHUDPackage(const FHUDPackage& Package) {HUDPackage=Package;}
 };

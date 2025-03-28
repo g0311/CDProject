@@ -3,7 +3,10 @@
 
 #include "Weapon.h"
 
+#include "Cartridge.h"
+#include "CDProject/Character/CDCharacter.h"
 #include "Components/WidgetComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -24,6 +27,11 @@ AWeapon::AWeapon()
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+bool AWeapon::AmmoIsEmpty()
+{
+	return true;
 }
 
 // Called when the game starts or when spawned
@@ -48,9 +56,11 @@ void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	ShowPickUpWidget(true);
-	UE_LOG(LogTemp, Display, TEXT("Weapon Collision"));
-	
-	//PickUpSystem, Widget Open
+	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
+	if (CDCharacter)
+	{
+		//CDCharacter->SetWeapon(this);
+	}
 }
 
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -64,12 +74,35 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 
 void AWeapon::Fire(const FVector& HitTarget)
 {
-	//Play Fire Animation
+	if (FireAnimation)
+	{
+		WeaponMesh->PlayAnimation(FireAnimation, false);
+	}
+	if (CartridgeClass)
+	{
+		const USkeletalMeshSocket* AmmoEjectSocket=WeaponMesh->GetSocketByName("AmmoEject");
+		if (AmmoEjectSocket)
+		{
+			FTransform AmmoEjectTransform=AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				World->SpawnActor<ACartridge>(
+					ACartridge::StaticClass(),
+					AmmoEjectTransform.GetLocation(),
+					AmmoEjectTransform.GetRotation().Rotator()
+					);
+			}//Edit Need
+		}
+	}
 }
 
 void AWeapon::Dropped()
 {
 	SetWeaponState(EWeaponState::EWS_Dropped);
+	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+	WeaponMesh->DetachFromComponent(DetachRules);
+	SetOwner(nullptr);
 }
 
 void AWeapon::ShowPickUpWidget(bool bShowWidget)
@@ -78,6 +111,11 @@ void AWeapon::ShowPickUpWidget(bool bShowWidget)
 	{
 		PickupWidget->SetVisibility(bShowWidget);
 	}
+}
+
+void AWeapon::SetHUDAmmo()
+{
+	
 }
 
 void AWeapon::SetWeaponState(EWeaponState state)
@@ -95,5 +133,9 @@ void AWeapon::SetWeaponState(EWeaponState state)
 		//Collision Enable(true)
 		break;
 	}
+}
+
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
 }
 

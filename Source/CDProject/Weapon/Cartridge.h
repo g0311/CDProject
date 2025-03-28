@@ -26,7 +26,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class USoundCue* FallSound;
-	
+
+	UPROPERTY(EditAnywhere)
+	float EjectImpulse;
+
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComponent,
 	AActor* OtherActor,

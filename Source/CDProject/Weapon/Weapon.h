@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/SphereComponent.h"
+#include "DataWrappers/ChaosVDParticleDataWrapper.h"
 
 #include "Weapon.generated.h"
 
@@ -18,6 +19,15 @@ enum class EWeaponState:uint8
 	EWS_Equipped UMETA(DisplayName = "Equipped"),
 };
 
+UENUM(BlueprintType)
+enum class EWeaponType:uint8
+{
+	EWT_Rifle UMETA(DisplayName = "Rifle"),
+	EWT_Sniper UMETA(DisplayName = "Sniper"),
+	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
+	EWT_Speical UMETA(DisplayName = "Special"),
+};
+
 UCLASS()
 class CDPROJECT_API AWeapon : public AActor
 {
@@ -28,10 +38,17 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void Fire(const FVector& HitTarget);
 	//Using This function -> ProjectileWeapon
-	virtual void Dropped();
+
+	//* Widget Set function
 	void ShowPickUpWidget(bool bShowWidget);
+	void SetHUDAmmo();
 	
 	void SetWeaponState(EWeaponState state);
+	void AddAmmo(int32 AmmoToAdd);
+
+	void Dropped();
+	void Picked();
+
 	
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	class UTexture2D* CrosshairCenter;
@@ -47,6 +64,33 @@ public:
 
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	UTexture2D* CrosshairTop;
+
+	UPROPERTY(EditAnywhere, Category="Camera")
+	float ZoomedFOV=30.f;
+
+	UPROPERTY(EditAnywhere, Category="Camera")
+	float ZoomInterpSpeed=20.f;
+
+	UPROPERTY(EditAnywhere, Category="Weapon")
+	bool bAutomatic=true;
+	
+	UPROPERTY(EditAnywhere, Category="Weapon")
+	float FireDelay=10.f;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* EquipSound;
+
+	bool AmmoIsEmpty();
+
+	//FORCEINLINE
+	FORCEINLINE USkeletalMeshComponent* GetSkeletalMeshComponent() const {return WeaponMesh;}
+	FORCEINLINE USphereComponent* GetSphereComponent() const {return AreaSphere;}
+	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
+	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
+	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
+	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
+	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
 
 protected:
 	virtual void BeginPlay() override;
@@ -66,28 +110,35 @@ protected:
 		int32 OtherBodyIndex
 		);
 
-	UPROPERTY(VisibleAnywhere)
-	EWeaponState WeaponState;
-	
 
 
 private:
 	UPROPERTY(VisibleAnywhere)
-	class USkeletalMeshComponent* WeaponMesh;
+	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* AreaSphere;
 
 	UPROPERTY(VisibleAnyWhere)
 	class UWidgetComponent* PickupWidget;
-	
-	
-	//PickUp Widget
 
+	UPROPERTY(EditAnywhere, Category="Weapon Property")
+	class UAnimationAsset* FireAnimation;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ACartridge> CartridgeClass;
+
+	UPROPERTY(EditAnywhere)
+	int32 Ammo;
+
+	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
+	EWeaponState WeaponState;
+
+	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
+	EWeaponType WeaponType;
+	
 	//etc variable
 	float Damage;
-	int32 Ammo;
 
 	
 	
