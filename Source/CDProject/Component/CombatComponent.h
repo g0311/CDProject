@@ -20,34 +20,43 @@ public:
 	void Reload();
 	void Aim(bool tf);
 	bool ChangeWeapon(int idx);
-	void GetWeapon(class AWeapon* weapon);
+	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
 	
 	bool IsAmmoEmpty();
 	AWeapon* GetCurWeapon();
 	uint8 GetCurWeaponType();
 	bool IsAimng();
+	bool IsFireAvail();
+
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> _defaultSubWeapon;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
 private:
 	virtual void BeginPlay() override;
-
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class AWeapon> _curWeapon;
 	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere)
 	int _weaponIndex;
 	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere)
 	TArray<class AWeapon*> _weapons;
-
 	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class AWeapon> _subWeapon;
 	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class AWeapon> _meleeWeapon;
 	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere)
 	bool _isAiming;
+
+	float FireRate = 0.23f;
+	float LastFireTime = 0.0f;
+	
+	void CreateDefaultWeapons();
+	void AttatchMeshToChar(class AWeapon* weapon);
 
 	void SetHUDCrosshairs();
 };

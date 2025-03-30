@@ -3,6 +3,7 @@
 
 #include "CombatComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "CDProject/Character/CDCharacter.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -10,13 +11,15 @@ UCombatComponent::UCombatComponent()
 
 	//0: main / 1: sub / 2: melee / 3,4,5: projectile
 	_weapons.SetNumZeroed(6);
-	//create default weapon (sub, knife)
 }
 
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	CreateDefaultWeapons();
+	_weaponIndex = 1;
+	ChangeWeapon(_weaponIndex);
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -41,17 +44,20 @@ void UCombatComponent::Reset()
 
 void UCombatComponent::Fire()
 {
-	_curWeapon->Fire(FVector::ZeroVector);
+	FHitResult hit;
+	//GetWorld()->LineTraceSingleByChannel(hit, )
+	_weapons[_weaponIndex]->Fire(FVector::ZeroVector);
+	_isAiming = false;
 }
 
 void UCombatComponent::Reload()
 {
-	
+	//_weapons[_weaponIndex]->;
 }
 
 void UCombatComponent::Aim(bool tf)
 {
-	if (_curWeapon /*if TYPE == Sniper*/)
+	if (_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Sniper)
 	{
 		_isAiming = tf;
 		SetHUDCrosshairs();
@@ -59,29 +65,70 @@ void UCombatComponent::Aim(bool tf)
 }
 
 bool UCombatComponent::ChangeWeapon(int idx)
-{
+{ //avail visibility and update curWeaponIndex
 	if (_weapons[idx])
 	{
-		//_curWeapon->SetVisibilty(false);
-		_curWeapon = _weapons[idx];
+		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
+		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(false);
+		_isAiming = false;
+		
+		_weaponIndex = idx;
+		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
+		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(true);
 		SetHUDCrosshairs();
-		//_curWeapon->SetVisibilty(true);
 		return true;
 	}
 	return false;
 }
 
-void UCombatComponent::GetWeapon(AWeapon* weapon)
-{
-	//weapon type 검색 => 해당 타입 무기 존재 확인 => 거르거나 지정하기
+void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
+{ // compare weapon type and save or dicard
+	switch (weapon->GetWeaponType())
+	{
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Shotgun:
+		if (!_weapons[0])
+		{
+			_weapons[0] = weapon;
+			_weapons[0]->SetWeaponState(EWeaponState::EWS_Equipped);
+			ChangeWeapon(0);
+		}
+		else if (isForceGet)
+		{
+			DropWeapon();
+			_weapons[0] = weapon;
+			_weapons[0]->SetWeaponState(EWeaponState::EWS_Equipped);
+			ChangeWeapon(0);
+		}
+		break;
+	case EWeaponType::EWT_Speical:
+		break;
+	}
 }
 
 void UCombatComponent::DropWeapon()
-{
-	if (_curWeapon != _meleeWeapon)
+{ //avail visibility and update curWeaponIndex
+	if (_weapons[_weaponIndex] != _meleeWeapon)
 	{
-		_curWeapon = nullptr;
-		
+		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
+		_weapons[_weaponIndex]->Dropped();
+		_weapons[_weaponIndex] = nullptr;
+
+		// while (_weapons[_weaponIndex])
+		// 	_weaponIndex = (_weaponIndex + 1) % _weapons.Num();
+
+		for (int i = 0; i < _weapons.Num(); i++)
+		{
+			if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+			{
+				_weaponIndex = (_weaponIndex + i) % _weapons.Num();
+				break;
+			}
+		}
+
+		if (_weapons[_weaponIndex])
+			_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
 	}
 }
 
@@ -92,12 +139,14 @@ bool UCombatComponent::IsAmmoEmpty()
 
 AWeapon* UCombatComponent::GetCurWeapon()
 {
-	return _curWeapon;
+	return _weapons[_weaponIndex];
 }
 
 uint8 UCombatComponent::GetCurWeaponType()
 {
-	return 0;
+	if (_weapons[_weaponIndex])
+		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
+	return -1;
 }
 
 bool UCombatComponent::IsAimng()
@@ -105,7 +154,80 @@ bool UCombatComponent::IsAimng()
 	return _isAiming;
 }
 
+bool UCombatComponent::IsFireAvail()
+{
+	float curTime = GetWorld()->GetTimeSeconds();
+	if (curTime - LastFireTime > FireRate)
+	{
+		LastFireTime = curTime;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 void UCombatComponent::SetHUDCrosshairs()
 {
+	
+}
+
+void UCombatComponent::CreateDefaultWeapons()
+{
+	ACDCharacter* owner = Cast<ACDCharacter>(GetOwner());
+	if (!owner)
+		return;
+	
+	if (_defaultSubWeapon)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetOwner();
+		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		if (_weapons[1])
+		{
+			_weapons[1]->AttachToComponent(
+			owner->_armMesh,
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			TEXT("WeaponSocket")
+			);
+			_weapons[1]->GetWeaponMesh()->SetVisibility(false);
+			
+			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
+			//owner->_armMesh,
+			// FAttachmentTransformRules::SnapToTargetIncludingScale,
+			// TEXT("WeaponSocket")
+			// );
+			//_weapons[1]->GetWeaponMesh2()->SetVisibility(false);
+		}
+	}
+	//Debug
+	if (_defaultSubWeapon /*_defaultMeleeWeapon*/)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetOwner();
+		_weapons[2] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		if (_weapons[2])
+		{
+			_weapons[2]->AttachToComponent(
+			owner->_armMesh,
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			TEXT("WeaponSocket")
+			);
+			_weapons[2]->GetWeaponMesh()->SetVisibility(true);
+			
+			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
+			//owner->_armMesh,
+			// FAttachmentTransformRules::SnapToTargetIncludingScale,
+			// TEXT("WeaponSocket")
+			// );
+			//_weapons[1]->GetWeaponMesh2()->SetVisibility(false);
+		}
+	}
+}
+
+void UCombatComponent::AttatchMeshToChar(class AWeapon* weapon)
+{
+	
 }
 

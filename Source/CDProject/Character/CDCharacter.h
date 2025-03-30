@@ -28,14 +28,6 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-private:
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UAnimMontage> _reLoadMontage;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UAnimMontage> _fireMontage;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UAnimMontage> _equipMontage;
-	
 public:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -76,6 +68,7 @@ private:
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
+	void Crouch(bool bClientSimulation = false) override;
 	void Fire();
 	void Aim();
 	void Reload();

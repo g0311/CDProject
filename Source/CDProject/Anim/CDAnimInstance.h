@@ -16,6 +16,9 @@ class CDPROJECT_API UCDAnimInstance : public UAnimInstance
 
 //bool
 public:
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeInitializeAnimation() override;
+	
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	class ACharacter* _playerPawn;
 	
@@ -26,7 +29,7 @@ public:
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	bool _isAiming;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
-	int _weaponType;
+	uint8 _weaponType;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	float _movementSpeed;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
@@ -49,7 +52,29 @@ public:
 	
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	FTransform _leftHandTransform;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	bool _isFullBody = true;
+
+	//Montage
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _rifleReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _shotgunReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _pistolReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _baseFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _aimFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _equipRifleMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _equipPistolMontage;
+	void PlayFireMontage();
+	void PlayReloadMontage();
+	void PlayEquipMontage();
 	
-	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
-	virtual void NativeInitializeAnimation() override;
+	void UpdateFullBodyProperty();
+	void UpdateUpperBodyProperty();
 };

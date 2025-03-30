@@ -10,6 +10,7 @@
 #include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Anim/FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
 
 // Sets default values
@@ -68,10 +69,7 @@ void ACDCharacter::BeginPlay()
 
 	if (_combat)
 	{
-		_combat->GetCurWeapon()->SetWeaponState(EWeaponState::EWS_Equipped);
-		//SetVisibility(true)
-		if (_combat->GetCurWeapon())
-			_combat->GetCurWeapon()->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("hand_r"));
+		
 	}
 }
 
@@ -79,7 +77,8 @@ void ACDCharacter::BeginPlay()
 void ACDCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	//if >= 90 degree character rotate
 	if (Controller != nullptr)
 	{
 		FRotator ControlRot = Controller->GetControlRotation();
@@ -95,7 +94,6 @@ void ACDCharacter::Tick(float DeltaTime)
 	}
 }
 
-// Called to bind functionality to input
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -109,6 +107,7 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Completed, this, &ACDCharacter::StopJumping);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
+		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::Fire);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::Aim);
 		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::Reload);
 		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 1);
@@ -145,22 +144,33 @@ void ACDCharacter::Look(const FInputActionValue& value)
 	}
 }
 
+void ACDCharacter::Crouch(bool bClientSimulation)
+{
+	if (GetCharacterMovement()->IsFalling())
+		return;
+	
+	Super::Crouch(bClientSimulation);
+}
+
 void ACDCharacter::Fire()
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
 
-	if (_combat->IsAmmoEmpty())
+	if (_combat->IsFireAvail())
 	{
-		Reload();
-		bodyAnim->Montage_Play(_reLoadMontage);
-		armAnim->Montage_Play(_reLoadMontage);
-	}
-	else
-	{
-		_combat->Fire();
-		bodyAnim->Montage_Play(_fireMontage);
-		armAnim->Montage_Play(_fireMontage);
+		if (_combat->IsAmmoEmpty())
+		{
+			Reload();
+		}
+		else
+		{
+			_combat->Fire();
+			if (bodyAnim)
+				bodyAnim->PlayFireMontage();
+			if (armAnim)
+				armAnim->PlayFireMontage();
+		}
 	}
 }
 
@@ -172,28 +182,32 @@ void ACDCharacter::Aim()
 void ACDCharacter::Reload()
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* arnAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
-
-	_combat->Reload();
-	bodyAnim->Montage_Play(_reLoadMontage);
-	arnAnim->Montage_Play(_reLoadMontage);
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
+	
+	if (bodyAnim)
+		bodyAnim->PlayReloadMontage();
+	if (armAnim)
+		armAnim->PlayReloadMontage();
+	//_combat->Reload(); => Anim Notify call
 }
 
 void ACDCharacter::ChangeWeapon(int weaponIndex)
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* arnAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
 
 	if (_combat->ChangeWeapon(weaponIndex))
 	{
-		bodyAnim->Montage_Play(_equipMontage);
-		arnAnim->Montage_Play(_equipMontage);	
+		if (bodyAnim)
+			bodyAnim->PlayEquipMontage();
+		if (armAnim)
+			armAnim->PlayEquipMontage();
 	}
 }
 
 void ACDCharacter::GetWeapon(AWeapon* weapon)
 {
-	//
+	_combat->GetWeapon(weapon);
 }
 
 void ACDCharacter::DropWeapon()
