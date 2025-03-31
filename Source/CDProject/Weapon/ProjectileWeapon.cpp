@@ -14,6 +14,21 @@ AProjectileWeapon::AProjectileWeapon()
 
 }
 
+// Called when the game starts or when spawned
+void AProjectileWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
+// Called every frame
+void AProjectileWeapon::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
+
 void AProjectileWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
@@ -43,17 +58,4 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 	}
 }
 
-// Called when the game starts or when spawned
-void AProjectileWeapon::BeginPlay()
-{
-	Super::BeginPlay();
-	
-}
-
-// Called every frame
-void AProjectileWeapon::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
 

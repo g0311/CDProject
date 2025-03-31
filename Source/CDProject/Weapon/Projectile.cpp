@@ -2,8 +2,6 @@
 
 
 #include "Projectile.h"
-
-#include "NavCollision.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"

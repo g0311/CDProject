@@ -45,7 +45,8 @@ public:
 	
 	void SetWeaponState(EWeaponState state);
 	void AddAmmo(int32 AmmoToAdd);
-
+	void Reload();
+	
 	void Dropped();
 	void Picked();
 
@@ -83,15 +84,15 @@ public:
 	bool AmmoIsEmpty();
 
 	//FORCEINLINE
-	FORCEINLINE USkeletalMeshComponent* GetSkeletalMeshComponent() const {return WeaponMesh;}
-	FORCEINLINE USphereComponent* GetSphereComponent() const {return AreaSphere;}
+	FORCEINLINE USphereComponent* GetAreaComponent() const {return AreaSphere;}
 	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
 	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
+	FORCEINLINE int32 GetAmmo() const {return Ammo;}
+	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
-	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
-	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
-
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -110,6 +111,16 @@ protected:
 		int32 OtherBodyIndex
 		);
 
+	void SpendAmmo();
+	
+	UPROPERTY(EditAnywhere)
+	int32 AmmoCapacity;
+
+	UPROPERTY()
+	class ACDCharacter* OwnerCharacter;
+
+	UPROPERTY()
+	class ACDPlayerController* OwnerController;
 
 
 private:
@@ -144,3 +155,5 @@ private:
 	
 
 };
+
+

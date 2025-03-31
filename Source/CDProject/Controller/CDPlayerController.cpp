@@ -4,11 +4,12 @@
 #include "CDPlayerController.h"
 
 #include "CDProject/Character/CDCharacter.h"
-#include "CDProject/Widget/CDHUD.h"
+#include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Widget/CharacterOverlay.h"
-#include "CDProject/Widget/CharacterStateOverlay.h"
+#include "CDProject/Widget/GameStateOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "GameFramework/GameMode.h"
 
 
 ACDPlayerController::ACDPlayerController()
@@ -58,19 +59,19 @@ void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
 
 void ACDPlayerController::SetHUDKill(float killcount)
 {
-	if (EnsureHUD()&&CDHUD->StateOverlay->KillCount)
+	if (EnsureHUD()&&CDHUD->CharacterOverlay->KillCount)
 	{
 		FString KillCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(killcount));
-		CDHUD->StateOverlay->KillCount->SetText(FText::FromString(KillCount));
+		CDHUD->CharacterOverlay->KillCount->SetText(FText::FromString(KillCount));
 	}
 }
 
 void ACDPlayerController::SetHUDDeath(float deathcount)
 {
-	if (EnsureHUD()&&CDHUD->StateOverlay->DeathCount)
+	if (EnsureHUD()&&CDHUD->CharacterOverlay->DeathCount)
 	{
 		FString DeathCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(deathcount));
-		CDHUD->StateOverlay->DeathCount->SetText(FText::FromString(DeathCount));
+		CDHUD->CharacterOverlay->DeathCount->SetText(FText::FromString(DeathCount));
 	}
 }
 
@@ -92,6 +93,15 @@ void ACDPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	}
 }
 
+void ACDPlayerController::SetHUDCount(float CountdownTime)
+{
+	if (EnsureHUD() && CDHUD->CharacterOverlay->MatchCountdownText)
+	{
+		FString CountdownText = FString::Printf(TEXT("%d"), CountdownTime);
+		CDHUD->CharacterOverlay->MatchCountdownText;
+	}
+}
+
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -105,6 +115,19 @@ void ACDPlayerController::OnPossess(APawn* InPawn)
 			//Character Edit Need
 		}
 		//SetHUD();
+	}
+}
+
+void ACDPlayerController::OnMatchStateSet(FName State)
+{
+	MatchState=State;
+	if (MatchState==MatchState::InProgress)
+	{
+		CDHUD=Cast<ACDHUD>(GetHUD());
+		if (CDHUD)
+		{
+			CDHUD->AddCharacterOverlay();
+		}
 	}
 }
 
