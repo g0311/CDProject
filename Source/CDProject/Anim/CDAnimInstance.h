@@ -13,5 +13,68 @@ UCLASS()
 class CDPROJECT_API UCDAnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
+
+//bool
+public:
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	virtual void NativeInitializeAnimation() override;
 	
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	class ACharacter* _playerPawn;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	bool _isJumping;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	bool _isCrouching;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	bool _isAiming;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	uint8 _weaponType;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _movementSpeed;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _direction;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _aimYaw;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _aimPitch;
+	
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	FRotator _lFootRotator;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	FRotator _rFootRotator;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _hipOffset;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _lFootOffset;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _rFootOffset;
+	
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	FTransform _leftHandTransform;
+
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	bool _isFullBody = true;
+
+	//Montage
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _rifleReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _shotgunReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _pistolReloadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _baseFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _aimFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _equipRifleMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	TObjectPtr<UAnimMontage> _equipPistolMontage;
+	void PlayFireMontage();
+	void PlayReloadMontage();
+	void PlayEquipMontage();
+	
+	void UpdateFullBodyProperty();
+	void UpdateUpperBodyProperty();
 };
