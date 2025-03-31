@@ -156,11 +156,11 @@ void AWeapon::Reload()
 {
 	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
 	if (OwnerCharacter==nullptr) return;
-	//5/250 max->30
 	//int CarridAmmo=OwnerCharacter->GetCarriedAmmo();
 	//int32 ReloadAmount=(AmmoCapacity-Ammo, CarriedAmmo);
 	//Ammo+=ReloadAmount;
 	//OwnerCharacter->SpendCarriedAmmo(ReloadAmount);
+	//Need(GetCarriedAmmo(), SpendCarridAmmo();)
 	SetHUDAmmo();
 	
 }
