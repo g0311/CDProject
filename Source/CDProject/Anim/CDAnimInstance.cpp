@@ -3,7 +3,7 @@
 
 #include "CDAnimInstance.h"
 
-#include "FootIKComponent.h"
+#include "CDProject/Component/FootIKComponent.h"
 #include "KismetAnimationLibrary.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "GameFramework/Character.h"
@@ -43,12 +43,10 @@ void UCDAnimInstance::PlayFireMontage()
 			Montage_Play(_aimFireMontage);
 		else
 			Montage_Play(_baseFireMontage);
-		UE_LOG(LogTemp, Log, TEXT("Called Body"));
 	}
 	else
 	{
 		Montage_Play(_aimFireMontage);
-		UE_LOG(LogTemp, Log, TEXT("Called Arm"));
 	}
 }
 

@@ -75,7 +75,7 @@ IK_TraceInfo UFootIKComponent::IK_FootTrace(float traceDistance, FName socket)
 	TArray<AActor*> ignore;
 	ignore.Add(GetOwner());
  
-	bool bDebug = true;
+	bool bDebug = false;
 	EDrawDebugTrace::Type eDebug = EDrawDebugTrace::None;
 	if (bDebug == true) eDebug = EDrawDebugTrace::ForOneFrame;
  

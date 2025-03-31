@@ -8,7 +8,7 @@
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
 #include "CDProject/Anim/CDAnimInstance.h"
-#include "CDProject/Anim/FootIKComponent.h"
+#include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
