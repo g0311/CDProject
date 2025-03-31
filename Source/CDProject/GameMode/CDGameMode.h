@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameFramework/GameMode.h"
 #include "GameFramework/GameModeBase.h"
 #include "CDGameMode.generated.h"
 
@@ -10,7 +11,7 @@
  * 
  */
 UCLASS()
-class CDPROJECT_API ACDGameMode : public AGameModeBase
+class CDPROJECT_API ACDGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	

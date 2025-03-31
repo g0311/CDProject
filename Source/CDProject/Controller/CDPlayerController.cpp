@@ -6,7 +6,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Widget/CDHUD.h"
 #include "CDProject/Widget/CharacterOverlay.h"
-#include "CDProject/Widget/CharacterStateOverlay.h"
+#include "CDProject/Widget/GameStateOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 
