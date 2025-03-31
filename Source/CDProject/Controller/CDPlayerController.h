@@ -22,9 +22,11 @@ public:
 	void SetHUDDeath(float deathcount);
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDCarriedAmmo(int32 Ammo);
+	void SetHUDCount(float CountdownTime);
 	virtual void OnPossess(APawn* InPawn) override;
 	
-
+	void OnMatchStateSet(FName State);
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -38,6 +40,8 @@ private:
 	UPROPERTY()
 	class UCharacterOverlay* Overlay;
 
+	UPROPERTY()
+	FName MatchState;
 	//ACDCharacter* CachedCharacter;
 
 };

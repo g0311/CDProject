@@ -5,6 +5,8 @@
 
 #include "CDProject/Widget/GameStateOverlay.h"
 #include "Blueprint/UserWidget.h"
+#include "CDProject/Widget/Announcement.h"
+#include "CDProject/Widget/CharacterOverlay.h"
 
 void ACDHUD::DrawHUD()
 {
@@ -14,6 +16,7 @@ void ACDHUD::DrawHUD()
 	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize);
 		const FVector2D ViewportCenter = ViewportSize * 0.5f;
+		float CrosshairSpread=HUDPackage.CrosshairSpread;
 		if (HUDPackage.CrosshairCenter)
 		{
 			FVector2D Spread(0.f,0.f);
@@ -21,22 +24,22 @@ void ACDHUD::DrawHUD()
 		}
 		if (HUDPackage.CrosshairRight)
 		{
-			FVector2D Spread(0.f,0.f);
+			FVector2D Spread(CrosshairSpread,0.f);
 			DrawCrosshair(HUDPackage.CrosshairRight, Spread, HUDPackage.CrosshairColor);
 		}
 		if (HUDPackage.CrosshairLeft)
 		{
-			FVector2D Spread(0.f,0.f);
+			FVector2D Spread(-CrosshairSpread,0.f);
 			DrawCrosshair(HUDPackage.CrosshairLeft, Spread, HUDPackage.CrosshairColor);
 		}
 		if (HUDPackage.CrosshairTop)
 		{
-			FVector2D Spread(0.f,0.f);
+			FVector2D Spread(0.f,-CrosshairSpread);
 			DrawCrosshair(HUDPackage.CrosshairTop, Spread, HUDPackage.CrosshairColor);
 		}
 		if (HUDPackage.CrosshairBottom)
 		{
-			FVector2D Spread(0.f,0.f);
+			FVector2D Spread(0.f,CrosshairSpread);
 			DrawCrosshair(HUDPackage.CrosshairBottom, Spread, HUDPackage.CrosshairColor);
 		}
 
@@ -48,8 +51,26 @@ void ACDHUD::AddCharacterOverlay()
 {
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
+		CharacterOverlay=CreateWidget<UCharacterOverlay>(PlayerController,CharacterOverlayClass);
+		CharacterOverlay->AddToViewport();
+	}
+}
+
+void ACDHUD::AddGameStateOverlay()
+{
+	if (APlayerController* PlayerController=GetOwningPlayerController())
+	{
 		GameStateOverlay=CreateWidget<UGameStateOverlay>(PlayerController,CharacterOverlayClass);
 		GameStateOverlay->AddToViewport();
+	}
+}
+
+void ACDHUD::AddAnnouncement()
+{
+	if (APlayerController* PlayerController=GetOwningPlayerController())
+	{
+		Announcement=CreateWidget<UAnnouncement>(PlayerController,CharacterOverlayClass);
+		Announcement->AddToViewport();
 	}
 }
 
@@ -69,11 +90,11 @@ void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor C
 
 	FVector2D ViewportCenter = ViewportSize / 2;
 
-	float ScreenW=30.f;
-	float ScreenH=30.f;
+	const float ScreenW=30.f;
+	const float ScreenH=30.f;
 
-	float ScreenX=ViewportCenter.X-(ScreenW/2.f)+Spread.X;
-	float ScreenY=ViewportCenter.Y-(ScreenH/2.f)+Spread.Y;
+	const float ScreenX=ViewportCenter.X-(ScreenW/2.f)+Spread.X;
+	const float ScreenY=ViewportCenter.Y-(ScreenH/2.f)+Spread.Y;
 
 	DrawTexture(  
 	Texture,

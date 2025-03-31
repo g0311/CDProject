@@ -35,20 +35,29 @@ public:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 
+	UPROPERTY(EditAnywhere, Category="Player State")
+	TSubclassOf<class UUserWidget> GameStateOverlayClass;
+	
 	UPROPERTY()
 	class UGameStateOverlay* GameStateOverlay;
 
-	//UPROPERTY()
-	//class UAnnouncement* Announcement;
+	UPROPERTY(EditAnywhere, Category="Announcement")
+	TSubclassOf<UUserWidget> AnnouncementClass;
+	
+	UPROPERTY()
+	class UAnnouncement* Announcement;
 
-
-	void AddCharacterOverlay();	
+//Adding Function(HUD)
+	void AddCharacterOverlay();
+	void AddGameStateOverlay();
+	void AddAnnouncement();
+	
 protected:
 	virtual void BeginPlay() override;
 private:
 	FHUDPackage HUDPackage;
 
 	void DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor);
-
+public:
 	FORCEINLINE void SetHUDPackage(const FHUDPackage& Package) {HUDPackage=Package;}
 };

@@ -9,6 +9,7 @@
 #include "CDProject/Widget/GameStateOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "GameFramework/GameMode.h"
 
 
 ACDPlayerController::ACDPlayerController()
@@ -92,6 +93,15 @@ void ACDPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	}
 }
 
+void ACDPlayerController::SetHUDCount(float CountdownTime)
+{
+	if (EnsureHUD() && CDHUD->CharacterOverlay->MatchCountdownText)
+	{
+		FString CountdownText = FString::Printf(TEXT("%d"), CountdownTime);
+		CDHUD->CharacterOverlay->MatchCountdownText;
+	}
+}
+
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -105,6 +115,19 @@ void ACDPlayerController::OnPossess(APawn* InPawn)
 			//Character Edit Need
 		}
 		//SetHUD();
+	}
+}
+
+void ACDPlayerController::OnMatchStateSet(FName State)
+{
+	MatchState=State;
+	if (MatchState==MatchState::InProgress)
+	{
+		CDHUD=Cast<ACDHUD>(GetHUD());
+		if (CDHUD)
+		{
+			CDHUD->AddCharacterOverlay();
+		}
 	}
 }
 

@@ -5,6 +5,7 @@
 
 #include "Cartridge.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Controller/CDPlayerController.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 
@@ -31,7 +32,7 @@ void AWeapon::Tick(float DeltaTime)
 
 bool AWeapon::AmmoIsEmpty()
 {
-	return true;
+	return Ammo<=0;
 }
 
 // Called when the game starts or when spawned
@@ -48,8 +49,6 @@ void AWeapon::BeginPlay()
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereBeginOverlap);
 		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Begin Weapon"));
-	
 }
 
 void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -70,6 +69,11 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	//PickUpSystem, Widget Down
 }
 
+void AWeapon::SpendAmmo()
+{
+	Ammo=FMath::Clamp(Ammo-1,0,AmmoCapacity);
+	SetHUDAmmo();
+}
 
 
 void AWeapon::Fire(const FVector& HitTarget)
@@ -115,7 +119,15 @@ void AWeapon::ShowPickUpWidget(bool bShowWidget)
 
 void AWeapon::SetHUDAmmo()
 {
-	
+	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
+	if (OwnerCharacter)
+	{
+		OwnerController=Cast<ACDPlayerController>(OwnerCharacter->GetController());
+		if (OwnerController)
+		{
+			OwnerController->SetHUDWeaponAmmo(Ammo);
+		}
+	}
 }
 
 void AWeapon::SetWeaponState(EWeaponState state)
@@ -137,5 +149,18 @@ void AWeapon::SetWeaponState(EWeaponState state)
 
 void AWeapon::AddAmmo(int32 AmmoToAdd)
 {
+	Ammo=FMath::Clamp(Ammo-AmmoToAdd,0,AmmoCapacity);
+	SetHUDAmmo();
 }
-
+void AWeapon::Reload()
+{
+	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
+	if (OwnerCharacter==nullptr) return;
+	//5/250 max->30
+	//int CarridAmmo=OwnerCharacter->GetCarriedAmmo();
+	//int32 ReloadAmount=(AmmoCapacity-Ammo, CarriedAmmo);
+	//Ammo+=ReloadAmount;
+	//OwnerCharacter->SpendCarriedAmmo(ReloadAmount);
+	SetHUDAmmo();
+	
+}
