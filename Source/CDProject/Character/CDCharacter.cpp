@@ -107,6 +107,8 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Completed, this, &ACDCharacter::StopJumping);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
+		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Triggered, this, &ACDCharacter::Walk);
+		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Completed, this, &ACDCharacter::UnWalk);
 		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::Fire);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::Aim);
 		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::Reload);
@@ -152,6 +154,18 @@ void ACDCharacter::Crouch(bool bClientSimulation)
 	Super::Crouch(bClientSimulation);
 }
 
+void ACDCharacter::Walk()
+{
+	//need to change mechanism
+	//server RPC or MovementComponent Refactoring
+	GetCharacterMovement()->MaxWalkSpeed = 250.f;
+}
+
+void ACDCharacter::UnWalk()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+}
+
 void ACDCharacter::Fire()
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
@@ -181,6 +195,10 @@ void ACDCharacter::Aim()
 
 void ACDCharacter::Reload()
 {
+	//Check Reload Avail
+	if (false)
+		return;
+	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
 	

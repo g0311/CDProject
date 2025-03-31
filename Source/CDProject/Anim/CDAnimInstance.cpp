@@ -61,6 +61,7 @@ void UCDAnimInstance::PlayReloadMontage()
 		case static_cast<uint8>(EWeaponType::EWT_Rifle):
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
 			Montage_Play(_rifleReloadMontage);
+			//Montage_SetEndDelegate()
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
 			Montage_Play(_shotgunReloadMontage);

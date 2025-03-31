@@ -56,6 +56,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _crouchAction;
 	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _walkAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _fireAction;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _aimAction;
@@ -69,6 +71,8 @@ private:
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
 	void Crouch(bool bClientSimulation = false) override;
+	void Walk();
+	void UnWalk();
 	void Fire();
 	void Aim();
 	void Reload();
