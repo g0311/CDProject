@@ -38,8 +38,8 @@ public:
 	UPROPERTY()
 	class UGameStateOverlay* GameStateOverlay;
 
-	UPROPERTY()
-	class UAnnouncement* Announcement;
+	//UPROPERTY()
+	//class UAnnouncement* Announcement;
 
 
 	void AddCharacterOverlay();	

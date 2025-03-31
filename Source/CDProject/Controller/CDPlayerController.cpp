@@ -4,7 +4,7 @@
 #include "CDPlayerController.h"
 
 #include "CDProject/Character/CDCharacter.h"
-#include "CDProject/Widget/CDHUD.h"
+#include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/GameStateOverlay.h"
 #include "Components/ProgressBar.h"
@@ -58,19 +58,19 @@ void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
 
 void ACDPlayerController::SetHUDKill(float killcount)
 {
-	if (EnsureHUD()&&CDHUD->StateOverlay->KillCount)
+	if (EnsureHUD()&&CDHUD->CharacterOverlay->KillCount)
 	{
 		FString KillCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(killcount));
-		CDHUD->StateOverlay->KillCount->SetText(FText::FromString(KillCount));
+		CDHUD->CharacterOverlay->KillCount->SetText(FText::FromString(KillCount));
 	}
 }
 
 void ACDPlayerController::SetHUDDeath(float deathcount)
 {
-	if (EnsureHUD()&&CDHUD->StateOverlay->DeathCount)
+	if (EnsureHUD()&&CDHUD->CharacterOverlay->DeathCount)
 	{
 		FString DeathCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(deathcount));
-		CDHUD->StateOverlay->DeathCount->SetText(FText::FromString(DeathCount));
+		CDHUD->CharacterOverlay->DeathCount->SetText(FText::FromString(DeathCount));
 	}
 }
 

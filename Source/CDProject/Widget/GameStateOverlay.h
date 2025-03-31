@@ -14,12 +14,7 @@ class CDPROJECT_API UGameStateOverlay : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+
 	UPROPERTY(meta=(BindWidget))
-	class UTextBlock* KillCount;
-	
-	UPROPERTY(meta=(BindWidget))
-	UTextBlock* DeathCount;
-	
-	UPROPERTY(meta=(BindWidget))
-	UTextBlock* Score;
+	class UTextBlock* Score;
 };

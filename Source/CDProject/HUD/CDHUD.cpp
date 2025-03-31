@@ -48,8 +48,8 @@ void ACDHUD::AddCharacterOverlay()
 {
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
-		CharacterOverlay=CreateWidget<UCharacterOverlay>(PlayerController,CharacterOverlayClass);
-		CharacterOverlay->AddToViewport();
+		GameStateOverlay=CreateWidget<UGameStateOverlay>(PlayerController,CharacterOverlayClass);
+		GameStateOverlay->AddToViewport();
 	}
 }
 

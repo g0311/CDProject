@@ -33,7 +33,7 @@ private:
 	class ACDHUD* CDHUD;
 
 	UPROPERTY()
-	class UCharacterStateOverlay* StateOverlay;
+	class UGameStateOverlay* GameStateOverlay;
 	
 	UPROPERTY()
 	class UCharacterOverlay* Overlay;

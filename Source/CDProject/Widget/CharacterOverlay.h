@@ -26,6 +26,12 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* CarriedAmmoAmount;
+
+	UPROPERTY(meta=(BindWidget))
+	class UTextBlock* KillCount;
+	
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* DeathCount;
 	
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* Gold;
