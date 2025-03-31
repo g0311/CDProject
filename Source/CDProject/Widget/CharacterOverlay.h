@@ -26,7 +26,17 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* CarriedAmmoAmount;
+
+	//Tab Bind Text
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* KillCount;
 	
 	UPROPERTY(meta=(BindWidget))
-	UTextBlock* Gold;
+	UTextBlock* DeathCount;
+	
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* GoldAmount;
+
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* MatchCountdownText;
 };
