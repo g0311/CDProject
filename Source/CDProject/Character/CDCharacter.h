@@ -42,6 +42,20 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Components")
 	float _eyeHeight = 50.f;
 	
+	UPROPERTY(EditAnywhere, Category = "Components")
+	FTransform _defaultArmTransform;
+	UPROPERTY(EditAnywhere, Category = "Components")
+	FTransform  _aimArmTransform;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	FTransform  _currentArmTransform;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	FTransform  _targetArmTransform;
+
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float _defaultFOV = 90.0f;
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	float _targetFOV;
+
 private:
 	//Input
 	UPROPERTY(EditAnywhere, Category = "Input")
@@ -75,6 +89,7 @@ private:
 	void UnWalk();
 	void Fire();
 	void Aim();
+	void UnAim();
 	void Reload();
 	void ChangeWeapon(int weaponIndex);
 	void GetWeapon(class AWeapon* weapon);

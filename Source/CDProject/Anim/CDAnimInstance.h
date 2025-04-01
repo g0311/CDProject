@@ -74,6 +74,7 @@ public:
 	void PlayFireMontage();
 	void PlayReloadMontage();
 	void PlayEquipMontage();
+	void FireMontageSetRate(float fireRate);
 	
 	void UpdateFullBodyProperty();
 	void UpdateUpperBodyProperty();

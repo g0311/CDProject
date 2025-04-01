@@ -40,13 +40,16 @@ void UCDAnimInstance::PlayFireMontage()
 	if (_isFullBody)
 	{
 		if (_isAiming)
-			Montage_Play(_aimFireMontage);
+			if (_aimFireMontage)
+				Montage_Play(_aimFireMontage);
 		else
-			Montage_Play(_baseFireMontage);
+			if (_baseFireMontage)
+				Montage_Play(_baseFireMontage);
 	}
 	else
 	{
-		Montage_Play(_aimFireMontage);
+		if (_aimFireMontage)
+			Montage_Play(_aimFireMontage);
 	}
 }
 
@@ -58,14 +61,17 @@ void UCDAnimInstance::PlayReloadMontage()
 		{
 		case static_cast<uint8>(EWeaponType::EWT_Rifle):
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
-			Montage_Play(_rifleReloadMontage);
+			if (_rifleReloadMontage)
+				Montage_Play(_rifleReloadMontage);
 			//Montage_SetEndDelegate()
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-			Montage_Play(_shotgunReloadMontage);
+			if (_rifleReloadMontage)
+				Montage_Play(_shotgunReloadMontage);
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Speical):
-			Montage_Play(_pistolReloadMontage);
+			if (_pistolReloadMontage)
+				Montage_Play(_pistolReloadMontage);
 			break;
 		}
 	}
@@ -75,13 +81,16 @@ void UCDAnimInstance::PlayReloadMontage()
 		{
 		case static_cast<uint8>(EWeaponType::EWT_Rifle):
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
-			Montage_Play(_rifleReloadMontage);
+			if (_rifleReloadMontage)
+				Montage_Play(_rifleReloadMontage);
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-			Montage_Play(_shotgunReloadMontage);
+			if (_shotgunReloadMontage)
+				Montage_Play(_shotgunReloadMontage);
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Speical):
-			Montage_Play(_pistolReloadMontage);
+			if (_pistolReloadMontage)
+				Montage_Play(_pistolReloadMontage);
 			break;
 		}
 	}
@@ -94,12 +103,22 @@ void UCDAnimInstance::PlayEquipMontage()
 	case static_cast<uint8>(EWeaponType::EWT_Rifle):
 	case static_cast<uint8>(EWeaponType::EWT_Sniper):
 	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-		Montage_Play(_equipRifleMontage);
+		if (_equipRifleMontage)
+			Montage_Play(_equipRifleMontage);
 		break;
 	case static_cast<uint8>(EWeaponType::EWT_Speical):
-		Montage_Play(_equipPistolMontage);
+		if (_equipPistolMontage)
+			Montage_Play(_equipPistolMontage);
 		break;
 	}
+}
+
+void UCDAnimInstance::FireMontageSetRate(float fireRate)
+{
+	if (_baseFireMontage)
+		_baseFireMontage->RateScale = fireRate;
+	if (_aimFireMontage)
+		_aimFireMontage->RateScale = fireRate;
 }
 
 void UCDAnimInstance::UpdateFullBodyProperty()
@@ -121,7 +140,7 @@ void UCDAnimInstance::UpdateFullBodyProperty()
 		
 	_isJumping = _playerPawn->GetMovementComponent()->IsFalling();
 	_isCrouching = _playerPawn->GetMovementComponent()->IsCrouching();
-		
+	
 	UFootIKComponent* IKFootComp = _playerPawn->FindComponentByClass<UFootIKComponent>();
 	if (!IKFootComp) return;
 	_lFootRotator = IKFootComp->_outValue._footRotation_Left;
@@ -141,6 +160,7 @@ void UCDAnimInstance::UpdateUpperBodyProperty()
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAimng();
+
 		//if (combatComponent->GetCurWeapon()->GetWeaponInfo() != Melee)
 		//	_leftHandTransform = combatComponent->GetCurWeapon()->GetMesh()->GetSocketTransform()
 	}

@@ -18,17 +18,19 @@ public:
 	
 	void Fire();
 	void Reload();
-	void Aim(bool tf);
+	void Aim();
+	void UnAim();
 	bool ChangeWeapon(int idx);
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
 	
-	bool IsAmmoEmpty();
-	AWeapon* GetCurWeapon();
-	uint8 GetCurWeaponType();
-	bool IsAimng();
-	bool IsFireAvail();
+	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
+	FORCEINLINE	bool IsAimng() { return _isAiming; }
+	FORCEINLINE	float GetFireDelay() { return _fireDelay; }
 
+	bool IsFireAvail();
+	bool IsAmmoEmpty();
+	uint8 GetCurWeaponType();
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
@@ -36,6 +38,9 @@ public:
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
 private:
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere)
+	class ACDHUD* HUD;
 	
 	UPROPERTY(VisibleAnywhere)
 	int _weaponIndex;
@@ -52,8 +57,8 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	bool _isAiming;
 
-	float FireRate = 0.23f;
-	float LastFireTime = 0.0f;
+	float _fireDelay = 0.23f;
+	float _lastFireTime = 0.0f;
 	
 	void CreateDefaultWeapons();
 	void AttatchMeshToChar(class AWeapon* weapon);

@@ -12,6 +12,7 @@
 #include "CDProject/Component/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 ACDCharacter::ACDCharacter()
@@ -71,6 +72,10 @@ void ACDCharacter::BeginPlay()
 	{
 		
 	}
+	
+	_currentArmTransform = _defaultArmTransform;
+	_targetArmTransform = _currentArmTransform;
+	_targetFOV = _defaultFOV;
 }
 
 // Called every frame
@@ -92,6 +97,13 @@ void ACDCharacter::Tick(float DeltaTime)
 			SetActorRotation(SmoothRotation);
 		}
 	}
+
+	float InterpSpeed = 10.0f;
+	_currentArmTransform = UKismetMathLibrary::TInterpTo(_currentArmTransform, _targetArmTransform, DeltaTime, InterpSpeed);
+	_armMesh->SetRelativeTransform(_currentArmTransform);
+
+	float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _targetFOV, DeltaTime, InterpSpeed);
+	_camera->SetFieldOfView(NewFOV);
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -123,8 +135,11 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void ACDCharacter::Move(const FInputActionValue& value)
 {
+	if (!Controller)
+		return;
+	
 	FVector inputVal = value.Get<FVector>();
-
+	
 	const FRotator rotation = Controller->GetControlRotation();
 	const FRotator yawRotation(0, rotation.Yaw, 0);
 
@@ -139,7 +154,7 @@ void ACDCharacter::Look(const FInputActionValue& value)
 {
 	FVector2D LookAxisVector = value.Get<FVector2D>();
 	
-	if (Controller != nullptr)
+	if (Controller)
 	{
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(-LookAxisVector.Y);
@@ -170,10 +185,10 @@ void ACDCharacter::Fire()
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
-
+	
 	if (_combat->IsFireAvail())
 	{
-		if (_combat->IsAmmoEmpty())
+		if (false/*_combat->IsAmmoEmpty()*/)
 		{
 			Reload();
 		}
@@ -190,11 +205,30 @@ void ACDCharacter::Fire()
 
 void ACDCharacter::Aim()
 {
-	_combat->Aim(true);
+	if(_combat->IsAimng())
+	{
+		_combat->UnAim();
+		_targetArmTransform = _defaultArmTransform;
+		_targetFOV = _defaultFOV;
+	}
+	else
+	{
+		_combat->Aim();
+		_targetArmTransform = _aimArmTransform;
+		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+	}
+}
+
+void ACDCharacter::UnAim()
+{
+	_combat->UnAim();
+	_targetArmTransform = _defaultArmTransform;
+	_targetFOV = _defaultFOV;
 }
 
 void ACDCharacter::Reload()
 {
+	UnAim();
 	//Check Reload Avail
 	if (false)
 		return;
@@ -213,13 +247,20 @@ void ACDCharacter::ChangeWeapon(int weaponIndex)
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
-
+	
 	if (_combat->ChangeWeapon(weaponIndex))
 	{
+		UnAim();
 		if (bodyAnim)
+		{
 			bodyAnim->PlayEquipMontage();
+			bodyAnim->FireMontageSetRate(_combat->GetFireDelay());
+		}
 		if (armAnim)
+		{
 			armAnim->PlayEquipMontage();
+			armAnim->FireMontageSetRate(_combat->GetFireDelay());
+		}
 	}
 }
 
@@ -230,6 +271,7 @@ void ACDCharacter::GetWeapon(AWeapon* weapon)
 
 void ACDCharacter::DropWeapon()
 {
+	UnAim();
 	_combat->DropWeapon();
 }
 
