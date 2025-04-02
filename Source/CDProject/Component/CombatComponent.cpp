@@ -5,14 +5,16 @@
 
 #include <CDProject/HUD/CDHUD.h>
 
+#include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
+	
 	//0: main / 1: sub / 2: melee / 3,4,5: projectile
 	_weapons.SetNumZeroed(6);
 }
@@ -20,10 +22,11 @@ UCombatComponent::UCombatComponent()
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SetIsReplicated(true);
+	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	CreateDefaultWeapons();
-	_weaponIndex = 1;
-	ChangeWeapon(_weaponIndex);
+	
+	ChangeWeapon(1);
 	SetHUDCrosshairs();
 }
 
@@ -31,7 +34,13 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
+}
+
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
+	DOREPLIFETIME(UCombatComponent, _isAiming);
 }
 
 void UCombatComponent::Reset()
@@ -49,6 +58,23 @@ void UCombatComponent::Reset()
 
 void UCombatComponent::Fire()
 {
+	if (!_playerCharacter)
+		return;
+
+	_isCanFire = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		_isCanFire = true;
+	}), _fireDelay, false);
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+
+	if (bodyAnim)
+		bodyAnim->PlayFireMontage(_fireDelay);
+	if (armAnim)
+		armAnim->PlayFireMontage(_fireDelay);
+	
 	FHitResult hit;
 	AController* controller= Cast<ACharacter>(GetOwner())->Controller;
 	if (controller)
@@ -70,7 +96,17 @@ void UCombatComponent::Fire()
 
 void UCombatComponent::Reload()
 {
-	_weapons[_weaponIndex]->Reload();
+	//isammo full => return
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+
+	_isCanFire = false;
+	_isCanAim = false;
+	if (bodyAnim)
+		bodyAnim->PlayReloadMontage();
+	if (armAnim)
+		armAnim->PlayReloadMontage();
 }
 
 void UCombatComponent::Aim()
@@ -93,17 +129,36 @@ void UCombatComponent::UnAim()
 
 bool UCombatComponent::ChangeWeapon(int idx)
 { //avail visibility and update curWeaponIndex
+	if (idx == _weaponIndex)
+		return false;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	if (_weapons[idx])
 	{
-		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
-		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(false);
-		_isAiming = false;
-		
+		if (_weapons[_weaponIndex])
+		{
+			_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
+			//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(false);
+			_isAiming = false;
+		}
 		_weaponIndex = idx;
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
 		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(true);
 		SetHUDCrosshairs();
-		_fireDelay = _weapons[_weaponIndex]->FireDelay;
+		
+		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
+		
+		if (bodyAnim)
+		{
+			bodyAnim->PlayEquipMontage();
+		}
+		if (armAnim)
+		{
+			armAnim->PlayEquipMontage();
+		}
+
+		_isCanFire = true;
 		return true;
 	}
 	return false;
@@ -163,25 +218,16 @@ bool UCombatComponent::IsAmmoEmpty()
 	return _weapons[_weaponIndex]->AmmoIsEmpty();
 }
 
+bool UCombatComponent::IsTotalAmmoEmpty()
+{
+	return false;
+}
+
 uint8 UCombatComponent::GetCurWeaponType()
 {
 	if (_weapons[_weaponIndex])
 		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
 	return -1;
-}
-
-bool UCombatComponent::IsFireAvail()
-{
-	float curTime = GetWorld()->GetTimeSeconds();
-	if (curTime - _lastFireTime > _fireDelay)
-	{
-		_lastFireTime = curTime;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 void UCombatComponent::SetHUDCrosshairs()
@@ -231,11 +277,11 @@ void UCombatComponent::CreateDefaultWeapons()
 		if (_weapons[1])
 		{
 			_weapons[1]->AttachToComponent(
-			owner->_armMesh,
+			owner->GetArmMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[1]->GetWeaponMesh()->SetVisibility(false);
+			_weapons[1]->GetWeaponMesh()->SetVisibility(true);
 			
 			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
 			//owner->_armMesh,
@@ -254,11 +300,11 @@ void UCombatComponent::CreateDefaultWeapons()
 		if (_weapons[2])
 		{
 			_weapons[2]->AttachToComponent(
-			owner->_armMesh,
+			owner->GetArmMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[2]->GetWeaponMesh()->SetVisibility(true);
+			_weapons[2]->GetWeaponMesh()->SetVisibility(false);
 			
 			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
 			//owner->_armMesh,

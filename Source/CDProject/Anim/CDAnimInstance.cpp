@@ -5,6 +5,7 @@
 
 #include "CDProject/Component/FootIKComponent.h"
 #include "KismetAnimationLibrary.h"
+#include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -13,9 +14,9 @@
 void UCDAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
-	if (_playerPawn == nullptr)
+	if (_playerCharacter == nullptr)
 	{
-		_playerPawn = Cast<ACharacter>(TryGetPawnOwner());
+		_playerCharacter = Cast<ACDCharacter>(TryGetPawnOwner());
 	}
 }
 
@@ -23,10 +24,10 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	if (_playerPawn == nullptr)
-		_playerPawn = Cast<ACharacter>(TryGetPawnOwner());
+	if (_playerCharacter == nullptr)
+		_playerCharacter = Cast<ACDCharacter>(TryGetPawnOwner());
 	
-	if (_playerPawn)
+	if (_playerCharacter)
 	{
 		if (_isFullBody)
 			UpdateFullBodyProperty();
@@ -35,16 +36,16 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 }
 
-void UCDAnimInstance::PlayFireMontage()
+void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
 	if (_isFullBody)
 	{
 		if (_isAiming)
 			if (_aimFireMontage)
-				Montage_Play(_aimFireMontage);
+				Montage_Play(_aimFireMontage, 1.f / fireRate * 1.5);
 		else
 			if (_baseFireMontage)
-				Montage_Play(_baseFireMontage);
+				Montage_Play(_baseFireMontage, 1.f / fireRate  * 1.5);
 	}
 	else
 	{
@@ -113,35 +114,27 @@ void UCDAnimInstance::PlayEquipMontage()
 	}
 }
 
-void UCDAnimInstance::FireMontageSetRate(float fireRate)
-{
-	if (_baseFireMontage)
-		_baseFireMontage->RateScale = fireRate;
-	if (_aimFireMontage)
-		_aimFireMontage->RateScale = fireRate;
-}
-
 void UCDAnimInstance::UpdateFullBodyProperty()
 {
 	//Lower Part
-	FVector velocity = _playerPawn->GetVelocity();
+	FVector velocity = _playerCharacter->GetVelocity();
 	velocity = FVector(velocity.X, velocity.Y, 0.f);
 		
 	_movementSpeed = FVector(velocity.X, velocity.Y, 0.f).Size();
-	_direction = UKismetAnimationLibrary::CalculateDirection(velocity, _playerPawn->GetActorRotation());
+	_direction = UKismetAnimationLibrary::CalculateDirection(velocity, _playerCharacter->GetActorRotation());
 		
-	FRotator controlRot = _playerPawn->GetControlRotation();
-	FRotator actorRot = _playerPawn->GetActorRotation();
+	FRotator controlRot = _playerCharacter->GetRepControlRotation();
+	FRotator actorRot = _playerCharacter->GetActorRotation();
 	FRotator deltaRot = controlRot - actorRot;
 		
 	_aimPitch = FMath::UnwindDegrees(deltaRot.Pitch);
 	_aimPitch = FMath::Clamp(_aimPitch, -75.f, 75.f);
 	_aimYaw = FMath::UnwindDegrees(deltaRot.Yaw);
 		
-	_isJumping = _playerPawn->GetMovementComponent()->IsFalling();
-	_isCrouching = _playerPawn->GetMovementComponent()->IsCrouching();
+	_isJumping = _playerCharacter->GetMovementComponent()->IsFalling();
+	_isCrouching = _playerCharacter->GetMovementComponent()->IsCrouching();
 	
-	UFootIKComponent* IKFootComp = _playerPawn->FindComponentByClass<UFootIKComponent>();
+	UFootIKComponent* IKFootComp = _playerCharacter->FindComponentByClass<UFootIKComponent>();
 	if (!IKFootComp) return;
 	_lFootRotator = IKFootComp->_outValue._footRotation_Left;
 	_rFootRotator = IKFootComp->_outValue._footRotation_Right;
@@ -155,7 +148,7 @@ void UCDAnimInstance::UpdateFullBodyProperty()
 void UCDAnimInstance::UpdateUpperBodyProperty()
 {
 	//Upper Part
-	UCombatComponent* combatComponent = _playerPawn->GetComponentByClass<UCombatComponent>();
+	UCombatComponent* combatComponent = _playerCharacter->GetComponentByClass<UCombatComponent>();
 	if (combatComponent)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
