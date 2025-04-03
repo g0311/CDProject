@@ -60,14 +60,9 @@ void ACDCharacter::BeginPlay()
 		}
 	
 		if (_abilitySystemComponent)
-		{
+		{//이거 서버에서 해야되나?
 			_abilitySystemComponent->InitAbilityActorInfo(this, this);
 			InitializeAttributes();
-		}
-
-		if (_combat)
-		{
-		
 		}
 	}
 	
@@ -111,9 +106,6 @@ void ACDCharacter::Tick(float DeltaTime)
 
 	float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _targetFOV, DeltaTime, InterpSpeed);
 	_camera->SetFieldOfView(NewFOV);
-
-	// UE_LOG(LogTemp, Log, TEXT("Camera: %s"), *_camera->GetRelativeRotation().ToString());
-	// UE_LOG(LogTemp, Log, TEXT("Rot: %s"), *_controlRotation.ToString());
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
