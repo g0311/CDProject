@@ -2,3 +2,8 @@
 
 
 #include "CDPlayerState.h"
+
+void ACDPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+}

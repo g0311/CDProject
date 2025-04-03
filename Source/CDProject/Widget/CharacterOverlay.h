@@ -15,12 +15,17 @@ class CDPROJECT_API UCharacterOverlay : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	//Status
 	UPROPERTY(meta=(BindWidget))
 	class UProgressBar* HealthBar;
 
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* HealthText;
 
+	//Weapon
+	UPROPERTY(meta=(BindWidget))
+	class UImage* WeaponImage;
+	
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* WeaponAmmoAmount;
 
@@ -37,6 +42,7 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* GoldAmount;
 
+	//Timer
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* MatchCountdownText;
 };

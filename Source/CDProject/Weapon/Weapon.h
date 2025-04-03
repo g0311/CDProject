@@ -24,6 +24,8 @@ enum class EWeaponType:uint8
 {
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
 	EWT_Sniper UMETA(DisplayName = "Sniper"),
+	EWT_RocketLauncher UMETA(DisplayName = "RocketLauncher"),
+	EWT_Pistol UMETA(DisplayName="Pistol"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_Speical UMETA(DisplayName = "Special"),
 };
@@ -37,6 +39,7 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void Fire(const FVector& HitTarget);
+	virtual void OnRep_Owner() override;
 	//Using This function -> ProjectileWeapon
 
 	//* Widget Set function
@@ -77,12 +80,15 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category="Weapon")
 	float FireDelay=10.f;
-
+	
 	UPROPERTY(EditAnywhere)
 	class USoundCue* EquipSound;
 
+	UPROPERTY(EditAnywhere)
+	USoundCue* ReloadSound;
+	
 	bool AmmoIsEmpty();
-
+	
 	//FORCEINLINE
 	FORCEINLINE USphereComponent* GetAreaComponent() const {return AreaSphere;}
 	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
@@ -95,6 +101,21 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+
+	UPROPERTY(ReplicatedUsing=OnRep_WeaponState,VisibleAnywhere, Category="Weapon Property")
+	EWeaponState WeaponState;
+
+	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
+	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere)
+	int32 AmmoCapacity;
+
+	UPROPERTY()
+	class ACDCharacter* OwnerCharacter;
+
+	UPROPERTY()
+	class ACDPlayerController* OwnerController;
 	
 	UFUNCTION()
 	virtual void OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent,
@@ -111,16 +132,13 @@ protected:
 		int32 OtherBodyIndex
 		);
 
-	void SpendAmmo();
+	UFUNCTION()
+	void OnRep_Ammo();
 	
-	UPROPERTY(EditAnywhere)
-	int32 AmmoCapacity;
+	UFUNCTION()
+	void OnRep_WeaponState();
 
-	UPROPERTY()
-	class ACDCharacter* OwnerCharacter;
-
-	UPROPERTY()
-	class ACDPlayerController* OwnerController;
+	void SpendAmmo();
 
 
 private:
@@ -139,20 +157,10 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACartridge> CartridgeClass;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,ReplicatedUsing=OnRep_Ammo)
 	int32 Ammo;
 
-	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
-	EWeaponState WeaponState;
 
-	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
-	EWeaponType WeaponType;
-	
-	//etc variable
-	float Damage;
-
-	
-	
 
 };
 

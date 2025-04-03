@@ -16,8 +16,13 @@ public:
 	AProjectile();
 	virtual void Destroyed() override;//Pawn Cascade
 
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed=15000.f;
+
+	UPROPERTY(VisibleAnywhere)
+	float Damage=10.f;
+	
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
@@ -26,28 +31,30 @@ protected:
 	UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse,
 	const FHitResult& Hit);
+	
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* ProjectileMesh;
 
 	UPROPERTY(VisibleAnywhere)
-	float Damage=10.f;
-	//be Adjusted by Weapon's Damage
-
-	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* Movement;
+	class UProjectileMovementComponent* ProjectileMovementComponent;
 	
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
 
-
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticle;
+	
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ImpactSound;
 	
 private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* Tracer;
+
+	UPROPERTY(EditAnywhere)
 	class UParticleSystemComponent* TracerComponent;
 	
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* ImpactParticle;
-	UParticleSystemComponent* ImpactParticleComponent;
+
 	
-	UPROPERTY(EditAnywhere)
-	class USoundCue* ImpactSound;
+	
 };

@@ -39,7 +39,7 @@ public:
 	TSubclassOf<class UUserWidget> GameStateOverlayClass;
 	
 	UPROPERTY()
-	class UGameStateOverlay* GameStateOverlay;
+	class UKDOverlay* GameStateOverlay;
 
 	UPROPERTY(EditAnywhere, Category="Announcement")
 	TSubclassOf<UUserWidget> AnnouncementClass;

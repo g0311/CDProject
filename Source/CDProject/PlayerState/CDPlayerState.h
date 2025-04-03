@@ -16,32 +16,13 @@ class CDPROJECT_API ACDPlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(VisibleAnywhere)
-	int32 CurrentHealth;
-	UPROPERTY(VisibleAnywhere)
-	int32 MaxHealth;
-	UPROPERTY(VisibleAnywhere)
-	int32 KillCount;
-	UPROPERTY(VisibleAnywhere)
-	int32 DeathCount;
-	UPROPERTY(VisibleAnywhere)
-	int32 Level;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(EditAnywhere)
-	int Ammo;
-	UPROPERTY(EditAnywhere)
-	int MaxAmmo;
-	UPROPERTY(EditAnywhere)
-	int CarriedAmmo;
-
+	
 	UPROPERTY()
 	class ACDCharacter* Character;
 	UPROPERTY()
 	class ACDPlayerController* Controller;
-
-	UPROPERTY(VisibleAnywhere)
-	EWeaponType WeaponType;
-	UPROPERTY(VisibleAnywhere)
-	EWeaponState WeaponState;
 	
+	//Team
 };

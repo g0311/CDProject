@@ -14,10 +14,12 @@ AWeapon::AWeapon()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates=true;
+	SetReplicateMovement(true);
 	
 	WeaponMesh=CreateDefaultSubobject<USkeletalMeshComponent>("WeaponMesh");
 	SetRootComponent(WeaponMesh);
-
+	
 	AreaSphere=CreateDefaultSubobject<USphereComponent>("AreaSphere");
 	AreaSphere->SetupAttachment(RootComponent);
 
@@ -69,6 +71,24 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	//PickUpSystem, Widget Down
 }
 
+void AWeapon::OnRep_Ammo()
+{
+	SetHUDAmmo();
+}
+
+void AWeapon::OnRep_WeaponState()
+{
+	switch (WeaponState)
+	{
+	case EWeaponState::EWS_Dropped:
+		ShowPickUpWidget(true);
+		WeaponMesh->SetEnableGravity(true);
+	case EWeaponState::EWS_Equipped:
+		ShowPickUpWidget(false);
+		WeaponMesh->SetEnableGravity(false);
+	}
+}
+
 void AWeapon::SpendAmmo()
 {
 	Ammo=FMath::Clamp(Ammo-1,0,AmmoCapacity);
@@ -99,6 +119,11 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}//Edit Need
 		}
 	}
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
 }
 
 void AWeapon::Dropped()
@@ -136,14 +161,13 @@ void AWeapon::SetWeaponState(EWeaponState state)
 	switch (WeaponState)
 	{
 	case EWeaponState::EWS_Dropped:
-		 ShowPickUpWidget(true);
+		ShowPickUpWidget(true);
+		WeaponMesh->SetEnableGravity(true);
 		//Collision Enable(true)
 	case EWeaponState::EWS_Equipped:
 		ShowPickUpWidget(false);
+		WeaponMesh->SetEnableGravity(false);
 		//Collision  Enable(false)
-	case EWeaponState::EWS_Initial:
-		//Collision Enable(true)
-		break;
 	}
 }
 
@@ -156,10 +180,10 @@ void AWeapon::Reload()
 {
 	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
 	if (OwnerCharacter==nullptr) return;
-	//int CarridAmmo=OwnerCharacter->GetCarriedAmmo();
-	//int32 ReloadAmount=(AmmoCapacity-Ammo, CarriedAmmo);
-	//Ammo+=ReloadAmount;
-	//OwnerCharacter->SpendCarriedAmmo(ReloadAmount);
+	// int CarridAmmo=OwnerCharacter->GetCarriedAmmo();
+	// int32 ReloadAmount=(AmmoCapacity-Ammo, CarriedAmmo);// 30 /240  5 /240 -25 215 
+	// Ammo+=ReloadAmount;
+	// OwnerCharacter->SpendCarriedAmmo(ReloadAmount);
 	//Need(GetCarriedAmmo(), SpendCarridAmmo();)
 	SetHUDAmmo();
 	
