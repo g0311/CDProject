@@ -3,7 +3,7 @@
 
 #include "CDHUD.h"
 
-#include "CDProject/Widget/GameStateOverlay.h"
+#include "CDProject/Widget/KDOverlay.h"
 #include "Blueprint/UserWidget.h"
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
@@ -21,7 +21,7 @@ void ACDHUD::DrawHUD()
 		{
 			FVector2D Spread(0.f,0.f);
 			DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
-		}
+		}//Getvelociy isinair
 		if (HUDPackage.CrosshairRight)
 		{
 			FVector2D Spread(CrosshairSpread,0.f);
@@ -60,7 +60,7 @@ void ACDHUD::AddGameStateOverlay()
 {
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
-		GameStateOverlay=CreateWidget<UGameStateOverlay>(PlayerController,CharacterOverlayClass);
+		GameStateOverlay=CreateWidget<UKDOverlay>(PlayerController,CharacterOverlayClass);
 		GameStateOverlay->AddToViewport();
 	}
 }

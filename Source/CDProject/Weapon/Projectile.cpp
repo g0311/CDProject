@@ -14,19 +14,13 @@ AProjectile::AProjectile()
 	CollisionBox=CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
 	SetRootComponent(CollisionBox);
 
-	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
-	CollisionBox->SetCollisionResponseToChannel(ECC_WorldStatic,ECR_Block);
+	CollisionBox->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 	//CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 }
-
-void AProjectile::Destroyed()
-{
-	if (ImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorLocation(), FRotator::ZeroRotator);
-	if (ImpactSound) UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-	UE_LOG(LogTemp, Warning, TEXT("Destroyed AProjectile"));
-	Super::Destroyed();
-}
-
 
 void AProjectile::BeginPlay()
 {
@@ -42,8 +36,15 @@ void AProjectile::BeginPlay()
 			EAttachLocation::KeepWorldPosition);
 	}
 	CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
-	//Auto
 }
+
+void AProjectile::Destroyed()
+{
+	Super::Destroyed();
+	if (ImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorLocation(), FRotator::ZeroRotator);
+	if (ImpactSound) UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+}
+
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)

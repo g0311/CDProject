@@ -12,11 +12,9 @@
 AAProjectileBullet::AAProjectileBullet()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	Movement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	Movement->bRotationFollowsVelocity = true;
-	Movement->InitialSpeed = 15000;
-	Movement->MaxSpeed = 15000;
+	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
+	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+	ProjectileMovementComponent->SetIsReplicated(true);
 }
 
 // Called when the game starts or when spawned

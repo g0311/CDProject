@@ -6,7 +6,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Widget/CharacterOverlay.h"
-#include "CDProject/Widget/GameStateOverlay.h"
+#include "CDProject/Widget/KDOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/GameMode.h"
@@ -43,6 +43,10 @@ bool ACDPlayerController::EnsureHUD()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	return CDHUD&&CDHUD->CharacterOverlay;
+}
+
+void ACDPlayerController::TotalSetHUD()
+{
 }
 
 void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
