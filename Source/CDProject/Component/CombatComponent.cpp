@@ -2,13 +2,19 @@
 
 
 #include "CombatComponent.h"
+
+#include <CDProject/HUD/CDHUD.h>
+
+#include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Controller/CDPlayerController.h"
+#include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
+	
 	//0: main / 1: sub / 2: melee / 3,4,5: projectile
 	_weapons.SetNumZeroed(6);
 }
@@ -16,17 +22,25 @@ UCombatComponent::UCombatComponent()
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SetIsReplicated(true);
+	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	CreateDefaultWeapons();
-	_weaponIndex = 1;
-	ChangeWeapon(_weaponIndex);
+	
+	ChangeWeapon(1);
+	SetHUDCrosshairs();
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	
+}
+
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
+	DOREPLIFETIME(UCombatComponent, _isAiming);
 }
 
 void UCombatComponent::Reset()
@@ -44,38 +58,107 @@ void UCombatComponent::Reset()
 
 void UCombatComponent::Fire()
 {
+	if (!_playerCharacter)
+		return;
+
+	_isCanFire = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		_isCanFire = true;
+	}), _fireDelay, false);
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+
+	if (bodyAnim)
+		bodyAnim->PlayFireMontage(_fireDelay);
+	if (armAnim)
+		armAnim->PlayFireMontage(_fireDelay);
+	
 	FHitResult hit;
-	//GetWorld()->LineTraceSingleByChannel(hit, )
-	_weapons[_weaponIndex]->Fire(FVector::ZeroVector);
-	_isAiming = false;
+	AController* controller= Cast<ACharacter>(GetOwner())->Controller;
+	if (controller)
+	{
+		FVector CameraLocation;
+		FRotator CameraRotation;
+		controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
+		
+		FVector traceStart = CameraLocation;
+		FVector traceEnd = traceStart + (CameraRotation.Vector() * 10000.f);
+
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(GetOwner()); // 플레이어 자신 제외
+
+		if(GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
+			_weapons[_weaponIndex]->Fire(hit.Location);
+	}
 }
 
 void UCombatComponent::Reload()
 {
-	//_weapons[_weaponIndex]->;
+	//isammo full => return
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+
+	_isCanFire = false;
+	_isCanAim = false;
+	if (bodyAnim)
+		bodyAnim->PlayReloadMontage();
+	if (armAnim)
+		armAnim->PlayReloadMontage();
 }
 
-void UCombatComponent::Aim(bool tf)
+void UCombatComponent::Aim()
 {
-	if (_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Sniper)
+	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
 	{
-		_isAiming = tf;
+		_isAiming = true;
+		SetHUDCrosshairs();
+	}
+}
+
+void UCombatComponent::UnAim()
+{
+	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
+	{
+		_isAiming = false;
 		SetHUDCrosshairs();
 	}
 }
 
 bool UCombatComponent::ChangeWeapon(int idx)
 { //avail visibility and update curWeaponIndex
+	if (idx == _weaponIndex)
+		return false;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	if (_weapons[idx])
 	{
-		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
-		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(false);
-		_isAiming = false;
-		
+		if (_weapons[_weaponIndex])
+		{
+			_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
+			//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(false);
+			_isAiming = false;
+		}
 		_weaponIndex = idx;
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
 		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(true);
 		SetHUDCrosshairs();
+		
+		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
+		
+		if (bodyAnim)
+		{
+			bodyAnim->PlayEquipMontage();
+		}
+		if (armAnim)
+		{
+			armAnim->PlayEquipMontage();
+		}
+
+		_isCanFire = true;
 		return true;
 	}
 	return false;
@@ -126,20 +209,18 @@ void UCombatComponent::DropWeapon()
 				break;
 			}
 		}
-
-		if (_weapons[_weaponIndex])
-			_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
+		ChangeWeapon(_weaponIndex);
 	}
 }
 
 bool UCombatComponent::IsAmmoEmpty()
 {
-	return false;
+	return _weapons[_weaponIndex]->AmmoIsEmpty();
 }
 
-AWeapon* UCombatComponent::GetCurWeapon()
+bool UCombatComponent::IsTotalAmmoEmpty()
 {
-	return _weapons[_weaponIndex];
+	return false;
 }
 
 uint8 UCombatComponent::GetCurWeaponType()
@@ -149,28 +230,37 @@ uint8 UCombatComponent::GetCurWeaponType()
 	return -1;
 }
 
-bool UCombatComponent::IsAimng()
-{
-	return _isAiming;
-}
-
-bool UCombatComponent::IsFireAvail()
-{
-	float curTime = GetWorld()->GetTimeSeconds();
-	if (curTime - LastFireTime > FireRate)
-	{
-		LastFireTime = curTime;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
 void UCombatComponent::SetHUDCrosshairs()
 {
-	
+	ACharacter* character = Cast<ACharacter>(GetOwner());
+	if (!character || !character->Controller) return;
+
+	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
+	if (controller)
+	{
+		HUD = HUD == nullptr ? Cast<ACDHUD>(controller->GetHUD()) : HUD;
+		if (HUD)
+		{
+			FHUDPackage HUDPackage;
+			if (_weapons[_weaponIndex])
+			{
+				HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
+				HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
+				HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
+				HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
+				HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
+			}
+			else
+			{
+				HUDPackage.CrosshairCenter = nullptr;
+				HUDPackage.CrosshairLeft = nullptr;
+				HUDPackage.CrosshairRight = nullptr;
+				HUDPackage.CrosshairBottom = nullptr;
+				HUDPackage.CrosshairTop = nullptr;
+			}
+			HUD->SetHUDPackage(HUDPackage);
+		}
+	}
 }
 
 void UCombatComponent::CreateDefaultWeapons()
@@ -187,11 +277,11 @@ void UCombatComponent::CreateDefaultWeapons()
 		if (_weapons[1])
 		{
 			_weapons[1]->AttachToComponent(
-			owner->_armMesh,
+			owner->GetArmMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[1]->GetWeaponMesh()->SetVisibility(false);
+			_weapons[1]->GetWeaponMesh()->SetVisibility(true);
 			
 			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
 			//owner->_armMesh,
@@ -210,11 +300,11 @@ void UCombatComponent::CreateDefaultWeapons()
 		if (_weapons[2])
 		{
 			_weapons[2]->AttachToComponent(
-			owner->_armMesh,
+			owner->GetArmMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[2]->GetWeaponMesh()->SetVisibility(true);
+			_weapons[2]->GetWeaponMesh()->SetVisibility(false);
 			
 			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
 			//owner->_armMesh,
@@ -231,3 +321,39 @@ void UCombatComponent::AttatchMeshToChar(class AWeapon* weapon)
 	
 }
 
+
+/*
+void 
+UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
+{
+	FVector2D ViewportSize;
+	if (GEngine&&GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+	FVector2D CrossHairLocation(ViewportSize.X/2.f,ViewportSize.Y/2.f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+	bool bScreenToWorld=UGameplayStatics::DeprojectScreenToWorld(
+		UGameplayStatics::GetPlayerController(this,0),
+		CrossHairLocation,
+		CrosshairWorldPosition,
+		CrosshairWorldDirection
+	);//DeprojectScreenToWorld = ScreenPosition -> WorldPosition, WorldDirection 변환 역할
+	if (bScreenToWorld)
+	{
+		FVector Start=CrosshairWorldPosition;
+		DrawDebugSphere(GetWorld(), Start, 0.5f, 20, FColor::Yellow, false);
+		if (Character)
+		{
+			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
+			Start+=CrosshairWorldDirection*(DistanceToCharacter+100.f);
+		}
+		FVector End=Start+CrosshairWorldDirection*TRACE_LENGTH;
+		GetWorld()->LineTraceSingleByChannel(
+			TraceHitResult,
+			Start,
+			End,
+			ECollisionChannel::ECC_Visibility
+			);
+ */
