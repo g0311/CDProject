@@ -15,11 +15,12 @@ ACartridge::ACartridge()
 
 	CartridgeMesh=CreateDefaultSubobject<UStaticMeshComponent>("CartridgeMesh");
 	SetRootComponent(CartridgeMesh);
-	CartridgeMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
+	CartridgeMesh->SetCollisionObjectType(ECC_PhysicsBody);
+	CartridgeMesh->SetCollisionResponseToAllChannels(ECR_Block);
+	CartridgeMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	CartridgeMesh->SetSimulatePhysics(true);
 	CartridgeMesh->SetEnableGravity(true);
 	CartridgeMesh->SetNotifyRigidBodyCollision(true);
-	EjectImpulse=10.f;
 }
 
 // Called when the game starts or when spawned

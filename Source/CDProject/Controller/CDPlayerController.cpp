@@ -3,7 +3,9 @@
 
 #include "CDPlayerController.h"
 
+#include "AbilitySystemComponent.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/KDOverlay.h"
@@ -45,9 +47,7 @@ bool ACDPlayerController::EnsureHUD()
 	return CDHUD&&CDHUD->CharacterOverlay;
 }
 
-void ACDPlayerController::TotalSetHUD()
-{
-}
+
 
 void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
 {
@@ -57,6 +57,18 @@ void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		CDHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
 		FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
+	}
+	
+}
+
+void ACDPlayerController::SetHUDShield(float Shield, float MaxShield)
+{
+	if (EnsureHUD())
+	{
+		// const float ShieldPercent = Shield/MaxShield;
+		// //CDHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+		// FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
+		// CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
 	
 }
@@ -79,20 +91,20 @@ void ACDPlayerController::SetHUDDeath(float deathcount)
 	}
 }
 
-void ACDPlayerController::SetHUDWeaponAmmo(int32 Ammo)
+void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo)
 {
 	if (EnsureHUD() && CDHUD->CharacterOverlay->WeaponAmmoAmount)
 	{
-		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
-		CDHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
+		FString WeaponAmmoText = FString::Printf(TEXT("%d"), WeaponAmmo);
+		CDHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(WeaponAmmoText));
 	}
 }
 
-void ACDPlayerController::SetHUDCarriedAmmo(int32 Ammo)
+void ACDPlayerController::SetHUDCarriedAmmo(int32 CarriedAmmo)
 {
 	if (EnsureHUD() && CDHUD->CharacterOverlay->CarriedAmmoAmount)
 	{
-		FString CarriedText = FString::Printf(TEXT("%d"), Ammo);
+		FString CarriedText = FString::Printf(TEXT("%d"), CarriedAmmo);
 		CDHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedText));
 	}
 }
@@ -101,25 +113,39 @@ void ACDPlayerController::SetHUDCount(float CountdownTime)
 {
 	if (EnsureHUD() && CDHUD->CharacterOverlay->MatchCountdownText)
 	{
-		FString CountdownText = FString::Printf(TEXT("%d"), CountdownTime);
+		FString CountdownText = FString::Printf(TEXT("%f"), CountdownTime);
 		CDHUD->CharacterOverlay->MatchCountdownText;
 	}
 }
+
+void ACDPlayerController::InitializeHUD()
+{
+	if (EnsureHUD())
+	{
+		if (bInitializeHealth)SetHUDHealth(HUDHealth, HUDMaxHealth);
+		//if (bInitializeShield)SetHUDShield(HUDShield);
+		if (bInitializeKill)SetHUDKill(HUDKillCount);
+		if (bInitializeDeath)SetHUDDeath(HUDDeathCount);
+		if (bInitializeCarriedAmmo)SetHUDCarriedAmmo(HUDCarriedAmmo);
+		if (bInitializeWeaponAmmo)SetHUDWeaponAmmo(HUDWeaponAmmo);
+	}
+}
+
 
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	ACDCharacter* CDCharacter=Cast<ACDCharacter>(InPawn);
-	if (CDCharacter)
+	if (CDCharacter&&CDCharacter->GetAbilitySystemComponent())
 	{
-		//CachedCharacter=CDCharacter;
-		if (CDCharacter)
-		{
-			//SetHUDHealth(CDCharacter->GetHealth(), CDCharacter->GetMaxHealth());
-			//Character Edit Need
-		}
-		//SetHUD();
+		const UCDCharacterAttributeSet* AttributeSet = CDCharacter->GetAbilitySystemComponent()->GetSet<UCDCharacterAttributeSet>();
+		//SetHUDHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
 	}
+}
+
+void ACDPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
 }
 
 void ACDPlayerController::OnMatchStateSet(FName State)
