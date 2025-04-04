@@ -122,7 +122,7 @@ void UCombatComponent::Fire(float curSpread)
 			}
 			if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
 			{
-				playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
+				//playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
 			}
 		}
 	}
