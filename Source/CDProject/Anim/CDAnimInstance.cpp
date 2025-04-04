@@ -114,6 +114,12 @@ void UCDAnimInstance::PlayEquipMontage()
 	}
 }
 
+void UCDAnimInstance::PlayDeadMontage()
+{
+	if (_deadMontage)
+		Montage_Play(_deadMontage);
+}
+
 void UCDAnimInstance::UpdateFullBodyProperty()
 {
 	//Lower Part

@@ -71,9 +71,12 @@ public:
 	TObjectPtr<UAnimMontage> _equipRifleMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipPistolMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _deadMontage;
 	void PlayFireMontage(float fireRate);
 	void PlayReloadMontage();
 	void PlayEquipMontage();
+	void PlayDeadMontage();
 	
 	void UpdateFullBodyProperty();
 	void UpdateUpperBodyProperty();

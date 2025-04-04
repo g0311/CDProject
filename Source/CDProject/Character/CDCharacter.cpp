@@ -20,6 +20,8 @@ ACDCharacter::ACDCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	bReplicates = true;
+	
 	_camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	_camera->SetupAttachment(RootComponent);
 	_camera->SetRelativeLocation(FVector(0, 0, _eyeHeight));
@@ -32,6 +34,7 @@ ACDCharacter::ACDCharacter()
 	GetMesh()->SetOwnerNoSee(true);
 
 	_combat = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
+	_combat->SetIsReplicated(true);
 	
 	_footIK = CreateDefaultSubobject<UFootIKComponent>(TEXT("FootIK"));
 	
@@ -111,6 +114,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	if (_combat)
 	{
 		float newSpread = CalculateSpread();
+		//UE_LOG(LogTemp, Log, TEXT("spread: %f"), newSpread);
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 5.f);
 		_combat->SetHUDCrosshairs(_curSpread);
 	}
@@ -226,7 +230,7 @@ void ACDCharacter::Fire()
 		}
 		else
 		{
-			_combat->Fire();
+			_combat->Fire(_curSpread);
 		}
 	}
 }
@@ -301,33 +305,31 @@ void ACDCharacter::DropWeapon()
 
 float ACDCharacter::CalculateSpread()
 {
-	float Spread = 1.0f;
-
+	float spread = 1.0f;
+	
 	float Speed = GetVelocity().Size();
-	if (Speed > 400.f) //run
+	spread += (Speed / 470.f) * 1.8f; //MaxSpeed
+	
+	if (GetMovementComponent()->IsFalling())
 	{
-		Spread += 1.5f;
+		spread += 3.f;
 	}
-	else if (Speed > 200.f) //walk
-	{
-		Spread += 0.5f;
-	}
-	else if (GetMovementComponent()->IsFalling())
-	{
-		Spread += 3.f;
-	}
-
 	if (bIsCrouched)
 	{
-		Spread -= 0.3f;  // 앉으면 감소
+		spread -= 0.2f;  // 앉으면 감소
+	}
+	if (_combat->IsAimng())
+	{
+		spread -= 0.1f;
 	}
 	
-	if (_combat && _combat->IsFireAvail()) 
+	if (_combat) 
 	{
-		Spread += 0.4f;
+		float continuousFireFactor = FMath::Clamp(_combat->GetContinuedFireCount() / 5.0f /* x Weapon Spread */, 0.f, 1.5f); 
+		spread += continuousFireFactor;
 	}
-
-	return FMath::Clamp(Spread, 1.0f, 5.0f);  // 최대 5.0까지 제한
+	
+	return FMath::Clamp(spread, 1.0f, 5.0f) * 5;
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const

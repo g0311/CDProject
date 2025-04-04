@@ -9,6 +9,7 @@
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/Interface/IsEnemyInterface.h"
 #include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()
@@ -22,7 +23,6 @@ UCombatComponent::UCombatComponent()
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	SetIsReplicated(true);
 	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	CreateDefaultWeapons();
 	
@@ -32,7 +32,8 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
+
+	_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 1.f);
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -55,17 +56,19 @@ void UCombatComponent::Reset()
 	}
 }
 
-void UCombatComponent::Fire()
+void UCombatComponent::Fire(float curSpread)
 {
 	if (!_playerCharacter)
 		return;
 
+	//Fire Delay
 	_isCanFire = false;
 	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
 		_isCanFire = true;
 	}), _fireDelay, false);
-	
+	_continuedFireCount++;
+	//Anim
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 
@@ -73,23 +76,56 @@ void UCombatComponent::Fire()
 		bodyAnim->PlayFireMontage(_fireDelay);
 	if (armAnim)
 		armAnim->PlayFireMontage(_fireDelay);
-	
-	FHitResult hit;
-	AController* controller= Cast<ACharacter>(GetOwner())->Controller;
+
+	//Trace
+	AController* controller = Cast<ACharacter>(GetOwner())->Controller;
 	if (controller)
 	{
+		APlayerController* playerController = Cast<APlayerController>(controller);
+		if (!playerController) return;
+
 		FVector CameraLocation;
 		FRotator CameraRotation;
-		controller->GetPlayerViewPoint(CameraLocation, CameraRotation);
-		
-		FVector traceStart = CameraLocation;
-		FVector traceEnd = traceStart + (CameraRotation.Vector() * 10000.f);
+		playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
-		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(GetOwner()); // 플레이어 자신 제외
+		int32 ViewportSizeX, ViewportSizeY;
+		playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
+    
+		float CrosshairSpread = curSpread;
 
-		if(GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
-			_weapons[_weaponIndex]->Fire(hit.Location);
+		FVector2D CrosshairScreenPosition(
+			(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
+			(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
+		);
+
+		FVector CrosshairWorldPosition, CrosshairWorldDirection;
+		if (playerController->DeprojectScreenPositionToWorld(
+				CrosshairScreenPosition.X,
+				CrosshairScreenPosition.Y,
+				CrosshairWorldPosition,
+				CrosshairWorldDirection))
+		{
+			FVector traceStart = CrosshairWorldPosition;
+			FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
+
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(GetOwner());
+
+			FHitResult hit;
+			if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
+			{
+				if (hit.GetActor() && hit.GetActor()->Implements<UIsEnemyInterface>())
+					DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
+				else
+					DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
+
+				_weapons[_weaponIndex]->Fire(hit.Location);
+			}
+			if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
+			{
+				playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
+			}
+		}
 	}
 }
 
