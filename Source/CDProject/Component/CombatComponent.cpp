@@ -25,7 +25,6 @@ void UCombatComponent::BeginPlay()
 	Super::BeginPlay();
 	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	CreateDefaultWeapons();
-	
 	ChangeWeapon(1);
 }
 
@@ -168,15 +167,15 @@ bool UCombatComponent::ChangeWeapon(int idx)
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	if (_weapons[idx])
 	{
-		if (_weapons[_weaponIndex])
+		if (_weaponIndex != -1 && _weapons[_weaponIndex])
 		{
 			_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
-			//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(false);
+			_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(false);
 			_isAiming = false;
 		}
 		_weaponIndex = idx;
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
-		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(true);
+		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(true);
 		
 		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
 		
@@ -190,6 +189,7 @@ bool UCombatComponent::ChangeWeapon(int idx)
 		}
 
 		_isCanFire = true;
+		_isCanAim = true;
 		return true;
 	}
 	return false;
@@ -205,18 +205,53 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 		if (!_weapons[0])
 		{
 			_weapons[0] = weapon;
+			if (_weapons[0])
+			{
+				_weapons[0]->SetOwner(GetOwner());
+					_weapons[0]->AttachToComponent(
+					_playerCharacter->GetArmMesh(),
+					FAttachmentTransformRules::SnapToTargetIncludingScale,
+					TEXT("WeaponSocket")
+				);
+				_weapons[0]->GetWeaponMesh()->SetVisibility(false);
+			
+				_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
+					_playerCharacter->GetMesh(),
+					FAttachmentTransformRules::SnapToTargetIncludingScale,
+					TEXT("WeaponSocket")
+				);
+				_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
+			}
 			_weapons[0]->SetWeaponState(EWeaponState::EWS_Equipped);
 			ChangeWeapon(0);
 		}
 		else if (isForceGet)
 		{
+			ChangeWeapon(0);
 			DropWeapon();
 			_weapons[0] = weapon;
+			if (_weapons[0])
+			{
+				_weapons[0]->SetOwner(GetOwner());
+					_weapons[0]->AttachToComponent(
+					_playerCharacter->GetArmMesh(),
+					FAttachmentTransformRules::SnapToTargetIncludingScale,
+					TEXT("WeaponSocket")
+				);
+				_weapons[0]->GetWeaponMesh()->SetVisibility(false);
+			
+				_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
+					_playerCharacter->GetMesh(),
+					FAttachmentTransformRules::SnapToTargetIncludingScale,
+					TEXT("WeaponSocket")
+				);
+				_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
+			}
 			_weapons[0]->SetWeaponState(EWeaponState::EWS_Equipped);
 			ChangeWeapon(0);
 		}
 		break;
-	case EWeaponType::EWT_Speical:
+	case EWeaponType::EWT_Pistol:
 		break;
 	}
 }
@@ -226,21 +261,18 @@ void UCombatComponent::DropWeapon()
 	if (_weapons[_weaponIndex] != _meleeWeapon)
 	{
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
+		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(false);
 		_weapons[_weaponIndex]->Dropped();
 		_weapons[_weaponIndex] = nullptr;
-
-		// while (_weapons[_weaponIndex])
-		// 	_weaponIndex = (_weaponIndex + 1) % _weapons.Num();
 
 		for (int i = 0; i < _weapons.Num(); i++)
 		{
 			if (_weapons[(_weaponIndex + i) % _weapons.Num()])
 			{
-				_weaponIndex = (_weaponIndex + i) % _weapons.Num();
-				break;
+				ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+				return;
 			}
 		}
-		ChangeWeapon(_weaponIndex);
 	}
 }
 
@@ -290,7 +322,7 @@ bool UCombatComponent::IsTotalAmmoEmpty()
 
 uint8 UCombatComponent::GetCurWeaponType()
 {
-	if (_weapons[_weaponIndex])
+	if (_weaponIndex != -1 && _weapons[_weaponIndex])
 		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
 	return -1;
 }
@@ -313,37 +345,37 @@ void UCombatComponent::CreateDefaultWeapons()
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[1]->GetWeaponMesh()->SetVisibility(true);
+			_weapons[1]->GetWeaponMesh()->SetVisibility(false);
 			
-			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
-			//owner->_armMesh,
-			// FAttachmentTransformRules::SnapToTargetIncludingScale,
-			// TEXT("WeaponSocket")
-			// );
-			//_weapons[1]->GetWeaponMesh2()->SetVisibility(false);
+			 _weapons[1]->GetWeaponMesh3p()->AttachToComponent(
+				 owner->GetMesh(),
+				 FAttachmentTransformRules::SnapToTargetIncludingScale,
+				 TEXT("WeaponSocket")
+			 );
+			_weapons[1]->GetWeaponMesh3p()->SetVisibility(false);
 		}
 	}
 	//Debug
-	if (_defaultSubWeapon /*_defaultMeleeWeapon*/)
+	if (_defaultMeleeWeapon)
 	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = GetOwner();
-		_weapons[2] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-		if (_weapons[2])
+		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		if (_weapons[0])
 		{
-			_weapons[2]->AttachToComponent(
+			_weapons[0]->AttachToComponent(
 			owner->GetArmMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[2]->GetWeaponMesh()->SetVisibility(false);
+			_weapons[0]->GetWeaponMesh()->SetVisibility(false);
 			
-			// _weapons[1]->GetWeaponMesh2()->AttachToComponent(
-			//owner->_armMesh,
-			// FAttachmentTransformRules::SnapToTargetIncludingScale,
-			// TEXT("WeaponSocket")
-			// );
-			//_weapons[1]->GetWeaponMesh2()->SetVisibility(false);
+			_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
+				owner->GetMesh(),
+				FAttachmentTransformRules::SnapToTargetIncludingScale,
+				TEXT("WeaponSocket")
+			);
+			_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
 		}
 	}
 }
