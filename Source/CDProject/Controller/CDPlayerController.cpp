@@ -20,6 +20,12 @@ ACDPlayerController::ACDPlayerController()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
+void ACDPlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	SetHUDTime();
+}
+
 // void ACDPlayerController::SetHUD()
 // {
 // 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
@@ -47,6 +53,9 @@ bool ACDPlayerController::EnsureHUD()
 	return CDHUD&&CDHUD->CharacterOverlay;
 }
 
+void ACDPlayerController::SetHUDTime()
+{
+}
 
 
 void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
@@ -73,23 +82,23 @@ void ACDPlayerController::SetHUDShield(float Shield, float MaxShield)
 	
 }
 
-void ACDPlayerController::SetHUDKill(float killcount)
-{
-	if (EnsureHUD()&&CDHUD->CharacterOverlay->KillCount)
-	{
-		FString KillCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(killcount));
-		CDHUD->CharacterOverlay->KillCount->SetText(FText::FromString(KillCount));
-	}
-}
+// void ACDPlayerController::SetHUDKill(float killcount)
+// {
+// 	if (EnsureHUD()&&CDHUD->CharacterOverlay->KillCount)
+// 	{
+// 		FString KillCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(killcount));
+// 		CDHUD->CharacterOverlay->KillCount->SetText(FText::FromString(KillCount));
+// 	}
+// }
 
-void ACDPlayerController::SetHUDDeath(float deathcount)
-{
-	if (EnsureHUD()&&CDHUD->CharacterOverlay->DeathCount)
-	{
-		FString DeathCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(deathcount));
-		CDHUD->CharacterOverlay->DeathCount->SetText(FText::FromString(DeathCount));
-	}
-}
+// void ACDPlayerController::SetHUDDeath(float deathcount)
+// {
+// 	if (EnsureHUD()&&CDHUD->CharacterOverlay->DeathCount)
+// 	{
+// 		FString DeathCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(deathcount));
+// 		CDHUD->CharacterOverlay->DeathCount->SetText(FText::FromString(DeathCount));
+// 	}
+// }
 
 void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo)
 {
@@ -123,11 +132,12 @@ void ACDPlayerController::InitializeHUD()
 	if (EnsureHUD())
 	{
 		if (bInitializeHealth)SetHUDHealth(HUDHealth, HUDMaxHealth);
-		//if (bInitializeShield)SetHUDShield(HUDShield);
-		if (bInitializeKill)SetHUDKill(HUDKillCount);
-		if (bInitializeDeath)SetHUDDeath(HUDDeathCount);
 		if (bInitializeCarriedAmmo)SetHUDCarriedAmmo(HUDCarriedAmmo);
 		if (bInitializeWeaponAmmo)SetHUDWeaponAmmo(HUDWeaponAmmo);
+		//if (bInitializeShield)SetHUDShield(HUDShield);
+		// if (bInitializeKill)SetHUDKill(HUDKillCount);
+		// if (bInitializeDeath)SetHUDDeath(HUDDeathCount);
+		
 	}
 }
 

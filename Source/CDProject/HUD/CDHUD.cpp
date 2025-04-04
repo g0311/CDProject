@@ -117,11 +117,11 @@ void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor C
 	1.f,  
 	CrosshairColor
 	);
-	if (Texture)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CrosshairColor: R=%.2f, G=%.2f, B=%.2f, A=%.2f"), 
-			CrosshairColor.R, CrosshairColor.G, CrosshairColor.B, CrosshairColor.A);
-	}
+	// if (Texture)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("CrosshairColor: R=%.2f, G=%.2f, B=%.2f, A=%.2f"), 
+	// 		CrosshairColor.R, CrosshairColor.G, CrosshairColor.B, CrosshairColor.A);
+	// }
 
 }
 

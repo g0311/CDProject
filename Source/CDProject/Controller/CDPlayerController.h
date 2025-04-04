@@ -13,9 +13,10 @@ class CDPROJECT_API ACDPlayerController : public APlayerController
 
 public:
 	ACDPlayerController();
-	
+	virtual void Tick(float DeltaSeconds) override;
 	//HUD
 	bool EnsureHUD();
+	void SetHUDTime();
 	void SetHUDHealth(float Health, float MaxHealth);
 	void SetHUDShield(float Shield, float MaxShield);
 	void SetHUDKill(float killcount);
