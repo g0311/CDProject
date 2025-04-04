@@ -7,11 +7,12 @@
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
-#include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ACDCharacter::ACDCharacter()
@@ -41,36 +42,33 @@ ACDCharacter::ACDCharacter()
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
 }
 
-void ACDCharacter::RespawnPlayer()
-{
-	
-}
-
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APlayerController* playerController = Cast<APlayerController>(Controller);
-	if (playerController)
+	if (IsLocallyControlled())
 	{
-		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(playerController->GetLocalPlayer()); 
-		if (subSystem)
+		APlayerController* playerController = Cast<APlayerController>(Controller);
+		if (playerController)
 		{
-			subSystem->AddMappingContext(_inputMappingContext, 0);
+			UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(playerController->GetLocalPlayer()); 
+			if (subSystem)
+			{
+				subSystem->AddMappingContext(_inputMappingContext, 0);
+			}
+		}
+	
+		if (_abilitySystemComponent)
+		{//이거 서버에서 해야되나?
+			_abilitySystemComponent->InitAbilityActorInfo(this, this);
+			InitializeAttributes();
 		}
 	}
 	
-	if (_abilitySystemComponent)
-	{
-		_abilitySystemComponent->InitAbilityActorInfo(this, this);
-		InitializeAttributes();
-	}
-
-	if (_combat)
-	{
-		
-	}
+	_currentArmTransform = _defaultArmTransform;
+	_targetArmTransform = _currentArmTransform;
+	_targetFOV = _defaultFOV;
 }
 
 // Called every frame
@@ -78,20 +76,36 @@ void ACDCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//if >= 90 degree character rotate
-	if (Controller != nullptr)
+	if (IsLocallyControlled())
 	{
-		FRotator ControlRot = Controller->GetControlRotation();
-		FRotator ActorRot = GetActorRotation();
-		float AimYaw = FMath::UnwindDegrees(ControlRot.Yaw - ActorRot.Yaw);
-		
-		if (AimYaw <= -75.f || AimYaw >= 75.f)
-		{
-			FRotator TargetRotation = FRotator(0.f, ControlRot.Yaw, 0.f);
-			FRotator SmoothRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), 2.5f); // 회전 속도 조절
-			SetActorRotation(SmoothRotation);
-		}
+		if (Controller != nullptr)
+			_controlRotation = Controller->GetControlRotation();
+		_cameraRotation = _camera->GetRelativeRotation();
 	}
+	if (!IsLocallyControlled())
+	{
+		_camera->SetRelativeRotation(_cameraRotation);
+	}
+	
+	//if >= 90 degree character rotate
+	FRotator ControlRot = _controlRotation;
+	FRotator ActorRot = GetActorRotation();
+	float AimYaw = FMath::UnwindDegrees(ControlRot.Yaw - ActorRot.Yaw);
+		
+	if (AimYaw <= -45.f || AimYaw >= 45.f)
+	{
+		FRotator TargetRotation = FRotator(0.f, ControlRot.Yaw, 0.f);
+		FRotator SmoothRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), 2.5f); // 회전 속도 조절
+		SetActorRotation(SmoothRotation);
+	}
+	
+	//Update Arm Mesh Location
+	float InterpSpeed = 10.0f;
+	_currentArmTransform = UKismetMathLibrary::TInterpTo(_currentArmTransform, _targetArmTransform, DeltaTime, InterpSpeed);
+	_armMesh->SetRelativeTransform(_currentArmTransform);
+
+	float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _targetFOV, DeltaTime, InterpSpeed);
+	_camera->SetFieldOfView(NewFOV);
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -112,19 +126,44 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::Fire);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::Aim);
 		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::Reload);
-		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 1);
-		enhancedInputComponent->BindAction(_changeWeaponActions[1], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 2);
-		enhancedInputComponent->BindAction(_changeWeaponActions[2], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 3);
-		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 4);
-		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Completed, this, &ACDCharacter::ChangeWeapon, 5);
+		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 0);
+		enhancedInputComponent->BindAction(_changeWeaponActions[1], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 1);
+		enhancedInputComponent->BindAction(_changeWeaponActions[2], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 2);
+		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 3);
+		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 4);
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::DropWeapon);
 	}
 }
 
+float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+	class AController* EventInstigator, AActor* DamageCauser)
+{
+	float curHealth = _attributeSet->GetHealth();
+	curHealth -= DamageAmount;
+	_attributeSet->SetHealth(curHealth);
+	
+	return DamageAmount;
+}
+
+void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACDCharacter, _controlRotation);
+	DOREPLIFETIME(ACDCharacter, _cameraRotation);
+}
+
+void ACDCharacter::RespawnPlayer()
+{
+}
+
 void ACDCharacter::Move(const FInputActionValue& value)
 {
+	if (!Controller)
+		return;
+	
 	FVector inputVal = value.Get<FVector>();
-
+	
 	const FRotator rotation = Controller->GetControlRotation();
 	const FRotator yawRotation(0, rotation.Yaw, 0);
 
@@ -139,7 +178,7 @@ void ACDCharacter::Look(const FInputActionValue& value)
 {
 	FVector2D LookAxisVector = value.Get<FVector2D>();
 	
-	if (Controller != nullptr)
+	if (Controller)
 	{
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(-LookAxisVector.Y);
@@ -168,74 +207,98 @@ void ACDCharacter::UnWalk()
 
 void ACDCharacter::Fire()
 {
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
-
+	if (!_combat)
+		return;
+	
 	if (_combat->IsFireAvail())
 	{
-		if (_combat->IsAmmoEmpty())
+		if (false/*_combat->IsAmmoEmpty()*/)
 		{
 			Reload();
 		}
 		else
 		{
 			_combat->Fire();
-			if (bodyAnim)
-				bodyAnim->PlayFireMontage();
-			if (armAnim)
-				armAnim->PlayFireMontage();
 		}
 	}
 }
 
 void ACDCharacter::Aim()
 {
-	_combat->Aim(true);
+	if (!_combat)
+		return;
+	
+	if(_combat->IsAimng())
+	{
+		_combat->UnAim();
+		_targetArmTransform = _defaultArmTransform;
+		_targetFOV = _defaultFOV;
+	}
+	else if (_combat->IsAimAvail())
+	{
+		_combat->Aim();
+		_targetArmTransform = _aimArmTransform;
+		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+	}
+}
+
+void ACDCharacter::UnAim()
+{
+	if (!_combat)
+		return;
+	
+	_combat->UnAim();
+	_targetArmTransform = _defaultArmTransform;
+	_targetFOV = _defaultFOV;
 }
 
 void ACDCharacter::Reload()
 {
-	//Check Reload Avail
-	if (false)
+	if (!_combat)
 		return;
 	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
+	UnAim();
 	
-	if (bodyAnim)
-		bodyAnim->PlayReloadMontage();
-	if (armAnim)
-		armAnim->PlayReloadMontage();
-	//_combat->Reload(); => Anim Notify call
+	//Check Reload Avail
+	if (_combat->IsTotalAmmoEmpty())
+		return;
+	
+	_combat->Reload();
 }
 
 void ACDCharacter::ChangeWeapon(int weaponIndex)
 {
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_armMesh->GetAnimInstance());
-
+	if (!_combat)
+		return;
 	if (_combat->ChangeWeapon(weaponIndex))
 	{
-		if (bodyAnim)
-			bodyAnim->PlayEquipMontage();
-		if (armAnim)
-			armAnim->PlayEquipMontage();
+		UnAim();
 	}
 }
 
 void ACDCharacter::GetWeapon(AWeapon* weapon)
 {
+	if (!_combat)
+		return;
 	_combat->GetWeapon(weapon);
 }
 
 void ACDCharacter::DropWeapon()
 {
+	if (!_combat)
+		return;
+	UnAim();
 	_combat->DropWeapon();
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
 {
 	return _abilitySystemComponent;
+}
+
+class UCDCharacterAttributeSet* ACDCharacter::GetAttributeSet()
+{
+	return _attributeSet;
 }
 
 void ACDCharacter::InitializeAttributes()

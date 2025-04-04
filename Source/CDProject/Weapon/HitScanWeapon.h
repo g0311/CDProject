@@ -12,6 +12,7 @@ class CDPROJECT_API AHitScanWeapon : public AWeapon
 	GENERATED_BODY()
 
 public:
+	AHitScanWeapon();
 	virtual void Fire(const FVector& HitTarget) override;
 	
 protected:

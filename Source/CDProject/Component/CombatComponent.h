@@ -14,21 +14,28 @@ class CDPROJECT_API UCombatComponent : public UActorComponent
 public:	
 	UCombatComponent();
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+
 	void Reset();
 	
 	void Fire();
 	void Reload();
-	void Aim(bool tf);
+	void Aim();
+	void UnAim();
 	bool ChangeWeapon(int idx);
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
 	
-	bool IsAmmoEmpty();
-	AWeapon* GetCurWeapon();
-	uint8 GetCurWeaponType();
-	bool IsAimng();
-	bool IsFireAvail();
+	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
+	FORCEINLINE	bool IsAimng() { return _isAiming; }
+	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
+	FORCEINLINE void SetAimAvail() {_isCanAim = true;}
+	FORCEINLINE bool IsFireAvail() {return _isCanFire;}
+	FORCEINLINE void SetFireAvail() {_isCanFire = true;}
 
+	bool IsAmmoEmpty();
+	bool IsTotalAmmoEmpty();
+	uint8 GetCurWeaponType();
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
@@ -38,7 +45,13 @@ private:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(VisibleAnywhere)
-	int _weaponIndex;
+	class ACDCharacter* _playerCharacter;
+	
+	UPROPERTY(VisibleAnywhere)
+	class ACDHUD* HUD;
+	
+	UPROPERTY(VisibleAnywhere)
+	int _weaponIndex = 0;
 	
 	UPROPERTY(VisibleAnywhere)
 	TArray<class AWeapon*> _weapons;
@@ -49,11 +62,13 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class AWeapon> _meleeWeapon;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
 
-	float FireRate = 0.23f;
-	float LastFireTime = 0.0f;
+	FTimerHandle _fireTimerHandle;
+	float _fireDelay = 0.23f;
+	bool _isCanFire = true;
+	bool _isCanAim = true;
 	
 	void CreateDefaultWeapons();
 	void AttatchMeshToChar(class AWeapon* weapon);

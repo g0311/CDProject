@@ -121,6 +121,12 @@ void AWeapon::Fire(const FVector& HitTarget)
 	}
 }
 
+void AWeapon::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+}
+
 void AWeapon::OnRep_Owner()
 {
 	Super::OnRep_Owner();

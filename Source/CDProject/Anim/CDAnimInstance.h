@@ -20,11 +20,11 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
-	class ACharacter* _playerPawn;
+	class ACDCharacter* _playerCharacter;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
 	bool _isJumping;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
 	bool _isCrouching;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	bool _isAiming;
@@ -57,21 +57,21 @@ public:
 	bool _isFullBody = true;
 
 	//Montage
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _rifleReloadMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _shotgunReloadMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _pistolReloadMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _baseFireMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _aimFireMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipRifleMontage;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipPistolMontage;
-	void PlayFireMontage();
+	void PlayFireMontage(float fireRate);
 	void PlayReloadMontage();
 	void PlayEquipMontage();
 	

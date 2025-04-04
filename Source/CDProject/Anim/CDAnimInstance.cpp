@@ -5,6 +5,7 @@
 
 #include "CDProject/Component/FootIKComponent.h"
 #include "KismetAnimationLibrary.h"
+#include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -13,9 +14,9 @@
 void UCDAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
-	if (_playerPawn == nullptr)
+	if (_playerCharacter == nullptr)
 	{
-		_playerPawn = Cast<ACharacter>(TryGetPawnOwner());
+		_playerCharacter = Cast<ACDCharacter>(TryGetPawnOwner());
 	}
 }
 
@@ -23,10 +24,10 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	if (_playerPawn == nullptr)
-		_playerPawn = Cast<ACharacter>(TryGetPawnOwner());
+	if (_playerCharacter == nullptr)
+		_playerCharacter = Cast<ACDCharacter>(TryGetPawnOwner());
 	
-	if (_playerPawn)
+	if (_playerCharacter)
 	{
 		if (_isFullBody)
 			UpdateFullBodyProperty();
@@ -35,18 +36,21 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 }
 
-void UCDAnimInstance::PlayFireMontage()
+void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
 	if (_isFullBody)
 	{
 		if (_isAiming)
-			Montage_Play(_aimFireMontage);
+			if (_aimFireMontage)
+				Montage_Play(_aimFireMontage, 1.f / fireRate * 1.5);
 		else
-			Montage_Play(_baseFireMontage);
+			if (_baseFireMontage)
+				Montage_Play(_baseFireMontage, 1.f / fireRate  * 1.5);
 	}
 	else
 	{
-		Montage_Play(_aimFireMontage);
+		if (_aimFireMontage)
+			Montage_Play(_aimFireMontage);
 	}
 }
 
@@ -58,14 +62,17 @@ void UCDAnimInstance::PlayReloadMontage()
 		{
 		case static_cast<uint8>(EWeaponType::EWT_Rifle):
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
-			Montage_Play(_rifleReloadMontage);
+			if (_rifleReloadMontage)
+				Montage_Play(_rifleReloadMontage);
 			//Montage_SetEndDelegate()
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-			Montage_Play(_shotgunReloadMontage);
+			if (_rifleReloadMontage)
+				Montage_Play(_shotgunReloadMontage);
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Speical):
-			Montage_Play(_pistolReloadMontage);
+			if (_pistolReloadMontage)
+				Montage_Play(_pistolReloadMontage);
 			break;
 		}
 	}
@@ -75,13 +82,16 @@ void UCDAnimInstance::PlayReloadMontage()
 		{
 		case static_cast<uint8>(EWeaponType::EWT_Rifle):
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
-			Montage_Play(_rifleReloadMontage);
+			if (_rifleReloadMontage)
+				Montage_Play(_rifleReloadMontage);
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-			Montage_Play(_shotgunReloadMontage);
+			if (_shotgunReloadMontage)
+				Montage_Play(_shotgunReloadMontage);
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Speical):
-			Montage_Play(_pistolReloadMontage);
+			if (_pistolReloadMontage)
+				Montage_Play(_pistolReloadMontage);
 			break;
 		}
 	}
@@ -94,10 +104,12 @@ void UCDAnimInstance::PlayEquipMontage()
 	case static_cast<uint8>(EWeaponType::EWT_Rifle):
 	case static_cast<uint8>(EWeaponType::EWT_Sniper):
 	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-		Montage_Play(_equipRifleMontage);
+		if (_equipRifleMontage)
+			Montage_Play(_equipRifleMontage);
 		break;
 	case static_cast<uint8>(EWeaponType::EWT_Speical):
-		Montage_Play(_equipPistolMontage);
+		if (_equipPistolMontage)
+			Montage_Play(_equipPistolMontage);
 		break;
 	}
 }
@@ -105,24 +117,24 @@ void UCDAnimInstance::PlayEquipMontage()
 void UCDAnimInstance::UpdateFullBodyProperty()
 {
 	//Lower Part
-	FVector velocity = _playerPawn->GetVelocity();
+	FVector velocity = _playerCharacter->GetVelocity();
 	velocity = FVector(velocity.X, velocity.Y, 0.f);
 		
 	_movementSpeed = FVector(velocity.X, velocity.Y, 0.f).Size();
-	_direction = UKismetAnimationLibrary::CalculateDirection(velocity, _playerPawn->GetActorRotation());
+	_direction = UKismetAnimationLibrary::CalculateDirection(velocity, _playerCharacter->GetActorRotation());
 		
-	FRotator controlRot = _playerPawn->GetControlRotation();
-	FRotator actorRot = _playerPawn->GetActorRotation();
+	FRotator controlRot = _playerCharacter->GetRepControlRotation();
+	FRotator actorRot = _playerCharacter->GetActorRotation();
 	FRotator deltaRot = controlRot - actorRot;
 		
 	_aimPitch = FMath::UnwindDegrees(deltaRot.Pitch);
 	_aimPitch = FMath::Clamp(_aimPitch, -75.f, 75.f);
 	_aimYaw = FMath::UnwindDegrees(deltaRot.Yaw);
 		
-	_isJumping = _playerPawn->GetMovementComponent()->IsFalling();
-	_isCrouching = _playerPawn->GetMovementComponent()->IsCrouching();
-		
-	UFootIKComponent* IKFootComp = _playerPawn->FindComponentByClass<UFootIKComponent>();
+	_isJumping = _playerCharacter->GetMovementComponent()->IsFalling();
+	_isCrouching = _playerCharacter->GetMovementComponent()->IsCrouching();
+	
+	UFootIKComponent* IKFootComp = _playerCharacter->FindComponentByClass<UFootIKComponent>();
 	if (!IKFootComp) return;
 	_lFootRotator = IKFootComp->_outValue._footRotation_Left;
 	_rFootRotator = IKFootComp->_outValue._footRotation_Right;
@@ -136,11 +148,12 @@ void UCDAnimInstance::UpdateFullBodyProperty()
 void UCDAnimInstance::UpdateUpperBodyProperty()
 {
 	//Upper Part
-	UCombatComponent* combatComponent = _playerPawn->GetComponentByClass<UCombatComponent>();
+	UCombatComponent* combatComponent = _playerCharacter->GetComponentByClass<UCombatComponent>();
 	if (combatComponent)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAimng();
+
 		//if (combatComponent->GetCurWeapon()->GetWeaponInfo() != Melee)
 		//	_leftHandTransform = combatComponent->GetCurWeapon()->GetMesh()->GetSocketTransform()
 	}
