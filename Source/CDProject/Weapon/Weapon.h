@@ -147,6 +147,10 @@ private:
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(VisibleAnywhere)
+	USkeletalMeshComponent* WeaponMesh3p;
+
+
+	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* AreaSphere;
 
 	UPROPERTY(VisibleAnyWhere)

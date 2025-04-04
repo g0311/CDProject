@@ -17,11 +17,23 @@ AWeapon::AWeapon()
 	bReplicates=true;
 	SetReplicateMovement(true);
 	
-	WeaponMesh=CreateDefaultSubobject<USkeletalMeshComponent>("WeaponMesh");
+	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
+	
+	WeaponMesh->SetOnlyOwnerSee(true);
+	WeaponMesh->SetOwnerNoSee(false);
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	WeaponMesh3p = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh3p"));
+	WeaponMesh3p->SetupAttachment(RootComponent); 
+	
+	WeaponMesh3p->SetOnlyOwnerSee(false);
+	WeaponMesh3p->SetOwnerNoSee(true);
+	WeaponMesh3p->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	WeaponMesh3p->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	WeaponMesh3p->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	AreaSphere=CreateDefaultSubobject<USphereComponent>("AreaSphere");
 	AreaSphere->SetupAttachment(RootComponent);
