@@ -9,6 +9,7 @@
 #include "CDCharacterAttributeSet.h"
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
+#include "CDProject/Controller/CDPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -43,6 +44,9 @@ ACDCharacter::ACDCharacter()
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
+
+	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
+	if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
 }
 
 // Called when the game starts or when spawned

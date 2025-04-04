@@ -26,24 +26,19 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 	SetHUDTime();
 }
 
-// void ACDPlayerController::SetHUD()
-// {
-// 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-// 	if (CDHUD&&CDHUD->CharacterOverlay)
-// 	{
-// 		SetHUDHealth();
-// 		SetHUDKill();
-// 		SetHUDDeath();
-// 		SetHUDWeaponAmmo(Ammo);
-// 		SetHUDCarriedAmmo(Ammo);
-// 		
-// 	}
-// }
-
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	CDHUD=Cast<ACDHUD>(GetHUD());
+	// CDHUD=Cast<ACDHUD>(GetHUD());
+	// {
+	// 	CDHUD->AddCharacterOverlay(); 
+	// }
+}
+
+
+
+void ACDPlayerController::HandleCooldown()
+{
 }
 
 
@@ -169,5 +164,9 @@ void ACDPlayerController::OnMatchStateSet(FName State)
 			CDHUD->AddCharacterOverlay();
 		}
 	}
+}
+
+void ACDPlayerController::HandleMatchHasStarted()
+{
 }
 

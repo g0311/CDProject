@@ -3,6 +3,7 @@
 
 #include "AProjectileBullet.h"
 
+#include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -13,8 +14,13 @@ AAProjectileBullet::AAProjectileBullet()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->SetIsReplicated(true);
+	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+
+	ProjectileMovementComponent->InitialSpeed = 15000.f;
+	ProjectileMovementComponent->MaxSpeed = 15000.f;
+	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
+
 }
 
 // Called when the game starts or when spawned
