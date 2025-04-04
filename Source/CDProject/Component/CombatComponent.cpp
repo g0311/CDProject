@@ -356,26 +356,26 @@ void UCombatComponent::CreateDefaultWeapons()
 		}
 	}
 	//Debug
-	if (_defaultSubWeapon /*_defaultMeleeWeapon*/)
+	if (_defaultMeleeWeapon)
 	{
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = GetOwner();
-		_weapons[2] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-		if (_weapons[2])
+		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		if (_weapons[0])
 		{
-			_weapons[2]->AttachToComponent(
+			_weapons[0]->AttachToComponent(
 			owner->GetArmMesh(),
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[2]->GetWeaponMesh()->SetVisibility(false);
+			_weapons[0]->GetWeaponMesh()->SetVisibility(false);
 			
-			_weapons[2]->GetWeaponMesh3p()->AttachToComponent(
+			_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
 				owner->GetMesh(),
 				FAttachmentTransformRules::SnapToTargetIncludingScale,
 				TEXT("WeaponSocket")
 			);
-			_weapons[2]->GetWeaponMesh3p()->SetVisibility(false);
+			_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
 		}
 	}
 }
