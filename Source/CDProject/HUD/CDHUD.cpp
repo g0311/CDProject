@@ -23,7 +23,7 @@ void ACDHUD::DrawHUD()
 	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize);
 		const FVector2D ViewportCenter = ViewportSize * 0.5f;
-		const float SpreadFactor=16.f;
+		const float SpreadFactor=5.f;
 		float CrosshairSpread=HUDPackage.CrosshairSpread*SpreadFactor;
 		if (HUDPackage.CrosshairCenter)
 		{
@@ -99,8 +99,8 @@ void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor C
 
 	FVector2D ViewportCenter = ViewportSize / 2;
 
-	const float ScreenW=100.f;
-	const float ScreenH=100.f;
+	const float ScreenW=60.f;
+	const float ScreenH=60.f;
 
 	const float ScreenX=ViewportCenter.X-(ScreenW/2.f)+Spread.X;
 	const float ScreenY=ViewportCenter.Y-(ScreenH/2.f)+Spread.Y;
