@@ -66,10 +66,10 @@ private:
 	TArray<class AWeapon*> _weapons;
 	
 	UPROPERTY(VisibleAnywhere)
-	TSubclassOf<class AWeapon> _subWeapon;
+	TObjectPtr<class AWeapon> _subWeapon;
 	
 	UPROPERTY(VisibleAnywhere)
-	TSubclassOf<class AWeapon> _meleeWeapon;
+	TObjectPtr<class AWeapon> _meleeWeapon;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;

@@ -32,7 +32,7 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 1.f);
+	_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 3.f);
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -90,7 +90,7 @@ void UCombatComponent::Fire(float curSpread)
 		int32 ViewportSizeX, ViewportSizeY;
 		playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
     
-		float CrosshairSpread = curSpread;
+		float CrosshairSpread = curSpread * 16.f;
 
 		FVector2D CrosshairScreenPosition(
 			(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
@@ -104,7 +104,7 @@ void UCombatComponent::Fire(float curSpread)
 				CrosshairWorldPosition,
 				CrosshairWorldDirection))
 		{
-			FVector traceStart = CrosshairWorldPosition;
+			FVector traceStart = CameraLocation;
 			FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
 
 			FCollisionQueryParams QueryParams;
@@ -271,7 +271,7 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 				HUDPackage.CrosshairBottom = nullptr;
 				HUDPackage.CrosshairTop = nullptr;
 			}
-			//HUDPackage.CrosshairColor = FLinearColor(1.f, 1.f, 1.f, 1.f);
+			HUDPackage.CrosshairColor = FLinearColor(1.f, 1.f, 1.f, 1.f);
 			HUDPackage.CrosshairSpread=spread;
 			HUD->SetHUDPackage(HUDPackage);
 		}

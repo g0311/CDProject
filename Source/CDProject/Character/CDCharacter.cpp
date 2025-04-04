@@ -115,7 +115,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	{
 		float newSpread = CalculateSpread();
 		//UE_LOG(LogTemp, Log, TEXT("spread: %f"), newSpread);
-		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 5.f);
+		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 		//UE_LOG(LogTemp, Display, TEXT("%f"), _curSpread);
 		_combat->SetHUDCrosshairs(_curSpread);
 	}
@@ -317,20 +317,20 @@ float ACDCharacter::CalculateSpread()
 	}
 	if (bIsCrouched)
 	{
-		spread -= 0.2f;  // 앉으면 감소
+		spread -= 0.3f;  // 앉으면 감소
 	}
 	if (_combat->IsAimng())
 	{
-		spread -= 0.1f;
+		spread -= 0.3f;
 	}
 	
 	if (_combat) 
 	{
-		float continuousFireFactor = FMath::Clamp(_combat->GetContinuedFireCount() / 5.0f /* x Weapon Spread */, 0.f, 1.5f); 
-		spread += continuousFireFactor;
+		float continuouedFireFactor = FMath::Clamp(_combat->GetContinuedFireCount() * 3 / 5.0f /* x Weapon Spread */, 0.f, 3.f); 
+		spread += continuouedFireFactor;
 	}
 	
-	return FMath::Clamp(spread, 1.0f, 5.0f) * 5;
+	return FMath::Clamp(spread, 0.4f, 5.f);
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
