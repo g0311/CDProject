@@ -19,9 +19,14 @@ AWeapon::AWeapon()
 	
 	WeaponMesh=CreateDefaultSubobject<USkeletalMeshComponent>("WeaponMesh");
 	SetRootComponent(WeaponMesh);
+	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	AreaSphere=CreateDefaultSubobject<USphereComponent>("AreaSphere");
 	AreaSphere->SetupAttachment(RootComponent);
+	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	PickupWidget=CreateDefaultSubobject<UWidgetComponent>("PickupWidget");
 	PickupWidget->SetupAttachment(RootComponent);
@@ -112,7 +117,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 			if (World)
 			{
 				World->SpawnActor<ACartridge>(
-					ACartridge::StaticClass(),
+					CartridgeClass,
 					AmmoEjectTransform.GetLocation(),
 					AmmoEjectTransform.GetRotation().Rotator()
 					);

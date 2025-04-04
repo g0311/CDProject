@@ -15,9 +15,11 @@ ACartridge::ACartridge()
 
 	CartridgeMesh=CreateDefaultSubobject<UStaticMeshComponent>("CartridgeMesh");
 	SetRootComponent(CartridgeMesh);
+	CartridgeMesh->SetCollisionResponseToChannel(ECC_Camera,ECR_Ignore);
 	CartridgeMesh->SetSimulatePhysics(true);
 	CartridgeMesh->SetEnableGravity(true);
-	
+	CartridgeMesh->SetNotifyRigidBodyCollision(true);
+	EjectImpulse=10.f;
 }
 
 // Called when the game starts or when spawned
@@ -34,7 +36,9 @@ void ACartridge::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UP
 	if (FallSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(GetWorld(), FallSound, GetActorLocation());
+		UE_LOG(LogTemp, Warning, TEXT("FallSound playing"));
 	}
+	Destroy();
 }
 
 // Called every frame

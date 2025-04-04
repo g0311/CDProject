@@ -3,7 +3,10 @@
 
 #include "HitScanWeapon.h"
 
+#include "CDProject/Character/CDCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 
 // Sets default values
@@ -39,8 +42,56 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		if (FireHitResult.bBlockingHit)
 		{
 			BeamEnd=FireHitResult.ImpactPoint;
+			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHitResult.GetActor());
+			if (CDCharacter)
+			{
+				UGameplayStatics::ApplyDamage(CDCharacter,
+					Damage,
+					InstigatorController,
+					this,
+					UDamageType::StaticClass()
+					);
+			}
+			if (ImpactParticles)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(World,
+					ImpactParticles,
+					FireHitResult.ImpactPoint,
+					FireHitResult.ImpactNormal.Rotation());
+			}
+			if (HitSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					this,
+					HitSound,
+					FireHitResult.ImpactPoint
+					);
+			}
+			if (BeamParticleSystem)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(
+					World,
+					BeamParticleSystem,
+					SocketTransform
+					);
+			}
+			if (MuzzleFlash)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(
+					World,
+					MuzzleFlash,
+					SocketTransform
+					);
+			}
+			if (FireSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(
+					this,
+					FireSound,
+					SocketTransform.GetLocation()
+					);
+			}
 		}
-		//Playing ImpactParticle, HitSound, BeamParticle, MuzzleFlash, FireSound
 	}
 }
 
@@ -50,5 +101,6 @@ void AHitScanWeapon::BeginPlay()
 	Super::BeginPlay();
 	
 }
+
 
 
