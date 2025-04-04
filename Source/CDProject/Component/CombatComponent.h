@@ -60,7 +60,7 @@ private:
 	class ACDHUD* HUD;
 	
 	UPROPERTY(VisibleAnywhere)
-	int _weaponIndex = 0;
+	int _weaponIndex = -1;
 	
 	UPROPERTY(VisibleAnywhere)
 	TArray<class AWeapon*> _weapons;

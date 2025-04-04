@@ -95,6 +95,7 @@ public:
 	FORCEINLINE float GetZoomedFOV() const {return ZoomedFOV;}
 	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh3p() const {return WeaponMesh3p;}
 	FORCEINLINE int32 GetAmmo() const {return Ammo;}
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}

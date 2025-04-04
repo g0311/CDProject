@@ -75,9 +75,9 @@ void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 {
 	ShowPickUpWidget(true);
 	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
-	if (CDCharacter)
+	if (WeaponState ==  EWeaponState::EWS_Dropped && CDCharacter)
 	{
-		//CDCharacter->SetWeapon(this);
+		CDCharacter->GetWeapon(this);
 	}
 }
 
@@ -154,6 +154,7 @@ void AWeapon::Dropped()
 	SetWeaponState(EWeaponState::EWS_Dropped);
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
+	WeaponMesh3p->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
 }
 

@@ -98,12 +98,9 @@ private:
 	void Reload();
 	
 	void ChangeWeapon(int weaponIndex);
-	
-	void GetWeapon(class AWeapon* weapon);
-	
 	void DropWeapon();
 public:
-
+	void GetWeapon(class AWeapon* weapon);
 	
 private:
 	//Network Property
