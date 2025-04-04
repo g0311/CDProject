@@ -19,7 +19,7 @@ public:
 
 	void Reset();
 	
-	void Fire();
+	void Fire(float curSpread);
 	void Reload();
 	void Aim();
 	void UnAim();
@@ -33,9 +33,11 @@ public:
 	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
-	FORCEINLINE void SetAimAvail() {_isCanAim = true;}
-	FORCEINLINE bool IsFireAvail() {return _isCanFire;}
-	FORCEINLINE void SetFireAvail() {_isCanFire = true;}
+	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
+	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
+	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
+	FORCEINLINE float GetFireDelay() { return _fireDelay; }
+	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
 
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
@@ -47,12 +49,13 @@ public:
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
 private:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(VisibleAnywhere)
 	class ACDCharacter* _playerCharacter;
-	
 	UPROPERTY(VisibleAnywhere)
 	class ACDHUD* HUD;
 	
@@ -71,6 +74,8 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
 
+	float _continuedFireCount;
+	
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	bool _isCanFire = true;
