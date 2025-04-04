@@ -112,6 +112,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	{
 		float newSpread = CalculateSpread();
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 5.f);
+		//UE_LOG(LogTemp, Display, TEXT("%f"), _curSpread);
 		_combat->SetHUDCrosshairs(_curSpread);
 	}
 }
