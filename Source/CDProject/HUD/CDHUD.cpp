@@ -11,12 +11,20 @@
 void ACDHUD::DrawHUD()
 {
 	Super::DrawHUD();
+	
+	if (!Canvas)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Canvas is NULL!!"));
+		return;
+	}
 	FVector2D ViewportSize;
+
 	if (GEngine->GameViewport)
 	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize);
 		const FVector2D ViewportCenter = ViewportSize * 0.5f;
-		float CrosshairSpread=HUDPackage.CrosshairSpread;
+		const float SpreadFactor=16.f;
+		float CrosshairSpread=HUDPackage.CrosshairSpread*SpreadFactor;
 		if (HUDPackage.CrosshairCenter)
 		{
 			FVector2D Spread(0.f,0.f);
@@ -82,6 +90,7 @@ void ACDHUD::BeginPlay()
 
 void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor)
 {
+	
 	FVector2D ViewportSize;
 	if (GEngine->GameViewport)
 	{
@@ -90,8 +99,8 @@ void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor C
 
 	FVector2D ViewportCenter = ViewportSize / 2;
 
-	const float ScreenW=30.f;
-	const float ScreenH=30.f;
+	const float ScreenW=100.f;
+	const float ScreenH=100.f;
 
 	const float ScreenX=ViewportCenter.X-(ScreenW/2.f)+Spread.X;
 	const float ScreenY=ViewportCenter.Y-(ScreenH/2.f)+Spread.Y;
@@ -108,6 +117,11 @@ void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor C
 	1.f,  
 	CrosshairColor
 	);
+	if (Texture)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CrosshairColor: R=%.2f, G=%.2f, B=%.2f, A=%.2f"), 
+			CrosshairColor.R, CrosshairColor.G, CrosshairColor.B, CrosshairColor.A);
+	}
 
 }
 

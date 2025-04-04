@@ -32,7 +32,6 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 	_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 1.f);
 }
 
@@ -256,7 +255,6 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 		HUD = HUD == nullptr ? Cast<ACDHUD>(controller->GetHUD()) : HUD;
 		if (HUD)
 		{
-			FHUDPackage HUDPackage;
 			if (_weapons[_weaponIndex])
 			{
 				HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
@@ -273,6 +271,8 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 				HUDPackage.CrosshairBottom = nullptr;
 				HUDPackage.CrosshairTop = nullptr;
 			}
+			//HUDPackage.CrosshairColor = FLinearColor(1.f, 1.f, 1.f, 1.f);
+			HUDPackage.CrosshairSpread=spread;
 			HUD->SetHUDPackage(HUDPackage);
 		}
 	}

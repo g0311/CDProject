@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CDProject/HUD/CDHUD.h"
 #include "Components/ActorComponent.h"
 #include "CombatComponent.generated.h"
 
@@ -26,6 +27,8 @@ public:
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
 	void SetHUDCrosshairs(float spread);
+
+
 	
 	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
@@ -39,6 +42,8 @@ public:
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
 	uint8 GetCurWeaponType();
+
+	FHUDPackage HUDPackage;
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
