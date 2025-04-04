@@ -27,7 +27,6 @@ void UCombatComponent::BeginPlay()
 	CreateDefaultWeapons();
 	
 	ChangeWeapon(1);
-	SetHUDCrosshairs();
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -114,7 +113,6 @@ void UCombatComponent::Aim()
 	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
 	{
 		_isAiming = true;
-		SetHUDCrosshairs();
 	}
 }
 
@@ -123,7 +121,6 @@ void UCombatComponent::UnAim()
 	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
 	{
 		_isAiming = false;
-		SetHUDCrosshairs();
 	}
 }
 
@@ -145,7 +142,6 @@ bool UCombatComponent::ChangeWeapon(int idx)
 		_weaponIndex = idx;
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
 		//_weapons[_weaponIndex]->GetSecondWeaponMesh()->SetVisibility(true);
-		SetHUDCrosshairs();
 		
 		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
 		
@@ -213,24 +209,7 @@ void UCombatComponent::DropWeapon()
 	}
 }
 
-bool UCombatComponent::IsAmmoEmpty()
-{
-	return _weapons[_weaponIndex]->AmmoIsEmpty();
-}
-
-bool UCombatComponent::IsTotalAmmoEmpty()
-{
-	return false;
-}
-
-uint8 UCombatComponent::GetCurWeaponType()
-{
-	if (_weapons[_weaponIndex])
-		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
-	return -1;
-}
-
-void UCombatComponent::SetHUDCrosshairs()
+void UCombatComponent::SetHUDCrosshairs(float spread)
 {
 	ACharacter* character = Cast<ACharacter>(GetOwner());
 	if (!character || !character->Controller) return;
@@ -261,6 +240,23 @@ void UCombatComponent::SetHUDCrosshairs()
 			HUD->SetHUDPackage(HUDPackage);
 		}
 	}
+}
+
+bool UCombatComponent::IsAmmoEmpty()
+{
+	return _weapons[_weaponIndex]->AmmoIsEmpty();
+}
+
+bool UCombatComponent::IsTotalAmmoEmpty()
+{
+	return false;
+}
+
+uint8 UCombatComponent::GetCurWeaponType()
+{
+	if (_weapons[_weaponIndex])
+		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
+	return -1;
 }
 
 void UCombatComponent::CreateDefaultWeapons()

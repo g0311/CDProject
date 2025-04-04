@@ -25,6 +25,7 @@ public:
 	bool ChangeWeapon(int idx);
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
+	void SetHUDCrosshairs(float spread);
 	
 	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
@@ -72,6 +73,4 @@ private:
 	
 	void CreateDefaultWeapons();
 	void AttatchMeshToChar(class AWeapon* weapon);
-
-	void SetHUDCrosshairs();
 };
