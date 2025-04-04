@@ -237,7 +237,7 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 				HUDPackage.CrosshairBottom = nullptr;
 				HUDPackage.CrosshairTop = nullptr;
 			}
-			//HUDPackage.CrosshairColor = FLinearColor(1.f, 1.f, 1.f, 1.f);
+			HUDPackage.CrosshairColor = FLinearColor(1.f, 1.f, 1.f, 1.f);
 			HUDPackage.CrosshairSpread=spread;
 			HUD->SetHUDPackage(HUDPackage);
 		}
