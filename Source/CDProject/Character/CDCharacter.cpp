@@ -46,7 +46,7 @@ ACDCharacter::ACDCharacter()
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (IsLocallyControlled())
 	{
 		APlayerController* playerController = Cast<APlayerController>(Controller);
@@ -106,6 +106,14 @@ void ACDCharacter::Tick(float DeltaTime)
 
 	float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _targetFOV, DeltaTime, InterpSpeed);
 	_camera->SetFieldOfView(NewFOV);
+
+	//Update Spread
+	if (_combat)
+	{
+		float newSpread = CalculateSpread();
+		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 5.f);
+		_combat->SetHUDCrosshairs(_curSpread);
+	}
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -289,6 +297,37 @@ void ACDCharacter::DropWeapon()
 		return;
 	UnAim();
 	_combat->DropWeapon();
+}
+
+float ACDCharacter::CalculateSpread()
+{
+	float Spread = 1.0f;
+
+	float Speed = GetVelocity().Size();
+	if (Speed > 400.f) //run
+	{
+		Spread += 1.5f;
+	}
+	else if (Speed > 200.f) //walk
+	{
+		Spread += 0.5f;
+	}
+	else if (GetMovementComponent()->IsFalling())
+	{
+		Spread += 3.f;
+	}
+
+	if (bIsCrouched)
+	{
+		Spread -= 0.3f;  // 앉으면 감소
+	}
+	
+	if (_combat && _combat->IsFireAvail()) 
+	{
+		Spread += 0.4f;
+	}
+
+	return FMath::Clamp(Spread, 1.0f, 5.0f);  // 최대 5.0까지 제한
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const

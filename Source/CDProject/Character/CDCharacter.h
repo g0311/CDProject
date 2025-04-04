@@ -88,23 +88,33 @@ private:
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
 	void Crouch(bool bClientSimulation = false) override;
+	
 	void Walk();
 	void UnWalk();
+	
 	void Fire();
 	void Aim();
 	void UnAim();
 	void Reload();
+	
 	void ChangeWeapon(int weaponIndex);
+	
 	void GetWeapon(class AWeapon* weapon);
+	
 	void DropWeapon();
 public:
-	 
+
+	
 private:
 	//Network Property
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _controlRotation;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _cameraRotation;
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
+	float _curSpread = 0.f;
+
+	float CalculateSpread();
 public:
 	FORCEINLINE FRotator GetRepControlRotation() { return _controlRotation; }
 	
