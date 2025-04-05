@@ -42,22 +42,23 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Components")
 	float _eyeHeight = 50.f;
 	
-	UPROPERTY(EditAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere, Replicated, Category = "Components")
 	FTransform _defaultArmTransform;
-	UPROPERTY(EditAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere, Replicated, Category = "Components")
 	FTransform  _aimArmTransform;
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
 	FTransform  _currentArmTransform;
-	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
 	FTransform  _targetArmTransform;
 
-	UPROPERTY(EditAnywhere, Category = "Camera")
+	UPROPERTY(EditAnywhere, Replicated, Category = "Camera")
 	float _defaultFOV = 90.0f;
-	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Camera")
 	float _targetFOV;
 	
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
+	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
 	
 private:
 	//Input
@@ -96,7 +97,6 @@ private:
 	void Aim();
 	void UnAim();
 	void Reload();
-	
 	void ChangeWeapon(int weaponIndex);
 	void DropWeapon();
 public:
@@ -108,10 +108,7 @@ private:
 	FRotator _controlRotation;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _cameraRotation;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
-	float _curSpread = 0.f;
 
-	float CalculateSpread();
 public:
 	FORCEINLINE FRotator GetRepControlRotation() { return _controlRotation; }
 	
