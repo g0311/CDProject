@@ -21,7 +21,10 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	float Damage=10.f;
-	
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -38,8 +41,6 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	class UProjectileMovementComponent* ProjectileMovementComponent;
 	
-	UPROPERTY(EditAnywhere)
-	class UBoxComponent* CollisionBox;
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticle;

@@ -178,9 +178,10 @@ bool UCombatComponent::ChangeWeapon(int idx)
 		_weaponIndex = idx;
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
 		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(true);
-		
+	
 		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-		
+		_fireDelay=0.1f;
+		UE_LOG(LogTemp, Warning, TEXT("%f"), _fireDelay);
 		if (bodyAnim)
 		{
 			bodyAnim->PlayEquipMontage();
@@ -347,7 +348,7 @@ void UCombatComponent::CreateDefaultWeapons()
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[1]->GetWeaponMesh()->SetVisibility(false);
+			_weapons[1]->GetWeaponMesh()->SetVisibility(true);
 			
 			 _weapons[1]->GetWeaponMesh3p()->AttachToComponent(
 				 owner->GetMesh(),
@@ -370,7 +371,7 @@ void UCombatComponent::CreateDefaultWeapons()
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[0]->GetWeaponMesh()->SetVisibility(false);
+			_weapons[0]->GetWeaponMesh()->SetVisibility(true);
 			
 			_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
 				owner->GetMesh(),

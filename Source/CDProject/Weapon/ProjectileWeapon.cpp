@@ -4,6 +4,7 @@
 #include "ProjectileWeapon.h"
 
 #include "Projectile.h"
+#include "Components/BoxComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
@@ -34,7 +35,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 	Super::Fire(HitTarget);
 	APawn* InstigatorPawn=Cast<APawn>(GetOwner());
 	const USkeletalMeshSocket* MuzzleFlashSocket=GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
-	
+	UE_LOG(LogTemp,Display,TEXT("Fire"));
 	if (MuzzleFlashSocket)
 	{
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
@@ -42,20 +43,50 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 		FRotator TargetRotation = ToTarget.Rotation();
 		if (ProjectileClass&&InstigatorPawn)
 		{
+			UE_LOG(LogTemp,Display,TEXT("Projectile spawn"));
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = GetOwner();
 			SpawnParams.Instigator=InstigatorPawn;
 			UWorld* World = GetWorld();
 			if (World)
 			{
-				World->SpawnActor<AProjectile>(
+				AProjectile* Projectile=World->SpawnActor<AProjectile>(
 					ProjectileClass,
-					SocketTransform.GetLocation(),
+					SocketTransform.GetLocation()+SocketTransform.GetRotation().GetForwardVector()*100.f,
 					TargetRotation,
 					SpawnParams
 					);
+				if (Projectile)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Projectile spawn2"));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("Projectile failed!"));
+				}
+				if (Projectile)
+				{
+					DrawDebugSphere(
+						GetWorld(),
+						Projectile->GetActorLocation(),
+						10.f, 
+						12,   
+						FColor::Red,
+						false, 
+						5.0f,  
+						0,
+						2.0f   
+					);
+				}
+				if (Projectile)
+				{
+					FVector SpawnLocation = Projectile->GetActorLocation();
+					UE_LOG(LogTemp, Warning, TEXT("Projectile Spawned At: X=%.2f Y=%.2f Z=%.2f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+				}
+			
 			}
 		}
+		
 	}
 }
 
