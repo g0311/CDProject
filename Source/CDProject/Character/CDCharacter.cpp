@@ -29,11 +29,12 @@ ACDCharacter::ACDCharacter()
 	
 	_armMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Arm Mesh"));
 	_armMesh->SetupAttachment(_camera);
+	_armMesh->bOnlyOwnerSee = true;
 	_armMesh->bCastDynamicShadow = false;
 	_armMesh->CastShadow = false;
-	_armMesh->SetOnlyOwnerSee(true);
+	_armMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPose;
 	GetMesh()->SetOwnerNoSee(true);
-
+	
 	_combat = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
 	_combat->SetIsReplicated(true);
 	
@@ -48,7 +49,6 @@ ACDCharacter::ACDCharacter()
 	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
 	if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
 }
-
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()
 {
@@ -67,7 +67,7 @@ void ACDCharacter::BeginPlay()
 		}
 	
 		if (_abilitySystemComponent)
-		{//이거 서버에서 해야되나?
+		{//이거 서버에서 해야되나? ㄴㄴ
 			_abilitySystemComponent->InitAbilityActorInfo(this, this);
 			InitializeAttributes();
 		}
@@ -128,7 +128,7 @@ void ACDCharacter::Tick(float DeltaTime)
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	
+
 	UEnhancedInputComponent* enhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (enhancedInputComponent)
 	{
@@ -172,6 +172,24 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 
 void ACDCharacter::RespawnPlayer()
 {
+}
+
+void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
+{
+	if (isWatching)
+	{
+		_armMesh->SetOnlyOwnerSee(false);
+		_armMesh->SetVisibility(true);
+		
+		GetMesh()->SetVisibility(false);
+	}
+	else
+	{
+		_armMesh->SetOnlyOwnerSee(true);
+		_armMesh->SetVisibility(false);
+		
+		GetMesh()->SetVisibility(true);
+	}
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)

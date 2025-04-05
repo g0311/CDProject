@@ -27,7 +27,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void RespawnPlayer();
-	
+	void UpdateVisibilityForSpectator(bool isWatching);
 private:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")

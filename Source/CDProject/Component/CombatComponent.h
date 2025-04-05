@@ -59,17 +59,11 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class ACDHUD* HUD;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	int _weaponIndex = -1;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
-	
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class AWeapon> _subWeapon;
-	
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class AWeapon> _meleeWeapon;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
