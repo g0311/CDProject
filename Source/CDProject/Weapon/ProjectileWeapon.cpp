@@ -33,17 +33,18 @@ void AProjectileWeapon::Tick(float DeltaTime)
 void AProjectileWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
+	if (!HasAuthority()) return;
 	APawn* InstigatorPawn=Cast<APawn>(GetOwner());
 	const USkeletalMeshSocket* MuzzleFlashSocket=GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
-	UE_LOG(LogTemp,Display,TEXT("Fire"));
 	if (MuzzleFlashSocket)
 	{
+		
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+		FVector MuzzleLocation = SocketTransform.GetLocation();
 		FVector ToTarget = HitTarget - SocketTransform.GetLocation();
 		FRotator TargetRotation = ToTarget.Rotation();
 		if (ProjectileClass&&InstigatorPawn)
 		{
-			UE_LOG(LogTemp,Display,TEXT("Projectile spawn"));
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = GetOwner();
 			SpawnParams.Instigator=InstigatorPawn;
@@ -52,18 +53,10 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 			{
 				AProjectile* Projectile=World->SpawnActor<AProjectile>(
 					ProjectileClass,
-					SocketTransform.GetLocation()+SocketTransform.GetRotation().GetForwardVector()*100.f,
+					MuzzleLocation,
 					TargetRotation,
 					SpawnParams
 					);
-				if (Projectile)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("Projectile spawn2"));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Error, TEXT("Projectile failed!"));
-				}
 				if (Projectile)
 				{
 					DrawDebugSphere(
@@ -78,11 +71,20 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 						2.0f   
 					);
 				}
-				if (Projectile)
-				{
-					FVector SpawnLocation = Projectile->GetActorLocation();
-					UE_LOG(LogTemp, Warning, TEXT("Projectile Spawned At: X=%.2f Y=%.2f Z=%.2f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
-				}
+				FVector StartLocation = Projectile->GetActorLocation();
+				FVector EndLocation = StartLocation + Projectile->GetActorForwardVector() * 700.f; 
+				DrawDebugDirectionalArrow(
+					GetWorld(),
+					StartLocation,
+					EndLocation,
+					100.f,  
+					FColor::Blue,
+					false,
+					5.0f,
+					0,
+					2.0f
+				);
+			
 			
 			}
 		}

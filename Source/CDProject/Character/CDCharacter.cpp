@@ -155,9 +155,9 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	float curHealth = _attributeSet->GetHealth();
-	curHealth -= DamageAmount;
-	_attributeSet->SetHealth(curHealth);
+	//float curHealth = _attributeSet->GetHealth();
+	//curHealth -= DamageAmount;
+	//_attributeSet->SetHealth(curHealth);
 	
 	return DamageAmount;
 }
