@@ -21,6 +21,8 @@ AAProjectileBullet::AAProjectileBullet()
 	ProjectileMovementComponent->MaxSpeed = 15000.f;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
 
+	bReplicates = true;
+	SetReplicateMovement(true);
 }
 
 // Called when the game starts or when spawned

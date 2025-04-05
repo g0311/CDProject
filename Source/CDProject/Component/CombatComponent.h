@@ -57,16 +57,12 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class ACDHUD* HUD;
 	
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
 	int _weaponIndex = -1;
-	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
-	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
-
-	UPROPERTY(Replicated)
 	float _continuedFireCount;
 	
 	FTimerHandle _fireTimerHandle;
@@ -75,11 +71,10 @@ private:
 	bool _isCanAim = true;
 	
 	void CreateDefaultWeapons();
-	void AttatchMeshToChar(class AWeapon* weapon);
 	float CaculateSpread();
-	
+	void SetWeaponVisible(bool tf);
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Network")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 	
 	//network
@@ -95,7 +90,11 @@ private:
 	void ServerChangeWeapon(int idx);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastChangeWeapon(int idx);
-
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastSetWeaponVisible(bool tf);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetIsCanFire(bool tf);
+	UFUNCTION()
+	void OnRep_WeaponID();
 };

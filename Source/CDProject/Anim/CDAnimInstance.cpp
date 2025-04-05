@@ -41,16 +41,20 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 	if (_isFullBody)
 	{
 		if (_isAiming)
+		{
 			if (_aimFireMontage)
-				Montage_Play(_aimFireMontage, 1.f / fireRate * 1.5);
+				Montage_Play(_aimFireMontage, 1.f / fireRate);
+		}
 		else
+		{
 			if (_baseFireMontage)
-				Montage_Play(_baseFireMontage, 1.f / fireRate  * 1.5);
+				Montage_Play(_baseFireMontage, 1.f / fireRate);
+		}
 	}
 	else
 	{
 		if (_aimFireMontage)
-			Montage_Play(_aimFireMontage);
+				Montage_Play(_aimFireMontage, 1.f / fireRate);
 	}
 }
 
@@ -105,11 +109,17 @@ void UCDAnimInstance::PlayEquipMontage()
 	case static_cast<uint8>(EWeaponType::EWT_Sniper):
 	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
 		if (_equipRifleMontage)
+		{
 			Montage_Play(_equipRifleMontage);
+		}
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Speical):
+	case static_cast<uint8>(EWeaponType::EWT_Pistol):
 		if (_equipPistolMontage)
+		{
 			Montage_Play(_equipPistolMontage);
+		}
+		break;
+	default:
 		break;
 	}
 }

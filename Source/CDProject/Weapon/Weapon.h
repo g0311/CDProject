@@ -54,6 +54,8 @@ public:
 	void Dropped();
 	void Picked();
 
+	void AttachToPlayer();
+
 	//WeaponState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString WeaponName;
@@ -119,8 +121,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
 	EWeaponType WeaponType;
 
-
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	class ACDCharacter* OwnerCharacter;
 
 	UPROPERTY()

@@ -73,7 +73,7 @@ void AWeapon::BeginPlay()
 	{
 		PickupWidget->SetVisibility(false);
 	}
-	if (AreaSphere)
+	if (AreaSphere && HasAuthority())
 	{
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereBeginOverlap);
 		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
@@ -83,7 +83,6 @@ void AWeapon::BeginPlay()
 void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ShowPickUpWidget(true);
 	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
 	if (WeaponState ==  EWeaponState::EWS_Dropped && CDCharacter)
 	{
@@ -94,7 +93,6 @@ void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	ShowPickUpWidget(false);
 	//PickUpSystem, Widget Down
 }
 
@@ -114,12 +112,14 @@ void AWeapon::OnRep_WeaponState()
 	{
 	case EWeaponState::EWS_Dropped:
 		ShowPickUpWidget(false);
+		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
-		// WeaponMesh->SetVisibility(true);
-		// WeaponMesh3p->SetVisibility(true);
+		break;
 	case EWeaponState::EWS_Equipped:
 		ShowPickUpWidget(false);
+		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
+		break;
 	}
 }
 
@@ -169,23 +169,51 @@ void AWeapon::OnRep_Owner()
 	Super::OnRep_Owner();
 	if (Owner==nullptr)
 	{
+		GetWeaponMesh()->SetVisibility(true);
+		GetWeaponMesh3p()->SetVisibility(false);
+
+		SetWeaponState(EWeaponState::EWS_Dropped);
+		FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+		DetachFromActor(DetachRules);
+		WeaponMesh3p->DetachFromComponent(DetachRules);
 		OwnerCharacter=nullptr;
 		OwnerController=nullptr;
 	}
 	else
 	{
-	
+		AttachToPlayer();
 		SetHUDAmmo();
 	}
 }
 
 void AWeapon::Dropped()
 {
-	SetWeaponState(EWeaponState::EWS_Dropped);
-	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
-	WeaponMesh->DetachFromComponent(DetachRules);
-	WeaponMesh3p->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+}
+
+void AWeapon::AttachToPlayer()
+{
+	OwnerCharacter = Cast<ACDCharacter>(Owner);
+	if (!OwnerCharacter)
+		return;
+	OwnerController = Cast<ACDPlayerController>(OwnerCharacter->Controller);
+	SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachToComponent(
+		OwnerCharacter->GetArmMesh(),
+		FAttachmentTransformRules::SnapToTargetIncludingScale,
+		TEXT("WeaponSocket")
+	);
+	GetWeaponMesh()->SetVisibility(false);
+	GetWeaponMesh()->SetOnlyOwnerSee(true);
+		
+	GetWeaponMesh3p()->AttachToComponent(
+		OwnerCharacter->GetMesh(),
+		FAttachmentTransformRules::SnapToTargetIncludingScale,
+		TEXT("WeaponSocket")
+	);
+	GetWeaponMesh3p()->SetVisibility(false);
+	GetWeaponMesh3p()->SetOwnerNoSee(true);
+		
 }
 
 void AWeapon::ShowPickUpWidget(bool bShowWidget)

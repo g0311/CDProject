@@ -88,6 +88,7 @@ void ACDCharacter::Tick(float DeltaTime)
 		if (Controller != nullptr)
 			_controlRotation = Controller->GetControlRotation();
 		_cameraRotation = _camera->GetRelativeRotation();
+		SetControlCameraRotation(_controlRotation, _cameraRotation);
 	}
 	if (!IsLocallyControlled())
 	{
@@ -147,7 +148,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 {
 	float curHealth = _attributeSet->GetHealth();
 	curHealth -= DamageAmount;
-	_attributeSet->SetHealth(curHealth);
+	//_attributeSet->SetHealth(curHealth);
 	
 	return DamageAmount;
 }
@@ -158,6 +159,9 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 
 	DOREPLIFETIME(ACDCharacter, _controlRotation);
 	DOREPLIFETIME(ACDCharacter, _cameraRotation);
+	DOREPLIFETIME(ACDCharacter, _currentArmTransform);
+	DOREPLIFETIME(ACDCharacter, _targetArmTransform);
+	DOREPLIFETIME(ACDCharacter, _targetFOV);
 }
 
 void ACDCharacter::RespawnPlayer()
@@ -237,7 +241,7 @@ void ACDCharacter::Fire()
 	
 	if (_combat->IsFireAvail())
 	{
-		if (false/*_combat->IsAmmoEmpty()*/)
+		if (false /*_combat->IsAmmoEmpty()*/)
 		{
 			Reload();
 		}
@@ -255,14 +259,12 @@ void ACDCharacter::Aim()
 	if(_combat->IsAimng())
 	{
 		_combat->UnAim();
-		_targetArmTransform = _defaultArmTransform;
-		_targetFOV = _defaultFOV;
+		ServerUnAim();
 	}
 	else if (_combat->IsAimAvail())
 	{
 		_combat->Aim();
-		_targetArmTransform = _aimArmTransform;
-		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+		ServerAim();
 	}
 }
 
@@ -272,8 +274,7 @@ void ACDCharacter::UnAim()
 		return;
 	
 	_combat->UnAim();
-	_targetArmTransform = _defaultArmTransform;
-	_targetFOV = _defaultFOV;
+	ServerUnAim();
 }
 
 void ACDCharacter::Reload()
@@ -300,6 +301,14 @@ void ACDCharacter::ChangeWeapon(int weaponIndex)
 	}
 }
 
+void ACDCharacter::DropWeapon()
+{
+	if (!_combat)
+		return;
+	UnAim();
+	_combat->DropWeapon();
+}
+
 void ACDCharacter::GetWeapon(AWeapon* weapon)
 {
 	if (!_combat)
@@ -307,12 +316,22 @@ void ACDCharacter::GetWeapon(AWeapon* weapon)
 	_combat->GetWeapon(weapon);
 }
 
-void ACDCharacter::DropWeapon()
+void ACDCharacter::SetControlCameraRotation_Implementation(FRotator control, FRotator camera)
 {
-	if (!_combat)
-		return;
-	UnAim();
-	_combat->DropWeapon();
+	_controlRotation = control;
+	_cameraRotation = camera;
+}
+
+void ACDCharacter::ServerAim_Implementation()
+{
+	_targetArmTransform = _aimArmTransform;
+	_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+}
+
+void ACDCharacter::ServerUnAim_Implementation()
+{
+	_targetArmTransform = _defaultArmTransform;
+	_targetFOV = _defaultFOV;
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const

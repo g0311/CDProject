@@ -42,16 +42,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Components")
 	float _eyeHeight = 50.f;
 	
-	UPROPERTY(EditAnywhere, Replicated, Category = "Components")
+	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform _defaultArmTransform;
-	UPROPERTY(EditAnywhere, Replicated, Category = "Components")
+	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform  _aimArmTransform;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
 	FTransform  _currentArmTransform;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
 	FTransform  _targetArmTransform;
 
-	UPROPERTY(EditAnywhere, Replicated, Category = "Camera")
+	UPROPERTY(EditAnywhere, Category = "Camera")
 	float _defaultFOV = 90.0f;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Camera")
 	float _targetFOV;
@@ -89,7 +89,6 @@ private:
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
 	void Crouch(bool bClientSimulation = false) override;
-	
 	void Walk();
 	void UnWalk();
 	
@@ -108,9 +107,16 @@ private:
 	FRotator _controlRotation;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _cameraRotation;
-
+	UFUNCTION(Server, Reliable)
+	void SetControlCameraRotation(FRotator control, FRotator camera);
+	UFUNCTION(Server, Reliable)
+	void ServerAim();
+	UFUNCTION(Server, Reliable)
+	void ServerUnAim();
+	
 public:
 	FORCEINLINE FRotator GetRepControlRotation() { return _controlRotation; }
+
 	
 private:
 	//GAS
