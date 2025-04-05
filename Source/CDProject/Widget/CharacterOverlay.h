@@ -24,6 +24,9 @@ public:
 
 	//Weapon
 	UPROPERTY(meta=(BindWidget))
+	UTextBlock* WeaponName;
+	
+	UPROPERTY(meta=(BindWidget))
 	class UImage* WeaponImage;
 	
 	UPROPERTY(meta=(BindWidget))

@@ -50,7 +50,6 @@ void ACDHUD::DrawHUD()
 			FVector2D Spread(0.f,CrosshairSpread);
 			DrawCrosshair(HUDPackage.CrosshairBottom, Spread, HUDPackage.CrosshairColor);
 		}
-
 	}
 	
 }
@@ -68,7 +67,7 @@ void ACDHUD::AddGameStateOverlay()
 {
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
-		GameStateOverlay=CreateWidget<UKDOverlay>(PlayerController,CharacterOverlayClass);
+		GameStateOverlay=CreateWidget<UKDOverlay>(PlayerController,GameStateOverlayClass);
 		GameStateOverlay->AddToViewport();
 	}
 }
@@ -77,7 +76,7 @@ void ACDHUD::AddAnnouncement()
 {
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
-		Announcement=CreateWidget<UAnnouncement>(PlayerController,CharacterOverlayClass);
+		Announcement=CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);
 		Announcement->AddToViewport();
 	}
 }

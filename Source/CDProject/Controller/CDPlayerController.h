@@ -22,6 +22,7 @@ public:
 	void SetHUDKill(float killcount);
 	void SetHUDDeath(float deathcount);
 	void SetHUDWeaponAmmo(int32 Ammo);
+	void SetHUDWeaponInfo(class AWeapon* weapon);
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDCount(float CountdownTime);
 
@@ -64,6 +65,8 @@ private:
 	float HUDShield;
 	float HUDCarriedAmmo;
 	float HUDWeaponAmmo;
+	
+
 
 	
 	//Match KDState

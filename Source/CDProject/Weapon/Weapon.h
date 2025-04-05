@@ -54,7 +54,14 @@ public:
 	void Dropped();
 	void Picked();
 
-	
+	//WeaponState
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString WeaponName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* WeaponImage;
+
+	//Crosshair
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	class UTexture2D* CrosshairCenter;
 
@@ -89,6 +96,7 @@ public:
 	USoundCue* ReloadSound;
 	
 	bool AmmoIsEmpty();
+	void SpendCarriedAmmo(int32 ReloadAmount);
 	
 	//FORCEINLINE
 	FORCEINLINE USphereComponent* GetAreaComponent() const {return AreaSphere;}
@@ -97,6 +105,7 @@ public:
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh3p() const {return WeaponMesh3p;}
 	FORCEINLINE int32 GetAmmo() const {return Ammo;}
+	FORCEINLINE int32 GetCarriedAmmo() const {return CarriedAmmo;}
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
@@ -110,8 +119,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
 	EWeaponType WeaponType;
 
-	UPROPERTY(EditAnywhere)
-	int32 AmmoCapacity;
 
 	UPROPERTY()
 	class ACDCharacter* OwnerCharacter;
@@ -136,9 +143,14 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Ammo();
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
 	
 	UFUNCTION()
 	void OnRep_WeaponState();
+
+	
 
 	void SpendAmmo();
 
@@ -162,9 +174,15 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACartridge> CartridgeClass;
-
+//Ammo
 	UPROPERTY(EditAnywhere,ReplicatedUsing=OnRep_Ammo)
 	int32 Ammo;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+	
+	UPROPERTY(EditAnywhere)
+	int32 AmmoCapacity;
 
 
 

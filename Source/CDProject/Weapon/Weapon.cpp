@@ -9,6 +9,7 @@
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Sound/SoundCue.h"
 
 // Sets default values
@@ -58,6 +59,11 @@ bool AWeapon::AmmoIsEmpty()
 	return Ammo<=0;
 }
 
+void AWeapon::SpendCarriedAmmo(int32 ReloadAmount)
+{
+	CarriedAmmo = FMath::Max(CarriedAmmo - ReloadAmount, 0);
+}
+
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay()
 {
@@ -97,13 +103,20 @@ void AWeapon::OnRep_Ammo()
 	SetHUDAmmo();
 }
 
+void AWeapon::OnRep_CarriedAmmo()
+{
+	SetHUDAmmo();
+}
+
 void AWeapon::OnRep_WeaponState()
 {
 	switch (WeaponState)
 	{
 	case EWeaponState::EWS_Dropped:
-		ShowPickUpWidget(true);
+		ShowPickUpWidget(false);
 		WeaponMesh->SetEnableGravity(true);
+		// WeaponMesh->SetVisibility(true);
+		// WeaponMesh3p->SetVisibility(true);
 	case EWeaponState::EWS_Equipped:
 		ShowPickUpWidget(false);
 		WeaponMesh->SetEnableGravity(false);
@@ -145,12 +158,25 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeapon, Ammo);
+	DOREPLIFETIME(AWeapon, CarriedAmmo);
+	DOREPLIFETIME(AWeapon, WeaponState);
 	
 }
 
 void AWeapon::OnRep_Owner()
 {
 	Super::OnRep_Owner();
+	if (Owner==nullptr)
+	{
+		OwnerCharacter=nullptr;
+		OwnerController=nullptr;
+	}
+	else
+	{
+	
+		SetHUDAmmo();
+	}
 }
 
 void AWeapon::Dropped()
@@ -172,16 +198,21 @@ void AWeapon::ShowPickUpWidget(bool bShowWidget)
 
 void AWeapon::SetHUDAmmo()
 {
-	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
-	if (OwnerCharacter)
+	if (OwnerCharacter == nullptr)
 	{
-		OwnerController=Cast<ACDPlayerController>(OwnerCharacter->GetController());
-		if (OwnerController)
-		{
-			OwnerController->SetHUDWeaponAmmo(Ammo);
-		}
+		OwnerCharacter = Cast<ACDCharacter>(GetOwner());
+	}
+	if (OwnerCharacter && OwnerController == nullptr)
+	{
+		OwnerController = Cast<ACDPlayerController>(OwnerCharacter->GetController());
+	}
+	if (OwnerController)
+	{
+		OwnerController->SetHUDWeaponAmmo(Ammo);
+		OwnerController->SetHUDWeaponInfo(this);
 	}
 }
+
 
 void AWeapon::SetWeaponState(EWeaponState state)
 {
@@ -206,14 +237,10 @@ void AWeapon::AddAmmo(int32 AmmoToAdd)
 }
 void AWeapon::Reload()
 {
-	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
-	if (OwnerCharacter==nullptr) return;
-
-	// int CarridAmmo=OwnerCharacter->GetCarriedAmmo();
-	// int32 ReloadAmount=(AmmoCapacity-Ammo, CarriedAmmo);// 30 /240  5 /240 -25 215 
-	// Ammo+=ReloadAmount;
-	// OwnerCharacter->SpendCarriedAmmo(ReloadAmount);
-	//Need(GetCarriedAmmo(), SpendCarridAmmo();)
-	SetHUDAmmo();
-	
+	 CarriedAmmo=GetCarriedAmmo();
+	 int32 AmmoNeed=AmmoCapacity-Ammo;
+	 int32 ReloadAmount=FMath::Min(AmmoNeed, CarriedAmmo);
+	 Ammo+=ReloadAmount;
+	 SpendCarriedAmmo(ReloadAmount);
+	 SetHUDAmmo();
 }

@@ -46,10 +46,9 @@ public:
 	
 	UPROPERTY()
 	class UAnnouncement* Announcement;
-
-//Adding Function(HUD)
+	
 	void AddCharacterOverlay();
-	void AddGameStateOverlay();
+	void AddGameStateOverlay();//KDOverlay or GameStateOverlay
 	void AddAnnouncement();
 	
 protected:

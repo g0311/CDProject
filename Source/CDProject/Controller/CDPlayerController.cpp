@@ -6,9 +6,12 @@
 #include "AbilitySystemComponent.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
+#include "CDProject/Component/CombatComponent.h"
 #include "CDProject/HUD/CDHUD.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/KDOverlay.h"
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "GameFramework/GameMode.h"
@@ -101,6 +104,26 @@ void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo)
 	{
 		FString WeaponAmmoText = FString::Printf(TEXT("%d"), WeaponAmmo);
 		CDHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(WeaponAmmoText));
+	}
+}
+
+void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
+{
+	if (Weapon == nullptr) return;
+
+	if (EnsureHUD() && CDHUD->CharacterOverlay)
+	{
+		FString WeaponName = Weapon->WeaponName;
+		if (!WeaponName.IsEmpty() && CDHUD->CharacterOverlay->WeaponName)
+		{
+			CDHUD->CharacterOverlay->WeaponName->SetText(FText::FromString(WeaponName));
+		}
+
+		UTexture2D* WeaponImage = Weapon->WeaponImage;
+		if (WeaponImage && CDHUD->CharacterOverlay->WeaponImage)
+		{
+			CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(WeaponImage);
+		}
 	}
 }
 

@@ -3,19 +3,25 @@
 
 #include "LobbyGameMode.h"
 
+#include "CDProject/Character/CDCharacter.h"
 #include "GameFramework/GameStateBase.h"
+
+ALobbyGameMode::ALobbyGameMode()
+{
+	DefaultPawnClass = ACDCharacter::StaticClass();
+}
 
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	
-	int32 NumberOfPlayers=GameState.Get()->PlayerArray.Num();
-	if (NumberOfPlayers==2)
+
+	int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
+	if (NumberOfPlayers == 2)
 	{
-		UWorld* World=GetWorld();
+		UWorld* World = GetWorld();
 		if (World)
 		{
-			bUseSeamlessTravel=true;
+			bUseSeamlessTravel = true;
 			World->ServerTravel(FString("/Game/Maps/CDGameMap?listen"));
 		}
 	}
