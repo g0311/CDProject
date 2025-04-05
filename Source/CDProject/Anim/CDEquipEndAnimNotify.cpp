@@ -15,7 +15,7 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	{
 		combat->SetFireAvail();
 		combat->SetAimAvail();
-		combat->GetCurWeapon()->Reload();
+		//combat->GetCurWeapon()->Reload();
 	}
 	
 	Super::Notify(MeshComp, Animation);

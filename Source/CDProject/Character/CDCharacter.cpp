@@ -113,16 +113,6 @@ void ACDCharacter::Tick(float DeltaTime)
 
 	float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _targetFOV, DeltaTime, InterpSpeed);
 	_camera->SetFieldOfView(NewFOV);
-
-	//Update Spread
-	if (_combat)
-	{
-		float newSpread = CalculateSpread();
-		//UE_LOG(LogTemp, Log, TEXT("spread: %f"), newSpread);
-		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
-		//UE_LOG(LogTemp, Display, TEXT("%f"), _curSpread);
-		_combat->SetHUDCrosshairs(_curSpread);
-	}
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -253,7 +243,7 @@ void ACDCharacter::Fire()
 		}
 		else
 		{
-			_combat->Fire(_curSpread);
+			_combat->Fire();
 		}
 	}
 }
@@ -262,7 +252,6 @@ void ACDCharacter::Aim()
 {
 	if (!_combat)
 		return;
-	
 	if(_combat->IsAimng())
 	{
 		_combat->UnAim();
@@ -324,35 +313,6 @@ void ACDCharacter::DropWeapon()
 		return;
 	UnAim();
 	_combat->DropWeapon();
-}
-
-float ACDCharacter::CalculateSpread()
-{
-	float spread = 1.0f;
-	
-	float Speed = GetVelocity().Size();
-	spread += (Speed / 470.f) * 1.8f; //MaxSpeed
-	
-	if (GetMovementComponent()->IsFalling())
-	{
-		spread += 3.f;
-	}
-	if (bIsCrouched)
-	{
-		spread -= 0.3f;  // 앉으면 감소
-	}
-	if (_combat->IsAimng())
-	{
-		spread -= 0.3f;
-	}
-	
-	if (_combat) 
-	{
-		float continuouedFireFactor = FMath::Clamp(_combat->GetContinuedFireCount() * 3 / 5.0f /* x Weapon Spread */, 0.f, 3.f); 
-		spread += continuouedFireFactor;
-	}
-	
-	return FMath::Clamp(spread, 0.4f, 5.f);
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
