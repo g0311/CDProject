@@ -39,6 +39,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
 	DOREPLIFETIME(UCombatComponent, _isAiming);
+	DOREPLIFETIME(UCombatComponent, _weapons);
+	DOREPLIFETIME(UCombatComponent, _weaponIndex);
 }
 
 void UCombatComponent::Reset()
@@ -259,7 +261,7 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 
 void UCombatComponent::DropWeapon()
 { //avail visibility and update curWeaponIndex
-	if (_weapons[_weaponIndex] != _meleeWeapon)
+	if (_weaponIndex != 2)
 	{
 		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
 		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(false);
@@ -353,7 +355,7 @@ void UCombatComponent::CreateDefaultWeapons()
 				 FAttachmentTransformRules::SnapToTargetIncludingScale,
 				 TEXT("WeaponSocket")
 			 );
-			_weapons[1]->GetWeaponMesh3p()->SetVisibility(false);
+			_weapons[1]->GetWeaponMesh3p()->SetVisibility(true);
 		}
 	}
 	//Debug
@@ -369,7 +371,7 @@ void UCombatComponent::CreateDefaultWeapons()
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[0]->GetWeaponMesh()->SetVisibility(true);
+			_weapons[0]->GetWeaponMesh()->SetVisibility(false);
 			
 			_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
 				owner->GetMesh(),

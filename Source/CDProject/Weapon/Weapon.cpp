@@ -8,6 +8,8 @@
 #include "CDProject/Controller/CDPlayerController.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -206,6 +208,7 @@ void AWeapon::Reload()
 {
 	OwnerCharacter=Cast<ACDCharacter>(GetOwner());
 	if (OwnerCharacter==nullptr) return;
+
 	// int CarridAmmo=OwnerCharacter->GetCarriedAmmo();
 	// int32 ReloadAmount=(AmmoCapacity-Ammo, CarriedAmmo);// 30 /240  5 /240 -25 215 
 	// Ammo+=ReloadAmount;
