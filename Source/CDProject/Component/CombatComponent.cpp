@@ -355,7 +355,7 @@ void UCombatComponent::CreateDefaultWeapons()
 				 FAttachmentTransformRules::SnapToTargetIncludingScale,
 				 TEXT("WeaponSocket")
 			 );
-			_weapons[1]->GetWeaponMesh3p()->SetVisibility(false);
+			_weapons[1]->GetWeaponMesh3p()->SetVisibility(true);
 		}
 	}
 	//Debug
@@ -371,7 +371,7 @@ void UCombatComponent::CreateDefaultWeapons()
 			FAttachmentTransformRules::SnapToTargetIncludingScale,
 			TEXT("WeaponSocket")
 			);
-			_weapons[0]->GetWeaponMesh()->SetVisibility(true);
+			_weapons[0]->GetWeaponMesh()->SetVisibility(false);
 			
 			_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
 				owner->GetMesh(),
