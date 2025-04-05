@@ -10,13 +10,14 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/Interface/IsEnemyInterface.h"
+#include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 	
-	//0: main / 1: sub / 2: melee / 3,4,5: projectile
+	//0: main / 1: sub / 2: melee / 3,4,5: ?
 	_weapons.SetNumZeroed(6);
 }
 
@@ -24,14 +25,23 @@ void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	_playerCharacter = Cast<ACDCharacter>(GetOwner());
-	CreateDefaultWeapons();
-	ChangeWeapon(1);
+	if (_playerCharacter->HasAuthority())
+	{
+		CreateDefaultWeapons();
+		ChangeWeapon(1);
+	}
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
 	_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 3.f);
+	
+	//Update Spread
+	float newSpread = CaculateSpread();
+	_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
+	SetHUDCrosshairs(_curSpread);
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -56,92 +66,89 @@ void UCombatComponent::Reset()
 	}
 }
 
-void UCombatComponent::Fire(float curSpread)
+void UCombatComponent::ServerFire_Implementation()
 {
-	if (!_playerCharacter)
-		return;
-
 	//Fire Delay
-	_isCanFire = false;
+	NetMulticastSetIsCanFire(false);
 	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
-		_isCanFire = true;
+		NetMulticastSetIsCanFire(true);
 	}), _fireDelay, false);
 	_continuedFireCount++;
-	//Anim
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-
-	if (bodyAnim)
-		bodyAnim->PlayFireMontage(_fireDelay);
-	if (armAnim)
-		armAnim->PlayFireMontage(_fireDelay);
-
+	
 	//Trace
-	AController* controller = Cast<ACharacter>(GetOwner())->Controller;
-	if (controller)
-	{
-		APlayerController* playerController = Cast<APlayerController>(controller);
-		if (!playerController) return;
+	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
+	if (!playerController) return;
 
-		FVector CameraLocation;
-		FRotator CameraRotation;
-		playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+	FVector CameraLocation;
+	FRotator CameraRotation;
+	playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
-		int32 ViewportSizeX, ViewportSizeY;
-		playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
+	int32 ViewportSizeX, ViewportSizeY;
+	playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
     
-		float CrosshairSpread = curSpread * 16.f;
+	float CrosshairSpread = _curSpread * 16.f;
 
-		FVector2D CrosshairScreenPosition(
-			(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
-			(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
-		);
+	FVector2D CrosshairScreenPosition(
+		(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
+		(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
+	);
 
-		FVector CrosshairWorldPosition, CrosshairWorldDirection;
-		if (playerController->DeprojectScreenPositionToWorld(
-				CrosshairScreenPosition.X,
-				CrosshairScreenPosition.Y,
-				CrosshairWorldPosition,
-				CrosshairWorldDirection))
+	FVector CrosshairWorldPosition, CrosshairWorldDirection;
+	if (playerController->DeprojectScreenPositionToWorld(
+			CrosshairScreenPosition.X,
+			CrosshairScreenPosition.Y,
+			CrosshairWorldPosition,
+			CrosshairWorldDirection))
+	{
+		FVector traceStart = CameraLocation;
+		FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
+
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(GetOwner());
+
+		FHitResult hit;
+		if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
 		{
-			FVector traceStart = CameraLocation;
-			FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
+			if (hit.GetActor() && hit.GetActor()->Implements<UIsEnemyInterface>())
+				DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
+			else
+				DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
 
-			FCollisionQueryParams QueryParams;
-			QueryParams.AddIgnoredActor(GetOwner());
-
-			FHitResult hit;
-			if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
-			{
-				if (hit.GetActor() && hit.GetActor()->Implements<UIsEnemyInterface>())
-					DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
-				else
-					DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
-
-				_weapons[_weaponIndex]->Fire(hit.Location);
-			}
-			if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
-			{
-				//playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
-			}
+			NetMulticastFire(hit.Location);
 		}
 	}
 }
 
-void UCombatComponent::Reload()
+void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 {
-	//isammo full => return
+	if (!_playerCharacter)
+		return;
+	
+	_weapons[_weaponIndex]->Fire(target);
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-
-	_isCanFire = false;
-	_isCanAim = false;
 	if (bodyAnim)
-		bodyAnim->PlayReloadMontage();
+		bodyAnim->PlayFireMontage(_fireDelay);
 	if (armAnim)
-		armAnim->PlayReloadMontage();
+		armAnim->PlayFireMontage(_fireDelay);
+	
+	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
+	if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
+	{
+		// playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
+	}
+}
+
+void UCombatComponent::Fire()
+{
+	ServerFire();
+}
+
+void UCombatComponent::Reload()
+{
+	ServerReload();
 }
 
 void UCombatComponent::Aim()
@@ -164,6 +171,8 @@ bool UCombatComponent::ChangeWeapon(int idx)
 { //avail visibility and update curWeaponIndex
 	if (idx == _weaponIndex)
 		return false;
+
+	//ServerChangeWeapon(idx);
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
@@ -180,7 +189,7 @@ bool UCombatComponent::ChangeWeapon(int idx)
 		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(true);
 	
 		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-		_fireDelay=0.1f;
+		//_fireDelay=0.1f;
 		UE_LOG(LogTemp, Warning, TEXT("%f"), _fireDelay);
 		if (bodyAnim)
 		{
@@ -205,34 +214,15 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 	case EWeaponType::EWT_Rifle:
 	case EWeaponType::EWT_Sniper:
 	case EWeaponType::EWT_Shotgun:
-		if (!_weapons[0])
-		{
-			_weapons[0] = weapon;
-			if (_weapons[0])
-			{
-				_weapons[0]->SetOwner(GetOwner());
-					_weapons[0]->AttachToComponent(
-					_playerCharacter->GetArmMesh(),
-					FAttachmentTransformRules::SnapToTargetIncludingScale,
-					TEXT("WeaponSocket")
-				);
-				_weapons[0]->GetWeaponMesh()->SetVisibility(false);
-			
-				_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
-					_playerCharacter->GetMesh(),
-					FAttachmentTransformRules::SnapToTargetIncludingScale,
-					TEXT("WeaponSocket")
-				);
-				_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
-			}
-			_weapons[0]->SetWeaponState(EWeaponState::EWS_Equipped);
-			ChangeWeapon(0);
-		}
-		else if (isForceGet)
+		if (isForceGet)
 		{
 			ChangeWeapon(0);
 			DropWeapon();
+		}
+		if (!_weapons[0])
+		{
 			_weapons[0] = weapon;
+			//_weapons[0]->SetOwner(_playerCharacter);
 			if (_weapons[0])
 			{
 				_weapons[0]->SetOwner(GetOwner());
@@ -388,39 +378,71 @@ void UCombatComponent::AttatchMeshToChar(class AWeapon* weapon)
 	
 }
 
-
-/*
-void 
-UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
+float UCombatComponent::CaculateSpread()
 {
-	FVector2D ViewportSize;
-	if (GEngine&&GEngine->GameViewport)
+	if (!_playerCharacter)
+		return 0;
+	
+	float spread = 1.0f;
+	
+	float Speed = _playerCharacter->GetVelocity().Size();
+	spread += (Speed / 470.f) * 1.8f; //MaxSpeed
+	
+	if (_playerCharacter->GetMovementComponent()->IsFalling())
 	{
-		GEngine->GameViewport->GetViewportSize(ViewportSize);
+		spread += 3.f;
 	}
-	FVector2D CrossHairLocation(ViewportSize.X/2.f,ViewportSize.Y/2.f);
-	FVector CrosshairWorldPosition;
-	FVector CrosshairWorldDirection;
-	bool bScreenToWorld=UGameplayStatics::DeprojectScreenToWorld(
-		UGameplayStatics::GetPlayerController(this,0),
-		CrossHairLocation,
-		CrosshairWorldPosition,
-		CrosshairWorldDirection
-	);//DeprojectScreenToWorld = ScreenPosition -> WorldPosition, WorldDirection 변환 역할
-	if (bScreenToWorld)
+	if (_playerCharacter->bIsCrouched)
 	{
-		FVector Start=CrosshairWorldPosition;
-		DrawDebugSphere(GetWorld(), Start, 0.5f, 20, FColor::Yellow, false);
-		if (Character)
-		{
-			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
-			Start+=CrosshairWorldDirection*(DistanceToCharacter+100.f);
-		}
-		FVector End=Start+CrosshairWorldDirection*TRACE_LENGTH;
-		GetWorld()->LineTraceSingleByChannel(
-			TraceHitResult,
-			Start,
-			End,
-			ECollisionChannel::ECC_Visibility
-			);
- */
+		spread -= 0.3f;  // 앉으면 감소
+	}
+	if (_isAiming)
+	{
+		spread -= 0.3f;
+	}
+	float continuouedFireFactor = FMath::Clamp(_continuedFireCount * 3 / 5.0f /* x Weapon Spread */, 0.f, 3.f); 
+	spread += continuouedFireFactor;
+	
+	return FMath::Clamp(spread, 0.4f, 5.f);
+}
+
+void UCombatComponent::ServerReload_Implementation()
+{
+	if (!_playerCharacter)
+		return;
+	//isammo full => return
+	//if (_weapons[_weaponIndex]->ammo)
+	
+	NetMulticastSetIsCanFire(false);
+	NetMulticastReload();
+}
+
+void UCombatComponent::NetMulticastReload_Implementation()
+{
+	if (!_playerCharacter)
+		return;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	_isCanAim = false;
+	if (bodyAnim)
+		bodyAnim->PlayReloadMontage();
+	if (armAnim)
+		armAnim->PlayReloadMontage();
+}
+
+
+void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
+{
+	
+}
+
+void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
+{
+
+}
+
+void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
+{
+	_isCanFire = tf;
+}
