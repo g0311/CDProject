@@ -28,15 +28,15 @@ public:
 	void DropWeapon();
 	void SetHUDCrosshairs(float spread);
 	
-	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
-	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
+	FORCEINLINE void SetAimAvail() { ServerSetAimAvail(); }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
-	FORCEINLINE void SetFireAvail() { _isCanAim = true; }
+	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
 
+	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
 	uint8 GetCurWeaponType();
@@ -67,7 +67,10 @@ private:
 	
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
+	
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanFire = true;
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanAim = true;
 	
 	void CreateDefaultWeapons();
@@ -90,6 +93,8 @@ private:
 	void ServerChangeWeapon(int idx);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastChangeWeapon(int idx);
+	UFUNCTION(Server, Reliable)
+	void ServerDropWeapon();
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetWeaponVisible(bool tf);
@@ -97,4 +102,8 @@ private:
 	void NetMulticastSetIsCanFire(bool tf);
 	UFUNCTION()
 	void OnRep_WeaponID();
+	UFUNCTION(Server, Reliable)
+	void ServerSetFireAvail();
+	UFUNCTION(Server, Reliable)
+	void ServerSetAimAvail();
 };

@@ -254,26 +254,11 @@ void ACDCharacter::Fire()
 
 void ACDCharacter::Aim()
 {
-	if (!_combat)
-		return;
-	if(_combat->IsAimng())
-	{
-		_combat->UnAim();
-		ServerUnAim();
-	}
-	else if (_combat->IsAimAvail())
-	{
-		_combat->Aim();
-		ServerAim();
-	}
+	ServerAim();
 }
 
 void ACDCharacter::UnAim()
 {
-	if (!_combat)
-		return;
-	
-	_combat->UnAim();
 	ServerUnAim();
 }
 
@@ -324,12 +309,26 @@ void ACDCharacter::SetControlCameraRotation_Implementation(FRotator control, FRo
 
 void ACDCharacter::ServerAim_Implementation()
 {
-	_targetArmTransform = _aimArmTransform;
-	_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+	if (!_combat)
+		return;
+	if(_combat->IsAimng())
+	{
+		ServerUnAim();
+	}
+	else if (_combat->IsAimAvail())
+	{
+		_combat->Aim();
+		_targetArmTransform = _aimArmTransform;
+		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+	}
 }
 
 void ACDCharacter::ServerUnAim_Implementation()
 {
+	if (!_combat)
+    	return;
+	_combat->UnAim();
+
 	_targetArmTransform = _defaultArmTransform;
 	_targetFOV = _defaultFOV;
 }

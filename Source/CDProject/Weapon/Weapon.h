@@ -51,7 +51,7 @@ public:
 	void AddAmmo(int32 AmmoToAdd);
 	void Reload();
 	
-	void Dropped();
+	void Dropped(FVector& impactDir);
 	void Picked();
 
 	void AttachToPlayer();

@@ -115,7 +115,7 @@ private:
 	void ServerUnAim();
 	
 public:
-	FORCEINLINE FRotator GetRepControlRotation() { return _controlRotation; }
+	FORCEINLINE FRotator GetControlRotation() { return _controlRotation; }
 
 	
 private:
