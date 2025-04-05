@@ -3,6 +3,7 @@
 
 #include "Projectile.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
@@ -19,6 +20,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
+
 
 	//CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 

@@ -148,6 +148,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 {
 	float curHealth = _attributeSet->GetHealth();
 	curHealth -= DamageAmount;
+
 	//_attributeSet->SetHealth(curHealth);
 	
 	return DamageAmount;

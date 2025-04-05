@@ -33,10 +33,11 @@ void AProjectileWeapon::Tick(float DeltaTime)
 void AProjectileWeapon::Fire(const FVector& HitTarget)
 {
 	Super::Fire(HitTarget);
+	if (!HasAuthority()) return;
 	APawn* InstigatorPawn=Cast<APawn>(GetOwner());
 	const USkeletalMeshSocket* MuzzleFlashSocket=GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
 	//(LogTemp,Display,TEXT("Fire"));
-	if (MuzzleFlashSocket && HasAuthority())
+	if (MuzzleFlashSocket)
 	{
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector ToTarget = HitTarget - SocketTransform.GetLocation();
