@@ -25,15 +25,17 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	
 	WeaponMesh3p = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh3p"));
-	WeaponMesh3p->SetupAttachment(RootComponent); 
+	//WeaponMesh3p->SetupAttachment(RootComponent); 
 	
 	WeaponMesh3p->SetOnlyOwnerSee(false);
 	WeaponMesh3p->SetOwnerNoSee(true);
 	WeaponMesh3p->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh3p->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh3p->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh3p->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	
 	AreaSphere=CreateDefaultSubobject<USphereComponent>("AreaSphere");
 	AreaSphere->SetupAttachment(RootComponent);
