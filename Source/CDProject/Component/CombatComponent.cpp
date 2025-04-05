@@ -35,12 +35,14 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 3.f);
 	
 	//Update Spread
-	float newSpread = CaculateSpread();
-	_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
+	if (_playerCharacter->HasAuthority())
+	{
+		float newSpread = CaculateSpread();
+		_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 3.f);
+		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
+	}
 	SetHUDCrosshairs(_curSpread);
 }
 
@@ -51,6 +53,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isAiming);
 	DOREPLIFETIME(UCombatComponent, _weapons);
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
+	DOREPLIFETIME(UCombatComponent, _curSpread);
 }
 
 void UCombatComponent::Reset()
@@ -64,6 +67,201 @@ void UCombatComponent::Reset()
 		if (ChangeWeapon(i))
 			break;
 	}
+}
+
+void UCombatComponent::Fire()
+{
+	if (_weaponIndex != -1 && _weapons[_weaponIndex])
+		ServerFire();
+}
+
+void UCombatComponent::Reload()
+{
+	ServerReload();
+}
+
+void UCombatComponent::Aim()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
+	{
+		_isAiming = true;
+	}
+}
+
+void UCombatComponent::UnAim()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
+	{
+		_isAiming = false;
+	}
+}
+
+bool UCombatComponent::ChangeWeapon(int idx)
+{ //avail visibility and update curWeaponIndex
+	if (idx == _weaponIndex)
+		return false;
+	
+	if (_weapons[idx])
+	{
+		ServerChangeWeapon(idx);
+		return true;
+	}
+	return false;
+}
+
+void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
+{ // compare weapon type and save or dicard
+	switch (weapon->GetWeaponType())
+	{
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Shotgun:
+		if (isForceGet)
+		{
+			ChangeWeapon(0);
+			DropWeapon();
+		}
+		if (!_weapons[0])
+		{
+			_weapons[0] = weapon;
+			_weapons[0]->SetOwner(_playerCharacter);
+			_weapons[0]->AttachToPlayer();
+			ChangeWeapon(0);
+		}
+		break;
+	case EWeaponType::EWT_Pistol:
+		break;
+	}
+}
+
+void UCombatComponent::DropWeapon()
+{ //avail visibility and update curWeaponIndex
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	if (_weaponIndex != 2)
+	{
+		ServerDropWeapon();
+	}
+}
+
+void UCombatComponent::SetHUDCrosshairs(float spread)
+{
+	ACharacter* character = Cast<ACharacter>(GetOwner());
+	if (!character || !character->Controller || _weaponIndex == -1) return;
+
+	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
+	if (controller)
+	{
+		HUD = HUD == nullptr ? Cast<ACDHUD>(controller->GetHUD()) : HUD;
+		if (HUD)
+		{
+			if (_weapons[_weaponIndex])
+			{
+				HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
+				HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
+				HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
+				HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
+				HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
+			}
+			else
+			{
+				HUDPackage.CrosshairCenter = nullptr;
+				HUDPackage.CrosshairLeft = nullptr;
+				HUDPackage.CrosshairRight = nullptr;
+				HUDPackage.CrosshairBottom = nullptr;
+				HUDPackage.CrosshairTop = nullptr;
+			}
+			HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+			HUDPackage.CrosshairSpread=spread;
+			HUD->SetHUDPackage(HUDPackage);
+		}
+	}
+}
+
+AWeapon* UCombatComponent::GetCurWeapon()
+{
+	if (_weaponIndex != -1 && _weapons[_weaponIndex])
+		return _weapons[_weaponIndex];
+	return nullptr;
+}
+
+bool UCombatComponent::IsAmmoEmpty()
+{
+	return _weapons[_weaponIndex]->AmmoIsEmpty();
+}
+
+bool UCombatComponent::IsTotalAmmoEmpty()
+{
+	return false;
+}
+
+uint8 UCombatComponent::GetCurWeaponType()
+{
+	if (_weaponIndex != -1 && _weapons[_weaponIndex])
+		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
+	return -1;
+}
+
+void UCombatComponent::CreateDefaultWeapons()
+{
+	if (_defaultSubWeapon)
+	{
+		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
+		_weapons[1]->SetOwner(_playerCharacter);
+		_weapons[1]->AttachToPlayer();
+	}
+	//Debug
+	if (_defaultMeleeWeapon)
+	{
+		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
+		_weapons[0]->SetOwner(_playerCharacter);
+		_weapons[0]->AttachToPlayer();
+		//dedi 상황에서 해주어야 하는가..
+	}
+}
+
+float UCombatComponent::CaculateSpread()
+{
+	if (!_playerCharacter)
+		return 0;
+	
+	float spread = 1.0f;
+	
+	float Speed = _playerCharacter->GetVelocity().Size();
+	spread += (Speed / 470.f) * 1.8f; //MaxSpeed
+	
+	if (_playerCharacter->GetMovementComponent()->IsFalling())
+	{
+		spread += 3.f;
+	}
+	if (_playerCharacter->bIsCrouched)
+	{
+		spread -= 0.3f;  // 앉으면 감소
+	}
+	if (_isAiming)
+	{
+		spread -= 0.3f;
+	}
+	float continuouedFireFactor = FMath::Clamp(_continuedFireCount * 3 / 5.0f /* x Weapon Spread */, 0.f, 3.f); 
+	spread += continuouedFireFactor;
+	
+	return FMath::Clamp(spread, 0.4f, 5.f);
+}
+
+void UCombatComponent::SetWeaponVisible(bool tf)
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(tf);
+	_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(tf);
 }
 
 void UCombatComponent::ServerFire_Implementation()
@@ -106,6 +304,7 @@ void UCombatComponent::ServerFire_Implementation()
 
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(GetOwner());
+		QueryParams.AddIgnoredActor(_weapons[_weaponIndex]);
 
 		FHitResult hit;
 		if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
@@ -114,7 +313,17 @@ void UCombatComponent::ServerFire_Implementation()
 				DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
 			else
 				DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
-
+			// DrawDebugSphere(GetWorld(), hit.Location, 10.f, 
+			// 			12,   
+			// 			FColor::Green,
+			// 			false, 
+			// 			5.0f,  
+			// 			0,
+			// 			2.0f);
+			// if (hit.GetActor())
+			// 	UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *hit.GetActor()->GetName());
+			// if (hit.GetActor())
+			// 	UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *hit.GetComponent()->GetName());
 			NetMulticastFire(hit.Location);
 		}
 	}
@@ -123,6 +332,9 @@ void UCombatComponent::ServerFire_Implementation()
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 {
 	if (!_playerCharacter)
+		return;
+
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
 	_weapons[_weaponIndex]->Fire(target);
@@ -139,271 +351,6 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 	{
 		// playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
 	}
-}
-
-void UCombatComponent::Fire()
-{
-	ServerFire();
-}
-
-void UCombatComponent::Reload()
-{
-	ServerReload();
-}
-
-void UCombatComponent::Aim()
-{
-	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
-	{
-		_isAiming = true;
-	}
-}
-
-void UCombatComponent::UnAim()
-{
-	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
-	{
-		_isAiming = false;
-	}
-}
-
-bool UCombatComponent::ChangeWeapon(int idx)
-{ //avail visibility and update curWeaponIndex
-	if (idx == _weaponIndex)
-		return false;
-
-	//ServerChangeWeapon(idx);
-	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	if (_weapons[idx])
-	{
-		if (_weaponIndex != -1 && _weapons[_weaponIndex])
-		{
-			_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(false);
-			_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(false);
-			_isAiming = false;
-		}
-		_weaponIndex = idx;
-		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
-		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(true);
-	
-		_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-		//_fireDelay=0.1f;
-		UE_LOG(LogTemp, Warning, TEXT("%f"), _fireDelay);
-		if (bodyAnim)
-		{
-			bodyAnim->PlayEquipMontage();
-		}
-		if (armAnim)
-		{
-			armAnim->PlayEquipMontage();
-		}
-
-		_isCanFire = true;
-		_isCanAim = true;
-		return true;
-	}
-	return false;
-}
-
-void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
-{ // compare weapon type and save or dicard
-	switch (weapon->GetWeaponType())
-	{
-	case EWeaponType::EWT_Rifle:
-	case EWeaponType::EWT_Sniper:
-	case EWeaponType::EWT_Shotgun:
-		if (isForceGet)
-		{
-			ChangeWeapon(0);
-			DropWeapon();
-		}
-		if (!_weapons[0])
-		{
-			_weapons[0] = weapon;
-			//_weapons[0]->SetOwner(_playerCharacter);
-			if (_weapons[0])
-			{
-				_weapons[0]->SetOwner(GetOwner());
-					_weapons[0]->AttachToComponent(
-					_playerCharacter->GetArmMesh(),
-					FAttachmentTransformRules::SnapToTargetIncludingScale,
-					TEXT("WeaponSocket")
-				);
-				_weapons[0]->GetWeaponMesh()->SetVisibility(false);
-			
-				_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
-					_playerCharacter->GetMesh(),
-					FAttachmentTransformRules::SnapToTargetIncludingScale,
-					TEXT("WeaponSocket")
-				);
-				_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
-			}
-			_weapons[0]->SetWeaponState(EWeaponState::EWS_Equipped);
-			ChangeWeapon(0);
-		}
-		break;
-	case EWeaponType::EWT_Pistol:
-		break;
-	}
-}
-
-void UCombatComponent::DropWeapon()
-{ //avail visibility and update curWeaponIndex
-	if (_weaponIndex != 2)
-	{
-		_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(true);
-		_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(false);
-		_weapons[_weaponIndex]->Dropped();
-		_weapons[_weaponIndex] = nullptr;
-
-		for (int i = 0; i < _weapons.Num(); i++)
-		{
-			if (_weapons[(_weaponIndex + i) % _weapons.Num()])
-			{
-				ChangeWeapon((_weaponIndex + i) % _weapons.Num());
-				return;
-			}
-		}
-	}
-}
-
-void UCombatComponent::SetHUDCrosshairs(float spread)
-{
-	ACharacter* character = Cast<ACharacter>(GetOwner());
-	if (!character || !character->Controller) return;
-
-	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
-	if (controller)
-	{
-		HUD = HUD == nullptr ? Cast<ACDHUD>(controller->GetHUD()) : HUD;
-		if (HUD)
-		{
-			if (_weapons[_weaponIndex])
-			{
-				HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
-				HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
-				HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
-				HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
-				HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
-			}
-			else
-			{
-				HUDPackage.CrosshairCenter = nullptr;
-				HUDPackage.CrosshairLeft = nullptr;
-				HUDPackage.CrosshairRight = nullptr;
-				HUDPackage.CrosshairBottom = nullptr;
-				HUDPackage.CrosshairTop = nullptr;
-			}
-			HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
-			HUDPackage.CrosshairSpread=spread;
-			HUD->SetHUDPackage(HUDPackage);
-		}
-	}
-}
-
-bool UCombatComponent::IsAmmoEmpty()
-{
-	return _weapons[_weaponIndex]->AmmoIsEmpty();
-}
-
-bool UCombatComponent::IsTotalAmmoEmpty()
-{
-	return false;
-}
-
-uint8 UCombatComponent::GetCurWeaponType()
-{
-	if (_weaponIndex != -1 && _weapons[_weaponIndex])
-		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
-	return -1;
-}
-
-void UCombatComponent::CreateDefaultWeapons()
-{
-	ACDCharacter* owner = Cast<ACDCharacter>(GetOwner());
-	if (!owner)
-		return;
-	
-	if (_defaultSubWeapon)
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = GetOwner();
-		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-		if (_weapons[1])
-		{
-			_weapons[1]->AttachToComponent(
-			owner->GetArmMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			TEXT("WeaponSocket")
-			);
-			_weapons[1]->GetWeaponMesh()->SetVisibility(true);
-			
-			 _weapons[1]->GetWeaponMesh3p()->AttachToComponent(
-				 owner->GetMesh(),
-				 FAttachmentTransformRules::SnapToTargetIncludingScale,
-				 TEXT("WeaponSocket")
-			 );
-			_weapons[1]->GetWeaponMesh3p()->SetVisibility(true);
-		}
-	}
-	//Debug
-	if (_defaultMeleeWeapon)
-	{
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = GetOwner();
-		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
-		if (_weapons[0])
-		{
-			_weapons[0]->AttachToComponent(
-			owner->GetArmMesh(),
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
-			TEXT("WeaponSocket")
-			);
-			_weapons[0]->GetWeaponMesh()->SetVisibility(false);
-			
-			_weapons[0]->GetWeaponMesh3p()->AttachToComponent(
-				owner->GetMesh(),
-				FAttachmentTransformRules::SnapToTargetIncludingScale,
-				TEXT("WeaponSocket")
-			);
-			_weapons[0]->GetWeaponMesh3p()->SetVisibility(false);
-		}
-	}
-}
-
-void UCombatComponent::AttatchMeshToChar(class AWeapon* weapon)
-{
-	
-}
-
-float UCombatComponent::CaculateSpread()
-{
-	if (!_playerCharacter)
-		return 0;
-	
-	float spread = 1.0f;
-	
-	float Speed = _playerCharacter->GetVelocity().Size();
-	spread += (Speed / 470.f) * 1.8f; //MaxSpeed
-	
-	if (_playerCharacter->GetMovementComponent()->IsFalling())
-	{
-		spread += 3.f;
-	}
-	if (_playerCharacter->bIsCrouched)
-	{
-		spread -= 0.3f;  // 앉으면 감소
-	}
-	if (_isAiming)
-	{
-		spread -= 0.3f;
-	}
-	float continuouedFireFactor = FMath::Clamp(_continuedFireCount * 3 / 5.0f /* x Weapon Spread */, 0.f, 3.f); 
-	spread += continuouedFireFactor;
-	
-	return FMath::Clamp(spread, 0.4f, 5.f);
 }
 
 void UCombatComponent::ServerReload_Implementation()
@@ -431,18 +378,80 @@ void UCombatComponent::NetMulticastReload_Implementation()
 		armAnim->PlayReloadMontage();
 }
 
-
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 {
-	
+	if (_weaponIndex != -1 && _weapons[_weaponIndex])
+	{
+		NetMulticastSetWeaponVisible(false);
+	}
+	_weaponIndex = idx;
+	SetWeaponVisible(true);
+	//리슨서버 테스트용
+	NetMulticastChangeWeapon(idx);
 }
 
 void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
+	if (!_playerCharacter)
+		return;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 
+	if (bodyAnim)
+		bodyAnim->PlayEquipMontage();
+	if (armAnim)
+		armAnim->PlayEquipMontage();
+	
+	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
+	_fireDelay = 0.1f;
+	
+	_isCanFire = true;
+	_isCanAim = true;
+}
+
+void UCombatComponent::NetMulticastSetWeaponVisible_Implementation(bool tf)
+{
+	SetWeaponVisible(tf);
 }
 
 void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
 {
 	_isCanFire = tf;
+}
+
+void UCombatComponent::ServerDropWeapon_Implementation()
+{
+	if (!_playerCharacter)
+		return;
+	
+	FRotator controlRot = _playerCharacter->GetControlRotation();
+	FVector lookDirection = controlRot.Vector();
+	
+	_weapons[_weaponIndex]->Dropped(lookDirection);
+	_weapons[_weaponIndex] = nullptr;
+
+	for (int i = 0; i < _weapons.Num(); i++)
+	{
+		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+		{
+			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+			return;
+		}
+	}
+}
+
+void UCombatComponent::OnRep_WeaponID()
+{
+	SetWeaponVisible(true);
+}
+
+void UCombatComponent::ServerSetFireAvail_Implementation()
+{
+	_isCanFire = true;
+}
+
+void UCombatComponent::ServerSetAimAvail_Implementation()
+{
+	_isCanAim = true;
 }

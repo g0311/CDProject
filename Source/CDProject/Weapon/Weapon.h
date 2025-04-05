@@ -51,8 +51,10 @@ public:
 	void AddAmmo(int32 AmmoToAdd);
 	void Reload();
 	
-	void Dropped();
+	void Dropped(FVector& impactDir);
 	void Picked();
+
+	void AttachToPlayer();
 
 	//WeaponState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -119,8 +121,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
 	EWeaponType WeaponType;
 
-
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	class ACDCharacter* OwnerCharacter;
 
 	UPROPERTY()

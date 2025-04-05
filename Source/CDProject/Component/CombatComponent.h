@@ -28,15 +28,15 @@ public:
 	void DropWeapon();
 	void SetHUDCrosshairs(float spread);
 	
-	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
-	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
+	FORCEINLINE void SetAimAvail() { ServerSetAimAvail(); }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
-	FORCEINLINE void SetFireAvail() { _isCanAim = true; }
+	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
 
+	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
 	uint8 GetCurWeaponType();
@@ -57,29 +57,27 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class ACDHUD* HUD;
 	
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
 	int _weaponIndex = -1;
-	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
-	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
-
-	UPROPERTY(Replicated)
 	float _continuedFireCount;
 	
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
+	
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanFire = true;
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanAim = true;
 	
 	void CreateDefaultWeapons();
-	void AttatchMeshToChar(class AWeapon* weapon);
 	float CaculateSpread();
-	
+	void SetWeaponVisible(bool tf);
 private:
-	UPROPERTY(VisibleAnywhere, Category = "Network")
+	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 	
 	//network
@@ -95,7 +93,17 @@ private:
 	void ServerChangeWeapon(int idx);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastChangeWeapon(int idx);
-
+	UFUNCTION(Server, Reliable)
+	void ServerDropWeapon();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastSetWeaponVisible(bool tf);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetIsCanFire(bool tf);
+	UFUNCTION()
+	void OnRep_WeaponID();
+	UFUNCTION(Server, Reliable)
+	void ServerSetFireAvail();
+	UFUNCTION(Server, Reliable)
+	void ServerSetAimAvail();
 };
