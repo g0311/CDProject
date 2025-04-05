@@ -19,7 +19,7 @@ public:
 
 	void Reset();
 	
-	void Fire(float curSpread);
+	void Fire();
 	void Reload();
 	void Aim();
 	void UnAim();
@@ -27,15 +27,13 @@ public:
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
 	void SetHUDCrosshairs(float spread);
-
-
 	
 	FORCEINLINE	AWeapon* GetCurWeapon() { return _weapons[_weaponIndex]; }
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
-	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
+	FORCEINLINE void SetFireAvail() { _isCanAim = true; }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
 
@@ -68,6 +66,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
 
+	UPROPERTY(Replicated)
 	float _continuedFireCount;
 	
 	FTimerHandle _fireTimerHandle;
@@ -77,4 +76,26 @@ private:
 	
 	void CreateDefaultWeapons();
 	void AttatchMeshToChar(class AWeapon* weapon);
+	float CaculateSpread();
+	
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Network")
+	float _curSpread = 0.f;
+	
+	//network
+	UFUNCTION(Server, Reliable)
+	void ServerFire();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastFire(FVector target);
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastReload();
+	UFUNCTION(Server, Reliable)
+	void ServerChangeWeapon(int idx);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastChangeWeapon(int idx);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastSetIsCanFire(bool tf);
 };
