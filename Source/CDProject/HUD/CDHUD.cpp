@@ -85,6 +85,7 @@ void ACDHUD::AddAnnouncement()
 void ACDHUD::BeginPlay()
 {
 	Super::BeginPlay();
+	AddCharacterOverlay();
 }
 
 void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor)

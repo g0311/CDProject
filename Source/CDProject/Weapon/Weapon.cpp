@@ -28,6 +28,7 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	WeaponMesh->SetVisibility(false);
 	
 	WeaponMesh3p = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh3p"));
 	//WeaponMesh3p->SetupAttachment(RootComponent); 
@@ -38,14 +39,12 @@ AWeapon::AWeapon()
 	WeaponMesh3p->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh3p->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh3p->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	WeaponMesh3p->SetVisibility(false);
 	
 	AreaSphere=CreateDefaultSubobject<USphereComponent>("AreaSphere");
 	AreaSphere->SetupAttachment(RootComponent);
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	PickupWidget=CreateDefaultSubobject<UWidgetComponent>("PickupWidget");
-	PickupWidget->SetupAttachment(RootComponent);
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -68,10 +67,6 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	DrawDebugSphere(GetWorld(), GetActorLocation(), 15, 10, FColor::Red, false);
-	if (PickupWidget)
-	{
-		PickupWidget->SetVisibility(false);
-	}
 	if (AreaSphere && HasAuthority())
 	{
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereBeginOverlap);
@@ -82,15 +77,14 @@ void AWeapon::BeginPlay()
 void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!HasAuthority())
+		return;
+		
 	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
 	if (WeaponState ==  EWeaponState::EWS_Dropped && CDCharacter)
 	{
-		if (HasAuthority())
-		{
-			WeaponMesh->SetSimulatePhysics(false);
-			WeaponMesh->SetEnableGravity(false);
-			CDCharacter->GetWeapon(this);
-		}
+		SetWeaponState(EWeaponState::EWS_Equipped);
+		CDCharacter->GetWeapon(this);
 	}
 }
 
@@ -171,11 +165,8 @@ void AWeapon::OnRep_Owner()
 	Super::OnRep_Owner();
 	if (Owner==nullptr)
 	{
-		GetWeaponMesh()->SetVisibility(true);
 		GetWeaponMesh()->SetOnlyOwnerSee(false);
-		GetWeaponMesh3p()->SetVisibility(false);
 
-		SetWeaponState(EWeaponState::EWS_Dropped);
 		FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 		DetachFromActor(DetachRules);
 		WeaponMesh->DetachFromComponent(DetachRules);
@@ -195,22 +186,17 @@ void AWeapon::Dropped(FVector& impactDir)
 	SetOwner(nullptr);
 
 	//Server Set (On Rep)
-	GetWeaponMesh()->SetVisibility(true);
 	GetWeaponMesh()->SetOnlyOwnerSee(false);
-	GetWeaponMesh3p()->SetVisibility(false);
-
-	SetWeaponState(EWeaponState::EWS_Dropped);
+	
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	DetachFromActor(DetachRules);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	WeaponMesh3p->DetachFromComponent(DetachRules);
 	OwnerCharacter=nullptr;
 	OwnerController=nullptr;
-	
-	//Server Set (On State)
-	WeaponMesh->SetSimulatePhysics(true);
-	WeaponMesh->SetEnableGravity(true);
 
+	SetWeaponState(EWeaponState::EWS_Dropped);
+	
 	//Add Impulse
 	if (WeaponMesh->IsSimulatingPhysics())
 	{
@@ -226,29 +212,20 @@ void AWeapon::AttachToPlayer()
 		return;
 	OwnerController = Cast<ACDPlayerController>(OwnerCharacter->Controller);
 	SetWeaponState(EWeaponState::EWS_Equipped);
+
 	AttachToComponent(
 		OwnerCharacter->GetArmMesh(),
 		FAttachmentTransformRules::SnapToTargetIncludingScale,
 		TEXT("WeaponSocket")
 	);
-	GetWeaponMesh()->SetVisibility(false);
 	GetWeaponMesh()->SetOnlyOwnerSee(true);
-		
+	
 	GetWeaponMesh3p()->AttachToComponent(
 		OwnerCharacter->GetMesh(),
 		FAttachmentTransformRules::SnapToTargetIncludingScale,
 		TEXT("WeaponSocket")
 	);
-	GetWeaponMesh3p()->SetVisibility(false);
 	GetWeaponMesh3p()->SetOwnerNoSee(true);
-}
-
-void AWeapon::ShowPickUpWidget(bool bShowWidget)
-{
-	if (PickupWidget)
-	{
-		PickupWidget->SetVisibility(bShowWidget);
-	}
 }
 
 void AWeapon::SetHUDAmmo()
@@ -277,9 +254,11 @@ void AWeapon::SetWeaponState(EWeaponState state)
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
+		break;
 	case EWeaponState::EWS_Equipped:
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
+		break;
 	}
 }
 

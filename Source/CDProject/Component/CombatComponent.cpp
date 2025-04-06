@@ -54,6 +54,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _weapons);
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
+	DOREPLIFETIME(UCombatComponent, _isCanFire);
+	DOREPLIFETIME(UCombatComponent, _curSpread);
 }
 
 void UCombatComponent::Reset()
@@ -105,7 +107,9 @@ void UCombatComponent::UnAim()
 bool UCombatComponent::ChangeWeapon(int idx)
 { //avail visibility and update curWeaponIndex
 	if (idx == _weaponIndex)
+	{
 		return false;
+	}
 	
 	if (_weapons[idx])
 	{
@@ -116,7 +120,7 @@ bool UCombatComponent::ChangeWeapon(int idx)
 }
 
 void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
-{ // compare weapon type and save or dicard
+{ // Only Server Called Func
 	switch (weapon->GetWeaponType())
 	{
 	case EWeaponType::EWT_Rifle:
@@ -124,18 +128,33 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 	case EWeaponType::EWT_Shotgun:
 		if (isForceGet)
 		{
-			ChangeWeapon(0);
-			DropWeapon();
+			if (ChangeWeapon(0))
+				DropWeapon();
 		}
 		if (!_weapons[0])
 		{
+			weapon->SetOwner(_playerCharacter);
+			weapon->AttachToPlayer();
+			weapon->SetHUDAmmo();
 			_weapons[0] = weapon;
-			_weapons[0]->SetOwner(_playerCharacter);
-			_weapons[0]->AttachToPlayer();
 			ChangeWeapon(0);
+				//여기 visible true로 변경
 		}
 		break;
 	case EWeaponType::EWT_Pistol:
+		if (isForceGet)
+		{
+			if (ChangeWeapon(1))
+				DropWeapon();
+		}
+		if (!_weapons[1])
+		{
+			weapon->SetOwner(_playerCharacter);
+			weapon->AttachToPlayer();
+			weapon->SetHUDAmmo();
+			_weapons[1] = weapon;
+			ChangeWeapon(1);
+		}
 		break;
 	}
 }
@@ -223,7 +242,6 @@ void UCombatComponent::CreateDefaultWeapons()
 		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		_weapons[0]->SetOwner(_playerCharacter);
 		_weapons[0]->AttachToPlayer();
-		//dedi 상황에서 해주어야 하는가..
 	}
 }
 
@@ -380,13 +398,6 @@ void UCombatComponent::NetMulticastReload_Implementation()
 
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 {
-	if (_weaponIndex != -1 && _weapons[_weaponIndex])
-	{
-		NetMulticastSetWeaponVisible(false);
-	}
-	_weaponIndex = idx;
-	SetWeaponVisible(true);
-	//리슨서버 테스트용
 	NetMulticastChangeWeapon(idx);
 }
 
@@ -394,6 +405,14 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
 	if (!_playerCharacter)
 		return;
+	
+	if (_weaponIndex != -1 && _weapons[_weaponIndex])
+	{
+		SetWeaponVisible(false);
+	}
+	
+	_weaponIndex = idx;
+	SetWeaponVisible(true);
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
@@ -410,11 +429,6 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 	_isCanAim = true;
 }
 
-void UCombatComponent::NetMulticastSetWeaponVisible_Implementation(bool tf)
-{
-	SetWeaponVisible(tf);
-}
-
 void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
 {
 	_isCanFire = tf;
@@ -427,7 +441,8 @@ void UCombatComponent::ServerDropWeapon_Implementation()
 	
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FVector lookDirection = controlRot.Vector();
-	
+
+	NetMulticastDropWeapon(_weapons[_weaponIndex]);
 	_weapons[_weaponIndex]->Dropped(lookDirection);
 	_weapons[_weaponIndex] = nullptr;
 
@@ -441,7 +456,18 @@ void UCombatComponent::ServerDropWeapon_Implementation()
 	}
 }
 
+void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
+{
+	weapon->GetWeaponMesh()->SetVisibility(true);
+	weapon->GetWeaponMesh3p()->SetVisibility(false);
+}
+
 void UCombatComponent::OnRep_WeaponID()
+{
+	SetWeaponVisible(true);
+}
+
+void UCombatComponent::OnRep_Weapons()
 {
 	SetWeaponVisible(true);
 }
