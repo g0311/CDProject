@@ -159,16 +159,39 @@ void ACDPlayerController::InitializeHUD()
 	}
 }
 
+void ACDPlayerController::AcknowledgePossession(class APawn* P)
+{ //Client Part
+	Super::AcknowledgePossession(P);
+
+	ACDCharacter* CDCharacter = Cast<ACDCharacter>(P);
+	if (CDCharacter && CDCharacter->GetAbilitySystemComponent())
+	{
+		CDCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(CDCharacter, this);
+		
+		const UCDCharacterAttributeSet* AttributeSet = CDCharacter->GetAbilitySystemComponent()->GetSet<UCDCharacterAttributeSet>();
+		if (AttributeSet)
+		{
+			SetHUDHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+		}
+
+		if (CDCharacter->GetCombatComponent()->GetCurWeapon())
+		{
+			CDCharacter->GetCombatComponent()->GetCurWeapon()->SetHUDAmmo();
+			UE_LOG(LogTemp, Warning, TEXT("HUD Ammo Set"));
+		}
+	}
+}
 
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	ACDCharacter* CDCharacter=Cast<ACDCharacter>(InPawn);
-	if (CDCharacter&&CDCharacter->GetAbilitySystemComponent())
-	{
-		const UCDCharacterAttributeSet* AttributeSet = CDCharacter->GetAbilitySystemComponent()->GetSet<UCDCharacterAttributeSet>();
-		//SetHUDHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
-	}
+	// ACDCharacter* CDCharacter=Cast<ACDCharacter>(InPawn);
+	// if (CDCharacter&&CDCharacter->GetAbilitySystemComponent())
+	// {
+	// 	const UCDCharacterAttributeSet* AttributeSet = CDCharacter->GetAbilitySystemComponent()->GetSet<UCDCharacterAttributeSet>();
+	// 	SetHUDHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
+	// 	CDCharacter->GetCombatComponent()->GetCurWeapon()->SetHUDAmmo();
+	// }
 }
 
 void ACDPlayerController::ReceivedPlayer()

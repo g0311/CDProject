@@ -65,14 +65,7 @@ void ACDCharacter::BeginPlay()
 				subSystem->AddMappingContext(_inputMappingContext, 0);
 			}
 		}
-	
-		if (_abilitySystemComponent)
-		{//이거 서버에서 해야되나? ㄴㄴ
-			_abilitySystemComponent->InitAbilityActorInfo(this, this);
-			InitializeAttributes();
-		}
 	}
-	
 	_currentArmTransform = _defaultArmTransform;
 	_targetArmTransform = _currentArmTransform;
 	_targetFOV = _defaultFOV;
@@ -166,6 +159,16 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME(ACDCharacter, _currentArmTransform);
 	DOREPLIFETIME(ACDCharacter, _targetArmTransform);
 	DOREPLIFETIME(ACDCharacter, _targetFOV);
+}
+
+inline void ACDCharacter::PossessedBy(AController* NewController)
+{ //Server Part
+	Super::PossessedBy(NewController);
+	if (_abilitySystemComponent)
+	{
+		_abilitySystemComponent->InitAbilityActorInfo(this, this);
+		InitializeAttributes();
+	}
 }
 
 void ACDCharacter::RespawnPlayer()

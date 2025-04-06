@@ -254,8 +254,6 @@ void AWeapon::AttachToPlayer()
 	if (!OwnerCharacter)
 		return;
 	OwnerController = Cast<ACDPlayerController>(OwnerCharacter->Controller);
-	if (!OwnerController)
-		return;
 	
 	SetWeaponState(EWeaponState::EWS_Equipped);
 
@@ -276,7 +274,6 @@ void AWeapon::AttachToPlayer()
 
 void AWeapon::SetHUDAmmo()
 {
-	UE_LOG(LogTemp, Log, TEXT("Called1"));
 	if (OwnerCharacter == nullptr)
 	{
 		OwnerCharacter = Cast<ACDCharacter>(GetOwner());
@@ -287,7 +284,6 @@ void AWeapon::SetHUDAmmo()
 	}
 	if (OwnerController)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Called2"));
 		OwnerController->SetHUDWeaponAmmo(Ammo);
 		OwnerController->SetHUDWeaponInfo(this);
 	}

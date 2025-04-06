@@ -30,6 +30,7 @@ public:
 	void InitializeHUD();
 	
 	//MatchState
+	virtual void AcknowledgePossession(class APawn* P) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void ReceivedPlayer() override;
 	void OnMatchStateSet(FName State);
