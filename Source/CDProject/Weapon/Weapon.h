@@ -44,7 +44,6 @@ public:
 	//Using This function -> ProjectileWeapon
 
 	//* Widget Set function
-	void ShowPickUpWidget(bool bShowWidget);
 	void SetHUDAmmo();
 	
 	void SetWeaponState(EWeaponState state);
@@ -162,13 +161,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* WeaponMesh3p;
-
-
+	
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* AreaSphere;
-
-	UPROPERTY(VisibleAnyWhere)
-	class UWidgetComponent* PickupWidget;
 
 	UPROPERTY(EditAnywhere, Category="Weapon Property")
 	class UAnimationAsset* FireAnimation;

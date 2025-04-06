@@ -59,7 +59,7 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
 	int _weaponIndex = -1;
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Weapons)
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
@@ -95,13 +95,15 @@ private:
 	void NetMulticastChangeWeapon(int idx);
 	UFUNCTION(Server, Reliable)
 	void ServerDropWeapon();
-	
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastSetWeaponVisible(bool tf);
+	void NetMulticastDropWeapon(AWeapon* weapon);
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetIsCanFire(bool tf);
 	UFUNCTION()
 	void OnRep_WeaponID();
+	UFUNCTION()
+	void OnRep_Weapons();
 	UFUNCTION(Server, Reliable)
 	void ServerSetFireAvail();
 	UFUNCTION(Server, Reliable)
