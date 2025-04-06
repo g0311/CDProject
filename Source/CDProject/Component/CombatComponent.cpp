@@ -284,14 +284,6 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 
 void UCombatComponent::ServerFire_Implementation()
 {
-	//Fire Delay
-	NetMulticastSetIsCanFire(false);
-	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
-	{
-		NetMulticastSetIsCanFire(true);
-	}), _fireDelay, false);
-	_continuedFireCount++;
-	
 	//Trace
 	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
 	if (!playerController) return;
@@ -343,6 +335,14 @@ void UCombatComponent::ServerFire_Implementation()
 			// if (hit.GetActor())
 			// 	UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *hit.GetComponent()->GetName());
 			NetMulticastFire(hit.Location);
+
+			//Fire Delay
+			NetMulticastSetIsCanFire(false);
+			GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
+			{
+				NetMulticastSetIsCanFire(true);
+			}), _fireDelay, false);
+			_continuedFireCount++;
 		}
 	}
 }
@@ -375,8 +375,9 @@ void UCombatComponent::ServerReload_Implementation()
 {
 	if (!_playerCharacter)
 		return;
-	//isammo full => return
-	//if (_weapons[_weaponIndex]->ammo)
+
+	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
+		return;
 	
 	NetMulticastSetIsCanFire(false);
 	NetMulticastReload();
@@ -403,16 +404,16 @@ void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 
 void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
-	if (!_playerCharacter)
+	if (!_playerCharacter || !_weapons[idx])
 		return;
 	
 	if (_weaponIndex != -1 && _weapons[_weaponIndex])
 	{
 		SetWeaponVisible(false);
 	}
-	
 	_weaponIndex = idx;
-	SetWeaponVisible(true);
+	
+	//SetWeaponVisible(true);
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
@@ -423,7 +424,6 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 		armAnim->PlayEquipMontage();
 	
 	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-	_fireDelay = 0.1f;
 	
 	_isCanFire = true;
 	_isCanAim = true;

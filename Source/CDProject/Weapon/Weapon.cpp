@@ -83,7 +83,6 @@ void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
 	if (WeaponState ==  EWeaponState::EWS_Dropped && CDCharacter)
 	{
-		SetWeaponState(EWeaponState::EWS_Equipped);
 		CDCharacter->GetWeapon(this);
 	}
 }
@@ -130,25 +129,69 @@ void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (FireAnimation)
 	{
-		WeaponMesh->PlayAnimation(FireAnimation, false);
+		if (OwnerCharacter->IsLocallyControlled())
+			WeaponMesh->PlayAnimation(FireAnimation, false);
+		else
+			WeaponMesh3p->PlayAnimation(FireAnimation, false);
 	}
 	if (CartridgeClass)
 	{
-		const USkeletalMeshSocket* AmmoEjectSocket=WeaponMesh3p->GetSocketByName("AmmoEject");
-		if (AmmoEjectSocket)
+		if (OwnerCharacter->IsLocallyControlled())
 		{
-			FTransform AmmoEjectTransform=AmmoEjectSocket->GetSocketTransform(WeaponMesh3p);
-			UWorld* World = GetWorld();
-			if (World)
+			const USkeletalMeshSocket* AmmoEjectSocket=WeaponMesh->GetSocketByName("AmmoEject");
+			if (AmmoEjectSocket)
 			{
-				World->SpawnActor<ACartridge>(
-					CartridgeClass,
-					AmmoEjectTransform.GetLocation(),
-					AmmoEjectTransform.GetRotation().Rotator()
+				FTransform AmmoEjectTransform=AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+				UWorld* World = GetWorld();
+				if (World)
+				{
+					ACartridge* Cartridge = World->SpawnActor<ACartridge>(
+						CartridgeClass,
+						AmmoEjectTransform.GetLocation(),
+						AmmoEjectTransform.GetRotation().Rotator()
 					);
-			}//Edit Need
+					if (Cartridge)
+					{
+						UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(Cartridge->GetRootComponent());
+						if (PrimitiveComp && PrimitiveComp->IsSimulatingPhysics())
+						{
+							FVector Impulse = FVector(-150.f, 100.f, 150.f);
+							PrimitiveComp->AddImpulse(Impulse, NAME_None, true);
+						}
+					}
+				}
+				//Edit Need
+			}
+		}
+		else
+		{
+			const USkeletalMeshSocket* AmmoEjectSocket=WeaponMesh3p->GetSocketByName("AmmoEject");
+			if (AmmoEjectSocket)
+			{
+				FTransform AmmoEjectTransform=AmmoEjectSocket->GetSocketTransform(WeaponMesh3p);
+				UWorld* World = GetWorld();
+				if (World)
+				{
+					ACartridge* Cartridge = World->SpawnActor<ACartridge>(
+						CartridgeClass,
+						AmmoEjectTransform.GetLocation(),
+						AmmoEjectTransform.GetRotation().Rotator()
+					);
+					if (Cartridge)
+					{
+						UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(Cartridge->GetRootComponent());
+						if (PrimitiveComp && PrimitiveComp->IsSimulatingPhysics())
+						{
+							FVector Impulse = FVector(-150.f, 100.f, 150.f);
+							PrimitiveComp->AddImpulse(Impulse, NAME_None, true);
+						}
+					}
+				}
+				//Edit Need
+			}
 		}
 	}
+	SpendAmmo();
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

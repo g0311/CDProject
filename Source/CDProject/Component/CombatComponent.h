@@ -40,7 +40,8 @@ public:
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
 	uint8 GetCurWeaponType();
-
+	void SetWeaponVisible(bool tf);
+	
 	FHUDPackage HUDPackage;
 	
 	UPROPERTY(EditAnywhere)
@@ -75,7 +76,6 @@ private:
 	
 	void CreateDefaultWeapons();
 	float CaculateSpread();
-	void SetWeaponVisible(bool tf);
 private:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;

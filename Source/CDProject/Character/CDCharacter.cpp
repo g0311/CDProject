@@ -242,7 +242,7 @@ void ACDCharacter::Fire()
 	
 	if (_combat->IsFireAvail())
 	{
-		if (false /*_combat->IsAmmoEmpty()*/)
+		if (_combat->IsAmmoEmpty())
 		{
 			Reload();
 		}

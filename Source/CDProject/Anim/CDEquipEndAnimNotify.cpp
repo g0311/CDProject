@@ -12,13 +12,17 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	if (!MeshComp && !MeshComp->GetOwner())
 		return;
 	ACDCharacter* character = Cast<ACDCharacter>(MeshComp->GetOwner());
-	if (character && character->IsLocallyControlled())
+	if (character)
 	{
 		UCombatComponent* combat = MeshComp->GetOwner()->FindComponentByClass<UCombatComponent>();
 		if (combat)
 		{
-			combat->SetFireAvail();
-			combat->SetAimAvail();
+			if (character->IsLocallyControlled())
+			{
+				combat->SetFireAvail();
+				combat->SetAimAvail();
+			}
+			combat->SetWeaponVisible(true);
 		}
 	}
 	
