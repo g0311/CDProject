@@ -13,20 +13,14 @@ void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, U
 	ACDCharacter* character = Cast<ACDCharacter>(MeshComp->GetOwner());
 	if (!character)
 		return;
-
-	if (!character->IsLocallyControlled())
-		return;
 	
-	UCombatComponent* combat = character->FindComponentByClass<UCombatComponent>();
+	UCombatComponent* combat = character->GetCombatComponent();
 	if (!combat)
 		return;
 
-	int32 nextWeaponId = combat->_nextWeaponIndex;
-	if (combat->GetCurWeapon())
-		combat->MultiSetWeaponVisible(false);
+	combat->SetBefWeaponVisible(false);
+	combat->SetWeaponVisible(true);
 	
-	combat->ServerSetWeaponID(nextWeaponId);
-	combat->MultiSetWeaponVisible(true);
 	
 	Super::Notify(MeshComp, Animation);
 }

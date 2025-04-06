@@ -37,12 +37,14 @@ public:
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
 	FORCEINLINE void MultiSetWeaponVisible(bool tf) { ServerSetWeaponVisible(tf); }
 	FORCEINLINE void ServerSetWeaponID(int id) { ServerSetWeaponIndex(id); }
+	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
 	uint8 GetCurWeaponType();
 	void SetWeaponVisible(bool tf);
+	void SetBefWeaponVisible(bool tf);
 	
 	FHUDPackage HUDPackage;
 	
@@ -52,9 +54,6 @@ public:
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
-	
-	UPROPERTY()
-	int _nextWeaponIndex = -1;
 private:
 	virtual void BeginPlay() override;
 	
@@ -65,6 +64,8 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
 	int _weaponIndex = -1;
+	UPROPERTY(VisibleAnywhere)
+	int _befIndex = -1;
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Weapons)
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
