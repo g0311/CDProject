@@ -35,8 +35,6 @@ public:
 	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
-	FORCEINLINE void MultiSetWeaponVisible(bool tf) { ServerSetWeaponVisible(tf); }
-	FORCEINLINE void ServerSetWeaponID(int id) { ServerSetWeaponIndex(id); }
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 
 	AWeapon* GetCurWeapon();
@@ -66,7 +64,7 @@ private:
 	int _weaponIndex = -1;
 	UPROPERTY(VisibleAnywhere)
 	int _befIndex = -1;
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Weapons)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
@@ -110,16 +108,8 @@ private:
 	void NetMulticastSetIsCanFire(bool tf);
 	UFUNCTION()
 	void OnRep_WeaponID();
-	UFUNCTION()
-	void OnRep_Weapons();
 	UFUNCTION(Server, Reliable)
 	void ServerSetFireAvail();
 	UFUNCTION(Server, Reliable)
 	void ServerSetAimAvail();
-	UFUNCTION(NetMulticast, Reliable)
-	void ServerSetWeaponVisible(bool tf);
-	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSetWeaponVisible(bool tf);
-	UFUNCTION(NetMulticast, Reliable)
-	void ServerSetWeaponIndex(int id);
 };

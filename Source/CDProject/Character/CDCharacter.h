@@ -25,7 +25,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
 private:
@@ -125,7 +125,7 @@ private:
 	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")
-	TSubclassOf<class UGameplayEffect> _defaultAttributes;
+	TSubclassOf<class UGameplayEffect> _defaultAttributeEffect;
 public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;

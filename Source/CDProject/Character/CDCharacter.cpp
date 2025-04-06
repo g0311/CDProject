@@ -148,8 +148,11 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 {
 	float curHealth = _attributeSet->GetHealth();
 	curHealth -= DamageAmount;
-
-	//_attributeSet->SetHealth(curHealth);
+	_attributeSet->SetHealth(curHealth);
+	if (curHealth <= 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("player Dead"));
+	}
 	
 	return DamageAmount;
 }
@@ -350,10 +353,10 @@ void ACDCharacter::InitializeAttributes()
 	FGameplayEffectContextHandle EffectContext = _abilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(this);
 
-	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributes, 0, EffectContext);
+	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributeEffect, 0, EffectContext);
 	if(NewHandle.IsValid())
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
-			_abilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), _abilitySystemComponent.Get());
+			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
 	}
 }

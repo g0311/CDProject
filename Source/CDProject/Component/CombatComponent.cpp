@@ -494,7 +494,7 @@ void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
 }
 
 void UCombatComponent::OnRep_WeaponID()
-{
+{ //Change Weapon
 	if (_weaponIndex == -1)
 		return;
 	
@@ -509,6 +509,7 @@ void UCombatComponent::OnRep_WeaponID()
 	if (!_playerCharacter)
 		return;
 	
+	_weapons[_weaponIndex]->SetHUDAmmo();
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 
@@ -520,13 +521,7 @@ void UCombatComponent::OnRep_WeaponID()
 	{
 		armAnim->PlayEquipMontage(_weapons[_weaponIndex]);
 	}
-	_weapons[_weaponIndex]->SetHUDAmmo();
 	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-}
-
-void UCombatComponent::OnRep_Weapons()
-{
-	//SetWeaponVisible(true);
 }
 
 void UCombatComponent::ServerSetFireAvail_Implementation()
@@ -537,22 +532,4 @@ void UCombatComponent::ServerSetFireAvail_Implementation()
 void UCombatComponent::ServerSetAimAvail_Implementation()
 {
 	_isCanAim = true;
-}
-
-void UCombatComponent::ServerSetWeaponVisible_Implementation(bool tf)
-{
-	MulticastSetWeaponVisible(tf);
-}
-
-void UCombatComponent::MulticastSetWeaponVisible_Implementation(bool tf)
-{
-	SetWeaponVisible(tf);
-}
-
-void UCombatComponent::ServerSetWeaponIndex_Implementation(int id)
-{
-	if (id < 0 || id >= _weapons.Num())
-		return;
-	
-	_weaponIndex = id;
 }
