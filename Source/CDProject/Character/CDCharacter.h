@@ -25,7 +25,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void PossessedBy(AController* NewController) override;
+	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
 private:
@@ -59,6 +60,7 @@ private:
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
+	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	
 private:
 	//Input
@@ -120,11 +122,13 @@ public:
 	
 private:
 	//GAS
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")
-	TSubclassOf<class UGameplayEffect> _defaultAttributes;
+	TSubclassOf<class UGameplayEffect> _defaultAttributeEffect;
 public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;

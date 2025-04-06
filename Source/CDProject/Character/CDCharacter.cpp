@@ -65,14 +65,7 @@ void ACDCharacter::BeginPlay()
 				subSystem->AddMappingContext(_inputMappingContext, 0);
 			}
 		}
-	
-		if (_abilitySystemComponent)
-		{//이거 서버에서 해야되나? ㄴㄴ
-			_abilitySystemComponent->InitAbilityActorInfo(this, this);
-			InitializeAttributes();
-		}
 	}
-	
 	_currentArmTransform = _defaultArmTransform;
 	_targetArmTransform = _currentArmTransform;
 	_targetFOV = _defaultFOV;
@@ -148,8 +141,11 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 {
 	float curHealth = _attributeSet->GetHealth();
 	curHealth -= DamageAmount;
-
-	//_attributeSet->SetHealth(curHealth);
+	_attributeSet->SetHealth(curHealth);
+	if (curHealth <= 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("player Dead"));
+	}
 	
 	return DamageAmount;
 }
@@ -163,6 +159,17 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME(ACDCharacter, _currentArmTransform);
 	DOREPLIFETIME(ACDCharacter, _targetArmTransform);
 	DOREPLIFETIME(ACDCharacter, _targetFOV);
+}
+
+inline void ACDCharacter::PossessedBy(AController* NewController)
+{ //Server Part
+	Super::PossessedBy(NewController);
+	if (_abilitySystemComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Possessed Called"));
+		_abilitySystemComponent->InitAbilityActorInfo(this, this);
+		InitializeAttributes();
+	}
 }
 
 void ACDCharacter::RespawnPlayer()
@@ -242,7 +249,7 @@ void ACDCharacter::Fire()
 	
 	if (_combat->IsFireAvail())
 	{
-		if (false /*_combat->IsAmmoEmpty()*/)
+		if (_combat->IsAmmoEmpty())
 		{
 			Reload();
 		}
@@ -320,7 +327,8 @@ void ACDCharacter::ServerAim_Implementation()
 	{
 		_combat->Aim();
 		_targetArmTransform = _aimArmTransform;
-		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+		if (_combat->GetCurWeapon())
+			_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
 	}
 }
 
@@ -349,10 +357,10 @@ void ACDCharacter::InitializeAttributes()
 	FGameplayEffectContextHandle EffectContext = _abilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(this);
 
-	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributes, 0, EffectContext);
+	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributeEffect, 0, EffectContext);
 	if(NewHandle.IsValid())
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
-			_abilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), _abilitySystemComponent.Get());
+			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
 	}
 }

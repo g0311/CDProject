@@ -35,12 +35,15 @@ public:
 	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
+	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
 	uint8 GetCurWeaponType();
-
+	void SetWeaponVisible(bool tf);
+	void SetBefWeaponVisible(bool tf);
+	
 	FHUDPackage HUDPackage;
 	
 	UPROPERTY(EditAnywhere)
@@ -59,7 +62,9 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
 	int _weaponIndex = -1;
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Weapons)
+	UPROPERTY(VisibleAnywhere)
+	int _befIndex = -1;
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
@@ -72,10 +77,10 @@ private:
 	bool _isCanFire = true;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanAim = true;
+	//보안용 레플리케이트
 	
 	void CreateDefaultWeapons();
 	float CaculateSpread();
-	void SetWeaponVisible(bool tf);
 private:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
@@ -97,13 +102,12 @@ private:
 	void ServerDropWeapon();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
+
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetIsCanFire(bool tf);
 	UFUNCTION()
 	void OnRep_WeaponID();
-	UFUNCTION()
-	void OnRep_Weapons();
 	UFUNCTION(Server, Reliable)
 	void ServerSetFireAvail();
 	UFUNCTION(Server, Reliable)

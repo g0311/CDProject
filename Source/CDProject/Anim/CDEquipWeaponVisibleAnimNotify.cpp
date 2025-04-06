@@ -1,13 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "CDEquipEndAnimNotify.h"
-
+#include "CDEquipWeaponVisibleAnimNotify.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Weapon/Weapon.h"
 
-void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
+void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	if (!MeshComp || !MeshComp->GetOwner())
 		return;
@@ -15,20 +14,18 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	ACDCharacter* character = Cast<ACDCharacter>(MeshComp->GetOwner());
 	if (!character)
 		return;
-
-	if (!character->IsLocallyControlled())
-		return;
 	
 	if (!character->IsFirstPersonMesh(MeshComp))
 		return;
 	
-	UCombatComponent* combat = character->FindComponentByClass<UCombatComponent>();
+	UCombatComponent* combat = character->GetCombatComponent();
 	if (!combat)
 		return;
 
-	combat->SetFireAvail();
-	combat->SetAimAvail();
-	//보안상 취약점
+	combat->SetBefWeaponVisible(false);
+	combat->SetWeaponVisible(true);
+	
+	combat->GetCurWeapon()->SetHUDAmmo();
 	
 	Super::Notify(MeshComp, Animation);
 }
