@@ -53,7 +53,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isAiming);
 	DOREPLIFETIME(UCombatComponent, _weapons);
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
-	DOREPLIFETIME(UCombatComponent, _curSpread);
+	DOREPLIFETIME(UCombatComponent, _isCanAim);
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
 }
@@ -106,7 +106,7 @@ void UCombatComponent::UnAim()
 
 bool UCombatComponent::ChangeWeapon(int idx)
 { //avail visibility and update curWeaponIndex
-	if (idx == _weaponIndex)
+	if (idx == _weaponIndex || idx < 0 || idx >= _weapons.Num())
 	{
 		return false;
 	}
@@ -114,6 +114,7 @@ bool UCombatComponent::ChangeWeapon(int idx)
 	if (_weapons[idx])
 	{
 		ServerChangeWeapon(idx);
+	UE_LOG(LogTemp, Log, TEXT("1"));
 		return true;
 	}
 	return false;
@@ -172,6 +173,9 @@ void UCombatComponent::DropWeapon()
 
 void UCombatComponent::SetHUDCrosshairs(float spread)
 {
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
 	ACharacter* character = Cast<ACharacter>(GetOwner());
 	if (!character || !character->Controller || _weaponIndex == -1) return;
 
@@ -206,26 +210,34 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 
 AWeapon* UCombatComponent::GetCurWeapon()
 {
-	if (_weaponIndex != -1 && _weapons[_weaponIndex])
-		return _weapons[_weaponIndex];
-	return nullptr;
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return nullptr;
+	return _weapons[_weaponIndex];
 }
 
 bool UCombatComponent::IsAmmoEmpty()
 {
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return false;
 	return _weapons[_weaponIndex]->AmmoIsEmpty();
 }
 
 bool UCombatComponent::IsTotalAmmoEmpty()
 {
-	return false;
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return false;
+
+	return
+		(_weapons[_weaponIndex]->GetCarriedAmmo() == 0
+			&& _weapons[_weaponIndex]->GetAmmo() == 0);
 }
 
 uint8 UCombatComponent::GetCurWeaponType()
 {
-	if (_weaponIndex != -1 && _weapons[_weaponIndex])
-		return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
-	return -1;
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return -1;
+
+	return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
 }
 
 void UCombatComponent::CreateDefaultWeapons()
@@ -349,10 +361,9 @@ void UCombatComponent::ServerFire_Implementation()
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 {
-	if (!_playerCharacter)
-		return;
-
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	if (!_playerCharacter)
 		return;
 	
 	_weapons[_weaponIndex]->Fire(target);
@@ -373,11 +384,13 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	if (!_playerCharacter)
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-
 	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
 		return;
+	if (!_playerCharacter)
+		return;
+	
 	
 	NetMulticastSetIsCanFire(false);
 	NetMulticastReload();
@@ -385,6 +398,8 @@ void UCombatComponent::ServerReload_Implementation()
 
 void UCombatComponent::NetMulticastReload_Implementation()
 {
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
 	if (!_playerCharacter)
 		return;
 	
@@ -406,39 +421,44 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
 	if (!_playerCharacter || !_weapons[idx])
 		return;
+
+	UE_LOG(LogTemp, Log, TEXT("last"));
 	
-	if (_weaponIndex != -1 && _weapons[_weaponIndex])
-	{
-		SetWeaponVisible(false);
-	}
-	_weaponIndex = idx;
-	
-	//SetWeaponVisible(true);
+	_isCanFire = false;
+	_isCanAim = false;
+	_nextWeaponIndex = idx;
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 
 	if (bodyAnim)
-		bodyAnim->PlayEquipMontage();
-	if (armAnim)
-		armAnim->PlayEquipMontage();
-	
-	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-	
-	_isCanFire = true;
-	_isCanAim = true;
-}
+	{
+		bodyAnim->PlayEquipMontage(_weapons[idx]);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("NO Anim"));
 
-void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
-{
-	_isCanFire = tf;
+	}
+	if (armAnim)
+	{
+		armAnim->PlayEquipMontage(_weapons[idx]);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("NO Anim"));
+	}
+	
+	_fireDelay = (_weapons[idx]->FireDelay);
 }
 
 void UCombatComponent::ServerDropWeapon_Implementation()
 {
 	if (!_playerCharacter)
 		return;
-	
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+		
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FVector lookDirection = controlRot.Vector();
 
@@ -462,14 +482,29 @@ void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 	weapon->GetWeaponMesh3p()->SetVisibility(false);
 }
 
+void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
+{
+	_isCanFire = tf;
+}
+
 void UCombatComponent::OnRep_WeaponID()
 {
+	if (!_weapons[_weaponIndex])
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		{
+			OnRep_WeaponID();
+		});
+		return;
+	}
 	SetWeaponVisible(true);
+
+	//changeWeapon
 }
 
 void UCombatComponent::OnRep_Weapons()
 {
-	SetWeaponVisible(true);
+	//SetWeaponVisible(true);
 }
 
 void UCombatComponent::ServerSetFireAvail_Implementation()
@@ -480,4 +515,22 @@ void UCombatComponent::ServerSetFireAvail_Implementation()
 void UCombatComponent::ServerSetAimAvail_Implementation()
 {
 	_isCanAim = true;
+}
+
+void UCombatComponent::ServerSetWeaponVisible_Implementation(bool tf)
+{
+	MulticastSetWeaponVisible(tf);
+}
+
+void UCombatComponent::MulticastSetWeaponVisible_Implementation(bool tf)
+{
+	SetWeaponVisible(tf);
+}
+
+void UCombatComponent::ServerSetWeaponIndex_Implementation(int id)
+{
+	if (id < 0 || id >= _weapons.Num())
+		return;
+	
+	_weaponIndex = id;
 }

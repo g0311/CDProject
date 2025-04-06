@@ -320,7 +320,8 @@ void ACDCharacter::ServerAim_Implementation()
 	{
 		_combat->Aim();
 		_targetArmTransform = _aimArmTransform;
-		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+		if (_combat->GetCurWeapon())
+			_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
 	}
 }
 

@@ -1,12 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "CDEquipEndAnimNotify.h"
-
+#include "CDEquipWeaponVisibleAnimNotify.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 
-void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
+void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	if (!MeshComp || !MeshComp->GetOwner())
 		return;
@@ -22,8 +21,12 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	if (!combat)
 		return;
 
-	combat->SetFireAvail();
-	combat->SetAimAvail();
+	int32 nextWeaponId = combat->_nextWeaponIndex;
+	if (combat->GetCurWeapon())
+		combat->MultiSetWeaponVisible(false);
+	
+	combat->ServerSetWeaponID(nextWeaponId);
+	combat->MultiSetWeaponVisible(true);
 	
 	Super::Notify(MeshComp, Animation);
 }

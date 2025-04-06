@@ -35,6 +35,8 @@ public:
 	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
+	FORCEINLINE void MultiSetWeaponVisible(bool tf) { ServerSetWeaponVisible(tf); }
+	FORCEINLINE void ServerSetWeaponID(int id) { ServerSetWeaponIndex(id); }
 
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
@@ -50,6 +52,9 @@ public:
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
+	
+	UPROPERTY()
+	int _nextWeaponIndex = -1;
 private:
 	virtual void BeginPlay() override;
 	
@@ -73,6 +78,7 @@ private:
 	bool _isCanFire = true;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanAim = true;
+	//보안용 레플리케이트
 	
 	void CreateDefaultWeapons();
 	float CaculateSpread();
@@ -97,6 +103,7 @@ private:
 	void ServerDropWeapon();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
+
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastSetIsCanFire(bool tf);
@@ -108,4 +115,10 @@ private:
 	void ServerSetFireAvail();
 	UFUNCTION(Server, Reliable)
 	void ServerSetAimAvail();
+	UFUNCTION(NetMulticast, Reliable)
+	void ServerSetWeaponVisible(bool tf);
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSetWeaponVisible(bool tf);
+	UFUNCTION(NetMulticast, Reliable)
+	void ServerSetWeaponIndex(int id);
 };

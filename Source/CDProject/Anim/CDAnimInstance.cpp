@@ -101,19 +101,19 @@ void UCDAnimInstance::PlayReloadMontage()
 	}
 }
 
-void UCDAnimInstance::PlayEquipMontage()
+void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 {
-	switch (_weaponType)
+	switch (nextWeapon->GetWeaponType())
 	{
-	case static_cast<uint8>(EWeaponType::EWT_Rifle):
-	case static_cast<uint8>(EWeaponType::EWT_Sniper):
-	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+	case (EWeaponType::EWT_Rifle):
+	case (EWeaponType::EWT_Sniper):
+	case (EWeaponType::EWT_Shotgun):
 		if (_equipRifleMontage)
 		{
 			Montage_Play(_equipRifleMontage);
 		}
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Pistol):
+	case (EWeaponType::EWT_Pistol):
 		if (_equipPistolMontage)
 		{
 			Montage_Play(_equipPistolMontage);
