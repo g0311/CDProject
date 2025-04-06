@@ -166,6 +166,7 @@ inline void ACDCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	if (_abilitySystemComponent)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Possessed Called"));
 		_abilitySystemComponent->InitAbilityActorInfo(this, this);
 		InitializeAttributes();
 	}

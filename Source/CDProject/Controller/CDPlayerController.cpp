@@ -162,23 +162,11 @@ void ACDPlayerController::InitializeHUD()
 void ACDPlayerController::AcknowledgePossession(class APawn* P)
 { //Client Part
 	Super::AcknowledgePossession(P);
-
+	UE_LOG(LogTemp, Warning, TEXT("ACK Called"));
 	ACDCharacter* CDCharacter = Cast<ACDCharacter>(P);
 	if (CDCharacter && CDCharacter->GetAbilitySystemComponent())
 	{
 		CDCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(CDCharacter, this);
-		
-		const UCDCharacterAttributeSet* AttributeSet = CDCharacter->GetAbilitySystemComponent()->GetSet<UCDCharacterAttributeSet>();
-		if (AttributeSet)
-		{
-			SetHUDHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
-		}
-
-		if (CDCharacter->GetCombatComponent()->GetCurWeapon())
-		{
-			CDCharacter->GetCombatComponent()->GetCurWeapon()->SetHUDAmmo();
-			UE_LOG(LogTemp, Warning, TEXT("HUD Ammo Set"));
-		}
 	}
 }
 

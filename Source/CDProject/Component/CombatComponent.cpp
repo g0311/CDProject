@@ -432,6 +432,7 @@ void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 	_isCanAim = false;
 	_befIndex = _weaponIndex;
 	_weaponIndex = idx;
+
 	OnRep_WeaponID();
 }
 
@@ -447,6 +448,7 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 
+	_weapons[idx]->SetHUDAmmo();
 	if (bodyAnim)
 	{
 		bodyAnim->PlayEquipMontage(_weapons[idx]);

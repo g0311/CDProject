@@ -4,6 +4,7 @@
 #include "CDEquipWeaponVisibleAnimNotify.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
+#include "CDProject/Weapon/Weapon.h"
 
 void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
@@ -24,6 +25,7 @@ void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, U
 	combat->SetBefWeaponVisible(false);
 	combat->SetWeaponVisible(true);
 	
+	combat->GetCurWeapon()->SetHUDAmmo();
 	
 	Super::Notify(MeshComp, Animation);
 }

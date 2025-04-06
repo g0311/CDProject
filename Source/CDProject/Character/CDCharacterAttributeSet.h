@@ -22,11 +22,11 @@ class CDPROJECT_API UCDCharacterAttributeSet : public UAttributeSet
 	GENERATED_BODY()
 public:
 	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_Health)
-	FGameplayAttributeData Health = 100.f;
+	FGameplayAttributeData Health;
 	ATTRIBUTE_ACCESSORS(UCDCharacterAttributeSet, Health)
 
 	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_MaxHealth)
-	FGameplayAttributeData MaxHealth = 100.f;
+	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(UCDCharacterAttributeSet, MaxHealth)
 	
 	UFUNCTION()

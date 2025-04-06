@@ -122,7 +122,9 @@ public:
 	
 private:
 	//GAS
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")
