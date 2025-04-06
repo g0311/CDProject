@@ -135,7 +135,6 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 		{
 			weapon->SetOwner(_playerCharacter);
 			weapon->AttachToPlayer();
-			weapon->SetHUDAmmo();
 			_weapons[0] = weapon;
 			ChangeWeapon(0);
 				//여기 visible true로 변경
@@ -151,7 +150,6 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 		{
 			weapon->SetOwner(_playerCharacter);
 			weapon->AttachToPlayer();
-			weapon->SetHUDAmmo();
 			_weapons[1] = weapon;
 			ChangeWeapon(1);
 		}
@@ -407,7 +405,6 @@ void UCombatComponent::ServerReload_Implementation()
 	if (!_playerCharacter)
 		return;
 	
-	
 	NetMulticastSetIsCanFire(false);
 	NetMulticastReload();
 }
@@ -523,6 +520,7 @@ void UCombatComponent::OnRep_WeaponID()
 	{
 		armAnim->PlayEquipMontage(_weapons[_weaponIndex]);
 	}
+	_weapons[_weaponIndex]->SetHUDAmmo();
 	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
 }
 

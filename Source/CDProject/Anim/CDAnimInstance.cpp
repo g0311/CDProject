@@ -68,13 +68,12 @@ void UCDAnimInstance::PlayReloadMontage()
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
 			if (_rifleReloadMontage)
 				Montage_Play(_rifleReloadMontage);
-			//Montage_SetEndDelegate()
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
 			if (_rifleReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Speical):
+		case static_cast<uint8>(EWeaponType::EWT_Pistol):
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -93,7 +92,7 @@ void UCDAnimInstance::PlayReloadMontage()
 			if (_shotgunReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Speical):
+		case static_cast<uint8>(EWeaponType::EWT_Pistol):
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;

@@ -59,6 +59,7 @@ private:
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
+	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	
 private:
 	//Input

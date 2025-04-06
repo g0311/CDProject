@@ -14,6 +14,9 @@ void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, U
 	if (!character)
 		return;
 	
+	if (!character->IsFirstPersonMesh(MeshComp))
+		return;
+	
 	UCombatComponent* combat = character->GetCombatComponent();
 	if (!combat)
 		return;

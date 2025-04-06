@@ -18,6 +18,9 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	if (!character->IsLocallyControlled())
 		return;
 	
+	if (!character->IsFirstPersonMesh(MeshComp))
+		return;
+	
 	UCombatComponent* combat = character->FindComponentByClass<UCombatComponent>();
 	if (!combat)
 		return;
