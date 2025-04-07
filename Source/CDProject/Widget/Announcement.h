@@ -16,4 +16,8 @@ class CDPROJECT_API UAnnouncement : public UUserWidget
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* AnnouncementText;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* AnnouncementInfoText;
+	
 };

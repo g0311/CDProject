@@ -26,7 +26,7 @@ ACDPlayerController::ACDPlayerController()
 void ACDPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	SetHUDTime();
+	//SetHUDTime();
 }
 
 void ACDPlayerController::BeginPlay()
