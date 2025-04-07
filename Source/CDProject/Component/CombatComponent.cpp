@@ -56,7 +56,6 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isCanAim);
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
-	DOREPLIFETIME(UCombatComponent, _continuedFireCount);
 }
 
 void UCombatComponent::Reset()
@@ -75,7 +74,43 @@ void UCombatComponent::Reset()
 void UCombatComponent::Fire()
 {
 	if (_weaponIndex != -1 && _weapons[_weaponIndex])
-		ServerFire();
+	{
+		//Trace
+		APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
+		if (!playerController)
+		{
+			return;
+		}
+		
+		FVector CameraLocation;
+		FRotator CameraRotation;
+		playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+		
+		int32 ViewportSizeX, ViewportSizeY;
+		playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
+		UE_LOG(LogTemp, Log, TEXT("Viewport Size: %d x %d"), ViewportSizeX, ViewportSizeY);
+		
+		float CrosshairSpread = _curSpread * 16.f;
+		
+		FVector2D CrosshairScreenPosition(
+			(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
+			(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
+		);
+		
+		FVector CrosshairWorldPosition, CrosshairWorldDirection;
+		if (playerController->DeprojectScreenPositionToWorld(
+				CrosshairScreenPosition.X,
+				CrosshairScreenPosition.Y,
+				CrosshairWorldPosition,
+				CrosshairWorldDirection))
+		{
+			FVector traceStart = CameraLocation;
+			FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
+
+			UE_LOG(LogTemp, Log, TEXT("FireCalled3"));
+			ServerFire(traceStart, traceEnd);
+		}
+	}
 }
 
 void UCombatComponent::Reload()
@@ -309,35 +344,39 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 	_befIndex = _weaponIndex;
 }
 
-void UCombatComponent::ServerFire_Implementation()
+void UCombatComponent::ServerFire_Implementation(FVector traceStart, FVector traceEnd)
 {
-	//Trace
-	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
-	if (!playerController) return;
-
-	FVector CameraLocation;
-	FRotator CameraRotation;
-	playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
-
-	int32 ViewportSizeX, ViewportSizeY;
-	playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
-    
-	float CrosshairSpread = _curSpread * 16.f;
-
-	FVector2D CrosshairScreenPosition(
-		(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
-		(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
-	);
-
-	FVector CrosshairWorldPosition, CrosshairWorldDirection;
-	if (playerController->DeprojectScreenPositionToWorld(
-			CrosshairScreenPosition.X,
-			CrosshairScreenPosition.Y,
-			CrosshairWorldPosition,
-			CrosshairWorldDirection))
-	{
-		FVector traceStart = CameraLocation;
-		FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
+	// //Trace
+	// APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
+	// if (!playerController)
+	// {
+	// 	return;
+	// }
+	//
+	// FVector CameraLocation;
+	// FRotator CameraRotation;
+	// playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+	//
+	// int32 ViewportSizeX, ViewportSizeY;
+	// playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
+	// UE_LOG(LogTemp, Log, TEXT("Viewport Size: %d x %d"), ViewportSizeX, ViewportSizeY);
+	//
+	// float CrosshairSpread = _curSpread * 16.f;
+	//
+	// FVector2D CrosshairScreenPosition(
+	// 	(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
+	// 	(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
+	// );
+	//
+	// FVector CrosshairWorldPosition, CrosshairWorldDirection;
+	// if (playerController->DeprojectScreenPositionToWorld(
+	// 		CrosshairScreenPosition.X,
+	// 		CrosshairScreenPosition.Y,
+	// 		CrosshairWorldPosition,
+	// 		CrosshairWorldDirection))
+	// {
+	// 	FVector traceStart = CameraLocation;
+	// 	FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
 
 		FCollisionQueryParams QueryParams;
 		QueryParams.AddIgnoredActor(GetOwner());
@@ -361,7 +400,13 @@ void UCombatComponent::ServerFire_Implementation()
 			}), _fireDelay, false);
 			_continuedFireCount++;
 		}
-	}
+	// 	
+	// 	UE_LOG(LogTemp, Log, TEXT("FireCalled5"));
+	// }
+	// else
+	// {
+	// 	UE_LOG(LogTemp, Log, TEXT("Fire Canceled 2"));
+	// }
 }
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
