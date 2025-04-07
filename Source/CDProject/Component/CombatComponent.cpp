@@ -498,7 +498,7 @@ void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
 void UCombatComponent::OnRep_WeaponID()
 { //Change Weapon
 	if (_weaponIndex == -1)
-		return;
+		return;`
 	
 	if (!_weapons[_weaponIndex])
 	{

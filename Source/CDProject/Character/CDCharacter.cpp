@@ -275,11 +275,11 @@ void ACDCharacter::Reload()
 	if (!_combat)
 		return;
 	
-	UnAim();
-	
 	//Check Reload Avail
 	if (_combat->IsTotalAmmoEmpty())
 		return;
+	
+	UnAim();
 	
 	_combat->Reload();
 }
