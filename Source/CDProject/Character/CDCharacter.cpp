@@ -69,10 +69,6 @@ void ACDCharacter::BeginPlay()
 			}
 		}
 	}
-
-	_currentArmTransform = _defaultArmTransform;
-	_targetArmTransform = _currentArmTransform;
-	_targetFOV = _defaultFOV;
 }
 
 // Called every frame
@@ -105,12 +101,28 @@ void ACDCharacter::Tick(float DeltaTime)
 	}
 	
 	//Update Arm Mesh Location
-	float InterpSpeed = 10.0f;
-	_currentArmTransform = UKismetMathLibrary::TInterpTo(_currentArmTransform, _targetArmTransform, DeltaTime, InterpSpeed);
-	_armMesh->SetRelativeTransform(_currentArmTransform);
-
-	float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _targetFOV, DeltaTime, InterpSpeed);
-	_camera->SetFieldOfView(NewFOV);
+	if (_combat->IsAimng())
+	{
+		float InterpSpeed = 10.0f;
+		
+		FTransform _currentArmTransform =
+			UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), _aimArmTransform, DeltaTime, InterpSpeed);
+		_armMesh->SetRelativeTransform(_currentArmTransform);
+		
+		float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _combat->GetCurWeapon()->GetZoomedFOV(), DeltaTime, InterpSpeed);
+		_camera->SetFieldOfView(NewFOV);
+	}
+	else
+	{
+		float InterpSpeed = 10.0f;
+		
+		FTransform _currentArmTransform =
+			UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), _defaultArmTransform, DeltaTime, InterpSpeed);
+		_armMesh->SetRelativeTransform(_currentArmTransform);
+		
+		float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
+		_camera->SetFieldOfView(NewFOV);
+	}
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -120,23 +132,27 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	UEnhancedInputComponent* enhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (enhancedInputComponent)
 	{
+		//Auto Replicate
 		enhancedInputComponent->BindAction(_moveAction, ETriggerEvent::Triggered, this, &ACDCharacter::Move);
 		enhancedInputComponent->BindAction(_lookAction, ETriggerEvent::Triggered, this, &ACDCharacter::Look);
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Triggered, this, &ACDCharacter::Jump);
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Completed, this, &ACDCharacter::StopJumping);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
+		//
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Triggered, this, &ACDCharacter::Walk);
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Completed, this, &ACDCharacter::UnWalk);
-		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::Fire);
-		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::Aim);
-		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::Reload);
-		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 0);
-		enhancedInputComponent->BindAction(_changeWeaponActions[1], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 1);
-		enhancedInputComponent->BindAction(_changeWeaponActions[2], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 2);
-		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 3);
-		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Started, this, &ACDCharacter::ChangeWeapon, 4);
-		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::DropWeapon);
+
+		//Need Server Request
+		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::RequestFire);
+		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestAim);
+		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestReload);
+		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 0);
+		enhancedInputComponent->BindAction(_changeWeaponActions[1], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 1);
+		enhancedInputComponent->BindAction(_changeWeaponActions[2], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 2);
+		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 3);
+		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 4);
+		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
 	}
 }
 
@@ -160,9 +176,6 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 
 	DOREPLIFETIME(ACDCharacter, _controlRotation);
 	DOREPLIFETIME(ACDCharacter, _cameraRotation);
-	DOREPLIFETIME(ACDCharacter, _currentArmTransform);
-	DOREPLIFETIME(ACDCharacter, _targetArmTransform);
-	DOREPLIFETIME(ACDCharacter, _targetFOV);
 }
 
 inline void ACDCharacter::PossessedBy(AController* NewController)
@@ -246,38 +259,57 @@ void ACDCharacter::UnWalk()
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
 }
 
-void ACDCharacter::Fire()
+void ACDCharacter::RequestFire()
 {
-	if (!IsLocallyControlled()) return;
-	if (!_combat)
-		return;
+	if (!IsLocallyControlled() || !_combat) return;
 	
 	if (_combat->IsFireAvail())
 	{
-		UE_LOG(LogTemp, Log, TEXT("FireCalled1"));
 		if (_combat->IsAmmoEmpty())
 		{
-			Reload();
+			RequestReload();
 		}
 		else
 		{
-		UE_LOG(LogTemp, Log, TEXT("FireCalled2"));
 			_combat->Fire();
 		}
 	}
 }
 
-void ACDCharacter::Aim()
+void ACDCharacter::RequestAim()
 {
+	if (!_combat)
+		return;
+	
+	// _isAim set -> server _isAim set => On_Rep
+	if (IsLocallyControlled())
+	{
+		if (_combat->IsAimng())
+		{
+			_combat->Aim();
+		}
+		else
+		{
+			_combat->UnAim();
+		}
+	}
 	ServerAim();
 }
 
-void ACDCharacter::UnAim()
+void ACDCharacter::RequestUnAim()
 {
+	if (!_combat)
+		return;
+	
+	// _isAim set -> server _isAim set => On_Rep
+	if (IsLocallyControlled())
+	{
+		_combat->UnAim();
+	}
 	ServerUnAim();
 }
 
-void ACDCharacter::Reload()
+void ACDCharacter::RequestReload()
 {
 	if (!_combat)
 		return;
@@ -286,26 +318,26 @@ void ACDCharacter::Reload()
 	if (_combat->IsTotalAmmoEmpty())
 		return;
 	
-	UnAim();
+	RequestUnAim();
 	
 	_combat->Reload();
 }
 
-void ACDCharacter::ChangeWeapon(int weaponIndex)
+void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
 	if (_combat->ChangeWeapon(weaponIndex))
 	{
-		UnAim();
+		RequestUnAim();
 	}
 }
 
-void ACDCharacter::DropWeapon()
+void ACDCharacter::RequestDropWeapon()
 {
 	if (!_combat)
 		return;
-	UnAim();
+	RequestUnAim();
 	_combat->DropWeapon();
 }
 
@@ -333,9 +365,6 @@ void ACDCharacter::ServerAim_Implementation()
 	else if (_combat->IsAimAvail())
 	{
 		_combat->Aim();
-		_targetArmTransform = _aimArmTransform;
-		if (_combat->GetCurWeapon())
-			_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
 	}
 }
 
@@ -344,9 +373,6 @@ void ACDCharacter::ServerUnAim_Implementation()
 	if (!_combat)
     	return;
 	_combat->UnAim();
-
-	_targetArmTransform = _defaultArmTransform;
-	_targetFOV = _defaultFOV;
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const

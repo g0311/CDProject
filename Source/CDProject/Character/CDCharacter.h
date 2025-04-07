@@ -47,20 +47,15 @@ private:
 	FTransform _defaultArmTransform;
 	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform  _aimArmTransform;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
-	FTransform  _currentArmTransform;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
-	FTransform  _targetArmTransform;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float _defaultFOV = 90.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Camera")
-	float _targetFOV;
 	
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
+	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
 	
 private:
 	//Input
@@ -94,12 +89,12 @@ private:
 	void Walk();
 	void UnWalk();
 	
-	void Fire();
-	void Aim();
-	void UnAim();
-	void Reload();
-	void ChangeWeapon(int weaponIndex);
-	void DropWeapon();
+	void RequestFire();
+	void RequestAim();
+	void RequestUnAim();
+	void RequestReload();
+	void RequestChangeWeapon(int weaponIndex);
+	void RequestDropWeapon();
 public:
 	void GetWeapon(class AWeapon* weapon);
 	

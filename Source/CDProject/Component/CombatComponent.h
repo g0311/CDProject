@@ -34,7 +34,6 @@ public:
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
 	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
-	FORCEINLINE float GetContinuedFireCount() { return _continuedFireCount; }
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 
 	AWeapon* GetCurWeapon();
@@ -68,7 +67,6 @@ private:
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
-	float _continuedFireCount;
 	
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
@@ -80,14 +78,14 @@ private:
 	//보안용 레플리케이트
 	
 	void CreateDefaultWeapons();
-	float CaculateSpread();
+	float CalculateSpread();
 private:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 	
 	//network
 	UFUNCTION(Server, Reliable)
-	void ServerFire(FVector traceStart, FVector traceEnd);
+	void ServerFire(FVector fireDir);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastFire(FVector target);
 	UFUNCTION(Server, Reliable)

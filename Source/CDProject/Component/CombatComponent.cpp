@@ -5,6 +5,7 @@
 
 #include <CDProject/HUD/CDHUD.h>
 
+#include "Camera/CameraComponent.h"
 #include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
@@ -39,8 +40,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	//Update Spread
 	if (_playerCharacter->HasAuthority())
 	{
-		float newSpread = CaculateSpread();
-		_continuedFireCount = FMath::FInterpTo(_continuedFireCount, 0.f, DeltaTime, 3.f);
+		float newSpread = CalculateSpread();
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 	}
 	SetHUDCrosshairs(_curSpread);
@@ -75,41 +75,19 @@ void UCombatComponent::Fire()
 {
 	if (_weaponIndex != -1 && _weapons[_weaponIndex])
 	{
-		//Trace
 		APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
 		if (!playerController)
 		{
 			return;
 		}
 		
-		FVector CameraLocation;
-		FRotator CameraRotation;
-		playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+		FRotator CameraRot;
+		FVector CameraLoc;
+		playerController->GetPlayerViewPoint(CameraLoc, CameraRot);
 		
-		int32 ViewportSizeX, ViewportSizeY;
-		playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
-		UE_LOG(LogTemp, Log, TEXT("Viewport Size: %d x %d"), ViewportSizeX, ViewportSizeY);
+		FVector FireDirection = CameraRot.Vector();
 		
-		float CrosshairSpread = _curSpread * 16.f;
-		
-		FVector2D CrosshairScreenPosition(
-			(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
-			(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
-		);
-		
-		FVector CrosshairWorldPosition, CrosshairWorldDirection;
-		if (playerController->DeprojectScreenPositionToWorld(
-				CrosshairScreenPosition.X,
-				CrosshairScreenPosition.Y,
-				CrosshairWorldPosition,
-				CrosshairWorldDirection))
-		{
-			FVector traceStart = CameraLocation;
-			FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
-
-			UE_LOG(LogTemp, Log, TEXT("FireCalled3"));
-			ServerFire(traceStart, traceEnd);
-		}
+		ServerFire(FireDirection);
 	}
 }
 
@@ -131,13 +109,7 @@ void UCombatComponent::Aim()
 
 void UCombatComponent::UnAim()
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
-	
-	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
-	{
-		_isAiming = false;
-	}
+	_isAiming = false;
 }
 
 bool UCombatComponent::ChangeWeapon(int idx)
@@ -290,12 +262,12 @@ void UCombatComponent::CreateDefaultWeapons()
 	}
 }
 
-float UCombatComponent::CaculateSpread()
+float UCombatComponent::CalculateSpread()
 {
 	if (!_playerCharacter)
 		return 0;
 	
-	float spread = 1.0f;
+	float spread = 1.f;
 	
 	float Speed = _playerCharacter->GetVelocity().Size();
 	spread += (Speed / 470.f) * 1.8f; //MaxSpeed
@@ -306,16 +278,13 @@ float UCombatComponent::CaculateSpread()
 	}
 	if (_playerCharacter->bIsCrouched)
 	{
-		spread -= 0.3f;  // 앉으면 감소
+		spread -= 0.5f;  // 앉으면 감소
 	}
 	if (_isAiming)
 	{
-		spread -= 0.3f;
+		spread -= 0.4f;
 	}
-	float continuouedFireFactor = FMath::Clamp(_continuedFireCount * 3 / 5.0f /* x Weapon Spread */, 0.f, 3.f); 
-	spread += continuouedFireFactor;
-	
-	return FMath::Clamp(spread, 0.4f, 5.f);
+	return FMath::Clamp(spread, 0.1f, 5.f);
 }
 
 void UCombatComponent::SetWeaponVisible(bool tf)
@@ -344,69 +313,49 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 	_befIndex = _weaponIndex;
 }
 
-void UCombatComponent::ServerFire_Implementation(FVector traceStart, FVector traceEnd)
+void UCombatComponent::ServerFire_Implementation(FVector fireDir)
 {
-	// //Trace
-	// APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
-	// if (!playerController)
-	// {
-	// 	return;
-	// }
-	//
-	// FVector CameraLocation;
-	// FRotator CameraRotation;
-	// playerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
-	//
-	// int32 ViewportSizeX, ViewportSizeY;
-	// playerController->GetViewportSize(ViewportSizeX, ViewportSizeY);
-	// UE_LOG(LogTemp, Log, TEXT("Viewport Size: %d x %d"), ViewportSizeX, ViewportSizeY);
-	//
-	// float CrosshairSpread = _curSpread * 16.f;
-	//
-	// FVector2D CrosshairScreenPosition(
-	// 	(ViewportSizeX / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread),
-	// 	(ViewportSizeY / 2.f) + FMath::RandRange(-CrosshairSpread, CrosshairSpread)
-	// );
-	//
-	// FVector CrosshairWorldPosition, CrosshairWorldDirection;
-	// if (playerController->DeprojectScreenPositionToWorld(
-	// 		CrosshairScreenPosition.X,
-	// 		CrosshairScreenPosition.Y,
-	// 		CrosshairWorldPosition,
-	// 		CrosshairWorldDirection))
-	// {
-	// 	FVector traceStart = CameraLocation;
-	// 	FVector traceEnd = traceStart + (CrosshairWorldDirection * 10000.f);
+	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
 
-		FCollisionQueryParams QueryParams;
-		QueryParams.AddIgnoredActor(GetOwner());
-		QueryParams.AddIgnoredActor(_weapons[_weaponIndex]);
+    float spreadAngleDeg = _curSpread;
+	UE_LOG(LogTemp, Log, TEXT("%f"), _curSpread);
+	float spreadAngleRad = FMath::DegreesToRadians(spreadAngleDeg);
+    
+    FVector rightVector = FVector::CrossProduct(fireDir, FVector::UpVector).GetSafeNormal();
+    FVector upVector = FVector::CrossProduct(rightVector, fireDir).GetSafeNormal();
+    
+    float randYaw = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
+    float randPitch = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
+    
+    FVector spreadDirection = 
+    	fireDir.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), upVector)
+    	             .RotateAngleAxis(FMath::RadiansToDegrees(randPitch), rightVector)
+    	             .GetSafeNormal();
 
-		FHitResult hit;
-		if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
-		{
-			// if (hit.GetActor() && hit.GetActor()->Implements<UIsEnemyInterface>())
-			// 	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
-			// else
-			// 	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
-			
-			NetMulticastFire(hit.Location);
-
-			//Fire Delay
-			NetMulticastSetIsCanFire(false);
-			GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
-			{
-				NetMulticastSetIsCanFire(true);
-			}), _fireDelay, false);
-			_continuedFireCount++;
-		}
-	// 	
-	// 	UE_LOG(LogTemp, Log, TEXT("FireCalled5"));
-	// }
-	// else
-	// {
-	// 	UE_LOG(LogTemp, Log, TEXT("Fire Canceled 2"));
-	// }
+	FVector traceEnd = traceStart + spreadDirection * 10000.f;
+	
+	FCollisionQueryParams queryParams;
+	queryParams.AddIgnoredActor(GetOwner());
+	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
+	FHitResult hit;
+	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, queryParams))
+	{
+		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
+		NetMulticastFire(hit.Location);
+		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
+	}
+	else
+	{
+		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
+		NetMulticastFire(traceEnd);
+	}
+	
+	//Fire Delay
+	NetMulticastSetIsCanFire(false);
+	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		NetMulticastSetIsCanFire(true);
+	}), _fireDelay, false);
 }
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
