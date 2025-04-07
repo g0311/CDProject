@@ -44,15 +44,16 @@ public:
 	//Using This function -> ProjectileWeapon
 
 	//* Widget Set function
-	void ShowPickUpWidget(bool bShowWidget);
 	void SetHUDAmmo();
 	
 	void SetWeaponState(EWeaponState state);
 	void AddAmmo(int32 AmmoToAdd);
 	void Reload();
 	
-	void Dropped();
+	void Dropped(FVector& impactDir);
 	void Picked();
+
+	void AttachToPlayer();
 
 	//WeaponState
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -119,8 +120,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
 	EWeaponType WeaponType;
 
-
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 	class ACDCharacter* OwnerCharacter;
 
 	UPROPERTY()
@@ -161,13 +161,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* WeaponMesh3p;
-
-
+	
 	UPROPERTY(VisibleAnywhere)
 	class USphereComponent* AreaSphere;
-
-	UPROPERTY(VisibleAnyWhere)
-	class UWidgetComponent* PickupWidget;
 
 	UPROPERTY(EditAnywhere, Category="Weapon Property")
 	class UAnimationAsset* FireAnimation;

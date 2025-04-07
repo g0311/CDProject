@@ -75,7 +75,7 @@ public:
 	TObjectPtr<UAnimMontage> _deadMontage;
 	void PlayFireMontage(float fireRate);
 	void PlayReloadMontage();
-	void PlayEquipMontage();
+	void PlayEquipMontage(class AWeapon* nextWeapon);
 	void PlayDeadMontage();
 	
 	void UpdateFullBodyProperty();

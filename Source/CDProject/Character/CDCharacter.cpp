@@ -65,14 +65,7 @@ void ACDCharacter::BeginPlay()
 				subSystem->AddMappingContext(_inputMappingContext, 0);
 			}
 		}
-	
-		if (_abilitySystemComponent)
-		{//이거 서버에서 해야되나? ㄴㄴ
-			_abilitySystemComponent->InitAbilityActorInfo(this, this);
-			InitializeAttributes();
-		}
 	}
-	
 	_currentArmTransform = _defaultArmTransform;
 	_targetArmTransform = _currentArmTransform;
 	_targetFOV = _defaultFOV;
@@ -88,6 +81,7 @@ void ACDCharacter::Tick(float DeltaTime)
 		if (Controller != nullptr)
 			_controlRotation = Controller->GetControlRotation();
 		_cameraRotation = _camera->GetRelativeRotation();
+		SetControlCameraRotation(_controlRotation, _cameraRotation);
 	}
 	if (!IsLocallyControlled())
 	{
@@ -145,9 +139,13 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	//float curHealth = _attributeSet->GetHealth();
-	//curHealth -= DamageAmount;
-	//_attributeSet->SetHealth(curHealth);
+	float curHealth = _attributeSet->GetHealth();
+	curHealth -= DamageAmount;
+	_attributeSet->SetHealth(curHealth);
+	if (curHealth <= 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("player Dead"));
+	}
 	
 	return DamageAmount;
 }
@@ -158,6 +156,20 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 
 	DOREPLIFETIME(ACDCharacter, _controlRotation);
 	DOREPLIFETIME(ACDCharacter, _cameraRotation);
+	DOREPLIFETIME(ACDCharacter, _currentArmTransform);
+	DOREPLIFETIME(ACDCharacter, _targetArmTransform);
+	DOREPLIFETIME(ACDCharacter, _targetFOV);
+}
+
+inline void ACDCharacter::PossessedBy(AController* NewController)
+{ //Server Part
+	Super::PossessedBy(NewController);
+	if (_abilitySystemComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Possessed Called"));
+		_abilitySystemComponent->InitAbilityActorInfo(this, this);
+		InitializeAttributes();
+	}
 }
 
 void ACDCharacter::RespawnPlayer()
@@ -237,7 +249,7 @@ void ACDCharacter::Fire()
 	
 	if (_combat->IsFireAvail())
 	{
-		if (false/*_combat->IsAmmoEmpty()*/)
+		if (_combat->IsAmmoEmpty())
 		{
 			Reload();
 		}
@@ -250,30 +262,12 @@ void ACDCharacter::Fire()
 
 void ACDCharacter::Aim()
 {
-	if (!_combat)
-		return;
-	if(_combat->IsAimng())
-	{
-		_combat->UnAim();
-		_targetArmTransform = _defaultArmTransform;
-		_targetFOV = _defaultFOV;
-	}
-	else if (_combat->IsAimAvail())
-	{
-		_combat->Aim();
-		_targetArmTransform = _aimArmTransform;
-		_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
-	}
+	ServerAim();
 }
 
 void ACDCharacter::UnAim()
 {
-	if (!_combat)
-		return;
-	
-	_combat->UnAim();
-	_targetArmTransform = _defaultArmTransform;
-	_targetFOV = _defaultFOV;
+	ServerUnAim();
 }
 
 void ACDCharacter::Reload()
@@ -300,6 +294,14 @@ void ACDCharacter::ChangeWeapon(int weaponIndex)
 	}
 }
 
+void ACDCharacter::DropWeapon()
+{
+	if (!_combat)
+		return;
+	UnAim();
+	_combat->DropWeapon();
+}
+
 void ACDCharacter::GetWeapon(AWeapon* weapon)
 {
 	if (!_combat)
@@ -307,12 +309,37 @@ void ACDCharacter::GetWeapon(AWeapon* weapon)
 	_combat->GetWeapon(weapon);
 }
 
-void ACDCharacter::DropWeapon()
+void ACDCharacter::SetControlCameraRotation_Implementation(FRotator control, FRotator camera)
+{
+	_controlRotation = control;
+	_cameraRotation = camera;
+}
+
+void ACDCharacter::ServerAim_Implementation()
 {
 	if (!_combat)
 		return;
-	UnAim();
-	_combat->DropWeapon();
+	if(_combat->IsAimng())
+	{
+		ServerUnAim();
+	}
+	else if (_combat->IsAimAvail())
+	{
+		_combat->Aim();
+		_targetArmTransform = _aimArmTransform;
+		if (_combat->GetCurWeapon())
+			_targetFOV = _combat->GetCurWeapon()->GetZoomedFOV();
+	}
+}
+
+void ACDCharacter::ServerUnAim_Implementation()
+{
+	if (!_combat)
+    	return;
+	_combat->UnAim();
+
+	_targetArmTransform = _defaultArmTransform;
+	_targetFOV = _defaultFOV;
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
@@ -330,10 +357,10 @@ void ACDCharacter::InitializeAttributes()
 	FGameplayEffectContextHandle EffectContext = _abilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(this);
 
-	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributes, 0, EffectContext);
+	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributeEffect, 0, EffectContext);
 	if(NewHandle.IsValid())
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
-			_abilitySystemComponent->ApplyGameplayEffectSpecToTarget(*NewHandle.Data.Get(), _abilitySystemComponent.Get());
+			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
 	}
 }

@@ -36,15 +36,15 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 	if (!HasAuthority()) return;
 	APawn* InstigatorPawn=Cast<APawn>(GetOwner());
 	const USkeletalMeshSocket* MuzzleFlashSocket=GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
+	//(LogTemp,Display,TEXT("Fire"));
 	if (MuzzleFlashSocket)
 	{
-		
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
-		FVector MuzzleLocation = SocketTransform.GetLocation();
 		FVector ToTarget = HitTarget - SocketTransform.GetLocation();
 		FRotator TargetRotation = ToTarget.Rotation();
 		if (ProjectileClass&&InstigatorPawn)
 		{
+			//UE_LOG(LogTemp,Display,TEXT("Projectile spawn"));
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = GetOwner();
 			SpawnParams.Instigator=InstigatorPawn;
@@ -53,39 +53,38 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 			{
 				AProjectile* Projectile=World->SpawnActor<AProjectile>(
 					ProjectileClass,
-					MuzzleLocation,
+					SocketTransform.GetLocation(),
 					TargetRotation,
 					SpawnParams
 					);
-				if (Projectile)
-				{
-					DrawDebugSphere(
-						GetWorld(),
-						Projectile->GetActorLocation(),
-						10.f, 
-						12,   
-						FColor::Red,
-						false, 
-						5.0f,  
-						0,
-						2.0f   
-					);
-				}
-				FVector StartLocation = Projectile->GetActorLocation();
-				FVector EndLocation = StartLocation + Projectile->GetActorForwardVector() * 700.f; 
-				DrawDebugDirectionalArrow(
-					GetWorld(),
-					StartLocation,
-					EndLocation,
-					100.f,  
-					FColor::Blue,
-					false,
-					5.0f,
-					0,
-					2.0f
-				);
-			
-			
+				// if (Projectile)
+				// {
+				// 	UE_LOG(LogTemp, Warning, TEXT("Projectile spawn2"));
+				// }
+				// else
+				// {
+				// 	UE_LOG(LogTemp, Error, TEXT("Projectile failed!"));
+				// }
+				// if (Projectile)
+				// {
+				// 	DrawDebugSphere(
+				// 		GetWorld(),
+				// 		Projectile->GetActorLocation(),
+				// 		10.f, 
+				// 		12,   
+				// 		FColor::Red,
+				// 		false, 
+				// 		5.0f,  
+				// 		0,
+				// 		2.0f   
+				// 	);
+				// }
+				// if (Projectile)
+				// {
+				// 	FVector SpawnLocation = Projectile->GetActorLocation();
+				// 	UE_LOG(LogTemp, Warning, TEXT("Projectile Spawned At: X=%.2f Y=%.2f Z=%.2f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+				// }
+				//
 			}
 		}
 		

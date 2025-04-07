@@ -25,7 +25,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-
+	virtual void PossessedBy(AController* NewController) override;
+	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
 private:
@@ -42,16 +43,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Components")
 	float _eyeHeight = 50.f;
 	
-	UPROPERTY(EditAnywhere, Replicated, Category = "Components")
+	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform _defaultArmTransform;
-	UPROPERTY(EditAnywhere, Replicated, Category = "Components")
+	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform  _aimArmTransform;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
 	FTransform  _currentArmTransform;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
 	FTransform  _targetArmTransform;
 
-	UPROPERTY(EditAnywhere, Replicated, Category = "Camera")
+	UPROPERTY(EditAnywhere, Category = "Camera")
 	float _defaultFOV = 90.0f;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Camera")
 	float _targetFOV;
@@ -59,6 +60,7 @@ private:
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
+	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	
 private:
 	//Input
@@ -89,7 +91,6 @@ private:
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
 	void Crouch(bool bClientSimulation = false) override;
-	
 	void Walk();
 	void UnWalk();
 	
@@ -108,17 +109,26 @@ private:
 	FRotator _controlRotation;
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _cameraRotation;
-
+	UFUNCTION(Server, Reliable)
+	void SetControlCameraRotation(FRotator control, FRotator camera);
+	UFUNCTION(Server, Reliable)
+	void ServerAim();
+	UFUNCTION(Server, Reliable)
+	void ServerUnAim();
+	
 public:
-	FORCEINLINE FRotator GetRepControlRotation() { return _controlRotation; }
+	FORCEINLINE FRotator GetControlRotation() { return _controlRotation; }
+
 	
 private:
 	//GAS
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
+	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")
-	TSubclassOf<class UGameplayEffect> _defaultAttributes;
+	TSubclassOf<class UGameplayEffect> _defaultAttributeEffect;
 public:
 	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;

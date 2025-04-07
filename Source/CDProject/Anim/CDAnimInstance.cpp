@@ -41,16 +41,20 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 	if (_isFullBody)
 	{
 		if (_isAiming)
+		{
 			if (_aimFireMontage)
-				Montage_Play(_aimFireMontage, 1.f / fireRate * 1.5);
+				Montage_Play(_aimFireMontage, 1.f / fireRate);
+		}
 		else
+		{
 			if (_baseFireMontage)
-				Montage_Play(_baseFireMontage, 1.f / fireRate  * 1.5);
+				Montage_Play(_baseFireMontage, 1.f / fireRate);
+		}
 	}
 	else
 	{
 		if (_aimFireMontage)
-			Montage_Play(_aimFireMontage);
+				Montage_Play(_aimFireMontage, 1.f / fireRate);
 	}
 }
 
@@ -64,13 +68,12 @@ void UCDAnimInstance::PlayReloadMontage()
 		case static_cast<uint8>(EWeaponType::EWT_Sniper):
 			if (_rifleReloadMontage)
 				Montage_Play(_rifleReloadMontage);
-			//Montage_SetEndDelegate()
 			break;
 		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
 			if (_rifleReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Speical):
+		case static_cast<uint8>(EWeaponType::EWT_Pistol):
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -89,7 +92,7 @@ void UCDAnimInstance::PlayReloadMontage()
 			if (_shotgunReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Speical):
+		case static_cast<uint8>(EWeaponType::EWT_Pistol):
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -97,19 +100,25 @@ void UCDAnimInstance::PlayReloadMontage()
 	}
 }
 
-void UCDAnimInstance::PlayEquipMontage()
+void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 {
-	switch (_weaponType)
+	switch (nextWeapon->GetWeaponType())
 	{
-	case static_cast<uint8>(EWeaponType::EWT_Rifle):
-	case static_cast<uint8>(EWeaponType::EWT_Sniper):
-	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+	case (EWeaponType::EWT_Rifle):
+	case (EWeaponType::EWT_Sniper):
+	case (EWeaponType::EWT_Shotgun):
 		if (_equipRifleMontage)
+		{
 			Montage_Play(_equipRifleMontage);
+		}
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Speical):
+	case (EWeaponType::EWT_Pistol):
 		if (_equipPistolMontage)
+		{
 			Montage_Play(_equipPistolMontage);
+		}
+		break;
+	default:
 		break;
 	}
 }
@@ -129,7 +138,7 @@ void UCDAnimInstance::UpdateFullBodyProperty()
 	_movementSpeed = FVector(velocity.X, velocity.Y, 0.f).Size();
 	_direction = UKismetAnimationLibrary::CalculateDirection(velocity, _playerCharacter->GetActorRotation());
 		
-	FRotator controlRot = _playerCharacter->GetRepControlRotation();
+	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FRotator actorRot = _playerCharacter->GetActorRotation();
 	FRotator deltaRot = controlRot - actorRot;
 		
