@@ -65,7 +65,6 @@ void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
 		FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
-	
 }
 
 void ACDPlayerController::SetHUDShield(float Shield, float MaxShield)

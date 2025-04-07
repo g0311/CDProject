@@ -48,6 +48,7 @@ ACDCharacter::ACDCharacter()
 
 	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
 	if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
+	//접근 안됨
 }
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()
@@ -253,12 +254,14 @@ void ACDCharacter::Fire()
 	
 	if (_combat->IsFireAvail())
 	{
+		UE_LOG(LogTemp, Log, TEXT("FireCalled1"));
 		if (_combat->IsAmmoEmpty())
 		{
 			Reload();
 		}
 		else
 		{
+		UE_LOG(LogTemp, Log, TEXT("FireCalled2"));
 			_combat->Fire();
 		}
 	}
@@ -279,11 +282,11 @@ void ACDCharacter::Reload()
 	if (!_combat)
 		return;
 	
-	UnAim();
-	
 	//Check Reload Avail
 	if (_combat->IsTotalAmmoEmpty())
 		return;
+	
+	UnAim();
 	
 	_combat->Reload();
 }
