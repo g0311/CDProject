@@ -13,6 +13,7 @@
 
 ACDGameMode::ACDGameMode()
 {
+	DefaultPawnClass = ACDCharacter::StaticClass();
 	bDelayedStart=true;
 }
 
@@ -67,5 +68,7 @@ void ACDGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Elim
 	}
 	
 }
+
+
 
 

@@ -53,11 +53,13 @@ ACDCharacter::ACDCharacter()
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (IsLocallyControlled())
+
+	APlayerController* playerController = Cast<APlayerController>(Controller);
+	if (playerController)
 	{
-		APlayerController* playerController = Cast<APlayerController>(Controller);
-		if (playerController)
+		EnableInput(playerController); 
+
+		if (IsLocallyControlled()) 
 		{
 			UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(playerController->GetLocalPlayer()); 
 			if (subSystem)
@@ -66,6 +68,7 @@ void ACDCharacter::BeginPlay()
 			}
 		}
 	}
+
 	_currentArmTransform = _defaultArmTransform;
 	_targetArmTransform = _currentArmTransform;
 	_targetFOV = _defaultFOV;
@@ -244,6 +247,7 @@ void ACDCharacter::UnWalk()
 
 void ACDCharacter::Fire()
 {
+	if (!IsLocallyControlled()) return;
 	if (!_combat)
 		return;
 	
