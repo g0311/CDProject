@@ -16,6 +16,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	Super::PostLogin(NewPlayer);
 
 	int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
+	UE_LOG(LogTemp, Warning, TEXT("PostLogin: %s"), *NewPlayer->GetName());
 	if (NumberOfPlayers == 2)
 	{
 		UWorld* World = GetWorld();

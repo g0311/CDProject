@@ -22,6 +22,7 @@ public:
 		ACDPlayerController* AttackerController
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
+	
 
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
