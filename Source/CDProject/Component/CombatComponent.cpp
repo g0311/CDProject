@@ -56,6 +56,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isCanAim);
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
+	DOREPLIFETIME(UCombatComponent, _continuedFireCount);
 }
 
 void UCombatComponent::Reset()
@@ -345,21 +346,11 @@ void UCombatComponent::ServerFire_Implementation()
 		FHitResult hit;
 		if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, QueryParams))
 		{
-			if (hit.GetActor() && hit.GetActor()->Implements<UIsEnemyInterface>())
-				DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
-			else
-				DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
-			// DrawDebugSphere(GetWorld(), hit.Location, 10.f, 
-			// 			12,   
-			// 			FColor::Green,
-			// 			false, 
-			// 			5.0f,  
-			// 			0,
-			// 			2.0f);
-			// if (hit.GetActor())
-			// 	UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *hit.GetActor()->GetName());
-			// if (hit.GetActor())
-			// 	UE_LOG(LogTemp, Warning, TEXT("Hit Component: %s"), *hit.GetComponent()->GetName());
+			// if (hit.GetActor() && hit.GetActor()->Implements<UIsEnemyInterface>())
+			// 	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Red, false, 2.0f, 0, 0.1f);
+			// else
+			// 	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Green, false, 2.0f, 0, 0.1f);
+			
 			NetMulticastFire(hit.Location);
 
 			//Fire Delay
@@ -498,7 +489,7 @@ void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
 void UCombatComponent::OnRep_WeaponID()
 { //Change Weapon
 	if (_weaponIndex == -1)
-		return;`
+		return;
 	
 	if (!_weapons[_weaponIndex])
 	{

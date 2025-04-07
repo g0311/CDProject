@@ -48,6 +48,7 @@ ACDCharacter::ACDCharacter()
 
 	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
 	if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
+	//접근 안됨
 }
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()

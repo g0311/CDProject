@@ -68,6 +68,7 @@ private:
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
+	UPROPERTY(VisibleAnywhere, Replicated)
 	float _continuedFireCount;
 	
 	FTimerHandle _fireTimerHandle;
