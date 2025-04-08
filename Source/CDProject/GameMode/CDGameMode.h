@@ -17,6 +17,7 @@ class CDPROJECT_API ACDGameMode : public AGameMode
 	
 public:
 	ACDGameMode();
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void PlayerEliminated(class ACDCharacter* ElimmedCharacter,
 		class ACDPlayerController* VictimController,
 		ACDPlayerController* AttackerController
@@ -30,7 +31,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	float WarmUpTime=10.f;
-
+	float Countdown=0.f;
 	float LevelStartingTime=0.f;
 	
 protected:

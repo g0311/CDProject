@@ -51,7 +51,6 @@ public:
 	void Reload();
 	
 	void Dropped(FVector& impactDir);
-	void Picked();
 
 	void AttachToPlayer();
 
@@ -117,7 +116,7 @@ protected:
 	UPROPERTY(ReplicatedUsing=OnRep_WeaponState,VisibleAnywhere, Category="Weapon Property")
 	EWeaponState WeaponState;
 
-	UPROPERTY(VisibleAnywhere, Category="Weapon Property")
+	UPROPERTY(EditAnywhere, Category="Weapon Property")
 	EWeaponType WeaponType;
 
 	UPROPERTY(VisibleAnywhere)

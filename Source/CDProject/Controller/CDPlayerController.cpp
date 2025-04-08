@@ -53,6 +53,8 @@ bool ACDPlayerController::EnsureHUD()
 
 void ACDPlayerController::SetHUDTime()
 {
+	int32 SecondsLeft=MatchTime-GetWorld()->GetTimeSeconds();
+	SetHUDCount(SecondsLeft);
 }
 
 
@@ -139,8 +141,10 @@ void ACDPlayerController::SetHUDCount(float CountdownTime)
 {
 	if (EnsureHUD() && CDHUD->CharacterOverlay->MatchCountdownText)
 	{
-		FString CountdownText = FString::Printf(TEXT("%f"), CountdownTime);
-		CDHUD->CharacterOverlay->MatchCountdownText;
+		int32 Min=FMath::CeilToInt(CountdownTime/60);
+		int32 Sec=FMath::CeilToInt(CountdownTime-Min*60);
+		FString CountdownText = FString::Printf(TEXT("%d:%d"), Min,Sec);
+		CDHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
 	}
 }
 
@@ -192,7 +196,7 @@ void ACDPlayerController::OnMatchStateSet(FName State)
 	if (MatchState==MatchState::InProgress)
 	{
 		CDHUD=Cast<ACDHUD>(GetHUD());
-		if (CDHUD)
+		if (!CDHUD->CharacterOverlay)
 		{
 			CDHUD->AddCharacterOverlay();
 		}
@@ -203,3 +207,9 @@ void ACDPlayerController::HandleMatchHasStarted()
 {
 }
 
+void ACDPlayerController::ShowSniperScope()
+{
+	// ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetPawn());
+	// UCombatComponent* CombatComponent = Cast<UCombatComponent>(CDCharacter->GetComponentByClass(UCombatComponent::StaticClass()));
+	// if (CombatComponent->GetCurWeaponType()==EWeaponType::EWT_Sniper)
+}

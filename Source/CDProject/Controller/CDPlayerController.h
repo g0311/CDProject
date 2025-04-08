@@ -25,6 +25,8 @@ public:
 	void SetHUDWeaponInfo(class AWeapon* weapon);
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDCount(float CountdownTime);
+	//Weapon
+	void ShowSniperScope();
 
 	//HUD initialize
 	void InitializeHUD();
@@ -36,6 +38,7 @@ public:
 	void OnMatchStateSet(FName State);
 	void HandleMatchHasStarted();
 	void HandleCooldown();
+
 	
 	
 protected:

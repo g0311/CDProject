@@ -17,6 +17,19 @@ ACDGameMode::ACDGameMode()
 	bDelayedStart=true;
 }
 
+void ACDGameMode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	Countdown=FMath::CeilToInt(WarmUpTime-LevelStartingTime);
+	if (MatchState==MatchState::WaitingToStart)
+	{
+		if (Countdown==-1)
+		{
+			StartMatch();
+		}
+	}
+}
+
 void ACDGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -36,8 +49,6 @@ void ACDGameMode::OnMatchStateSet()
 		}
 	}
 }
-
-
 
 void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController,
                                    ACDPlayerController* AttackerController)
