@@ -85,7 +85,7 @@ private:
 	
 	//network
 	UFUNCTION(Server, Reliable)
-	void ServerFire(FVector fireDir);
+	void ServerFire();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastFire(FVector target);
 	UFUNCTION(Server, Reliable)

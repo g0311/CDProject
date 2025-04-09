@@ -75,19 +75,7 @@ void UCombatComponent::Fire()
 {
 	if (_weaponIndex != -1 && _weapons[_weaponIndex])
 	{
-		APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
-		if (!playerController)
-		{
-			return;
-		}
-		
-		FRotator CameraRot;
-		FVector CameraLoc;
-		playerController->GetPlayerViewPoint(CameraLoc, CameraRot);
-		
-		FVector FireDirection = CameraRot.Vector();
-		
-		ServerFire(FireDirection);
+		ServerFire();
 	}
 }
 
@@ -313,22 +301,24 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 	_befIndex = _weaponIndex;
 }
 
-void UCombatComponent::ServerFire_Implementation(FVector fireDir)
+void UCombatComponent::ServerFire_Implementation()
 {
 	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
+	FRotator traceRotator = _playerCharacter->GetCamera()->GetComponentRotation();
+	FVector traceDir = traceRotator.Vector();
 
     float spreadAngleDeg = _curSpread;
-	UE_LOG(LogTemp, Log, TEXT("%f"), _curSpread);
+	//UE_LOG(LogTemp, Log, TEXT("%f"), _curSpread);
 	float spreadAngleRad = FMath::DegreesToRadians(spreadAngleDeg);
     
-    FVector rightVector = FVector::CrossProduct(fireDir, FVector::UpVector).GetSafeNormal();
-    FVector upVector = FVector::CrossProduct(rightVector, fireDir).GetSafeNormal();
+    FVector rightVector = FVector::CrossProduct(traceDir, FVector::UpVector).GetSafeNormal();
+    FVector upVector = FVector::CrossProduct(rightVector, traceDir).GetSafeNormal();
     
     float randYaw = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
     float randPitch = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
     
     FVector spreadDirection = 
-    	fireDir.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), upVector)
+    	traceDir.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), upVector)
     	             .RotateAngleAxis(FMath::RadiansToDegrees(randPitch), rightVector)
     	             .GetSafeNormal();
 
@@ -419,6 +409,7 @@ void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 	_weaponIndex = idx;
 
 	OnRep_WeaponID();
+	//리슨 서버 테스트용
 }
 
 void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
