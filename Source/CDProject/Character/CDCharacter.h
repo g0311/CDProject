@@ -8,6 +8,8 @@
 #include "AbilitySystemInterface.h"
 #include "CDCharacter.generated.h"
 
+#define  MAXSPEED 470.f
+
 UCLASS()
 class CDPROJECT_API ACDCharacter : public ACharacter, public IAbilitySystemInterface
 {

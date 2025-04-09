@@ -19,15 +19,6 @@ public:
 
 	void Reset();
 	
-	void Fire();
-	void Reload();
-	void ChangeWeapon(int idx);
-	void DropWeapon();
-	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
-	void Aim(bool tf);
-	void UnAim();
-	void SetHUDCrosshairs(float spread);
-	
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
@@ -85,24 +76,35 @@ public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 	
-	//network
+	//ServerCall
 	UFUNCTION(Server, Reliable)
 	void ServerFire();
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastFire(FVector target);
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastReload();
 	UFUNCTION(Server, Reliable)
 	void ServerChangeWeapon(int idx);
 	UFUNCTION(Server, Reliable)
 	void ServerDropWeapon();
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastDropWeapon(AWeapon* weapon);
 	UFUNCTION(Server, Reliable)
 	void ServerAim(bool tf);
+	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
+		//Both Call
+		void Aim(bool tf);
 private:
+	//Implementation
+	void Fire();
+	void Reload();
+	void ChangeWeapon(int idx);
+	void DropWeapon();
+	void SetHUDCrosshairs(float spread);
+
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastFire(FVector target);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastReload();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastDropWeapon(AWeapon* weapon);
 	UFUNCTION()
 	void OnRep_WeaponID();
 

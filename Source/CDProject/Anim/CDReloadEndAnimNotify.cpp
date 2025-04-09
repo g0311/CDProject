@@ -20,10 +20,8 @@ void UCDReloadEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSeque
 		UCombatComponent* combat = character->GetCombatComponent();
 		if (combat)
 		{
-			// combat->SetFireAvail();
-			// combat->SetAimAvail();
-			if (combat->GetCurWeapon())
-				combat->GetCurWeapon()->Reload();
+			// if (combat->GetCurWeapon())
+			// 	combat->GetCurWeapon()->Reload();
 			UE_LOG(LogTemp, Log, TEXT("Reload called"));
 		}
 	}
