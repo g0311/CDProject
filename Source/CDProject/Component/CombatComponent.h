@@ -21,11 +21,11 @@ public:
 	
 	void Fire();
 	void Reload();
-	void Aim();
-	void UnAim();
 	void ChangeWeapon(int idx);
-	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
+	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
+	void Aim(bool tf);
+	void UnAim();
 	void SetHUDCrosshairs(float spread);
 	
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
@@ -80,7 +80,8 @@ private:
 	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
-private:
+
+public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 	
@@ -99,7 +100,9 @@ private:
 	void ServerDropWeapon();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
-	
+	UFUNCTION(Server, Reliable)
+	void ServerAim(bool tf);
+private:
 	UFUNCTION()
 	void OnRep_WeaponID();
 

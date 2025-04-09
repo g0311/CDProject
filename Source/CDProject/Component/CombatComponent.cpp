@@ -67,52 +67,136 @@ void UCombatComponent::Reset()
 	//Switch Weapon
 	for (int i = 0; i < _weapons.Num(); i++)
 	{
-		if (ChangeWeapon(i))
+		if (_weapons[i])
+		{
+			ChangeWeapon(i);
 			break;
+		}
 	}
 }
 
 void UCombatComponent::Fire()
 {
-	if (_weaponIndex != -1 && _weapons[_weaponIndex])
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
+	FRotator traceRotator = _playerCharacter->GetCamera()->GetComponentRotation();
+	FVector traceDir = traceRotator.Vector();
+
+	float spreadAngleDeg = _curSpread;
+	//UE_LOG(LogTemp, Log, TEXT("%f"), _curSpread);
+	float spreadAngleRad = FMath::DegreesToRadians(spreadAngleDeg);
+    
+	FVector rightVector = FVector::CrossProduct(traceDir, FVector::UpVector).GetSafeNormal();
+	FVector upVector = FVector::CrossProduct(rightVector, traceDir).GetSafeNormal();
+    
+	float randYaw = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
+	float randPitch = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
+    
+	FVector spreadDirection = 
+		traceDir.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), upVector)
+					 .RotateAngleAxis(FMath::RadiansToDegrees(randPitch), rightVector)
+					 .GetSafeNormal();
+
+	FVector traceEnd = traceStart + spreadDirection * 10000.f;
+	
+	FCollisionQueryParams queryParams;
+	queryParams.AddIgnoredActor(GetOwner());
+	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
+	FHitResult hit;
+	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, queryParams))
 	{
-		ServerFire();
+		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
+		NetMulticastFire(hit.Location);
+		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
 	}
+	else
+	{
+		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
+		NetMulticastFire(traceEnd);
+	}
+	
+	//Fire Delay
+	_isCanFire = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		_isCanFire = true;
+	}), _fireDelay, false);
 }
 
 void UCombatComponent::Reload()
 {
-	ServerReload();
-}
-
-void UCombatComponent::Aim()
-{
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
+		return;
+	if (!_playerCharacter)
 		return;
 	
-	if (_weapons[_weaponIndex]->GetWeaponType() != EWeaponType::EWT_Speical)
-	{
-		_isAiming = true;
-	}
-}
-
-void UCombatComponent::UnAim()
-{
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (!armAnim)
+		return;
+	
+	NetMulticastReload();
+	_isCanFire = false;
+	_isCanAim = false;
 	_isAiming = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		_isCanFire = true;
+		_isCanAim = true;
+	}), armAnim->GetReloadTime(),false);
 }
 
 void UCombatComponent::ChangeWeapon(int idx)
 {
-	if (idx == _weaponIndex || idx < 0 || idx >= _weapons.Num())
+	if (idx == _weaponIndex || idx < 0 || idx >= _weapons.Num() || !_weapons[idx])
 	{
 		return;
 	}
+		
+	_befIndex = _weaponIndex;
+	_weaponIndex = idx;
+		
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (!armAnim)
+		return;
 	
-	if (_weapons[idx])
+	_isCanFire = false;
+	_isCanAim = false;
+	_isAiming = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
-		ServerChangeWeapon(idx);
+		_isCanFire = true;
+		_isCanAim = true;
+	}),
+	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
+	OnRep_WeaponID();
+	//리슨 서버 테스트용
+}
+
+void UCombatComponent::DropWeapon()
+{ //avail visibility and update curWeaponIndex
+	if (!_playerCharacter)
+		return;
+	if (_weaponIndex == -1 || _weaponIndex == 2 || !_weapons[_weaponIndex])
+		return;
+	
+	_isAiming = false;
+	FRotator controlRot = _playerCharacter->GetControlRotation();
+	FVector lookDirection = controlRot.Vector();
+
+	NetMulticastDropWeapon(_weapons[_weaponIndex]);
+	_weapons[_weaponIndex]->Dropped(lookDirection);
+	_weapons[_weaponIndex] = nullptr;
+
+	for (int i = 0; i < _weapons.Num(); i++)
+	{
+		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+		{
+			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+			return;
+		}
 	}
-	return;
 }
 
 void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
@@ -124,8 +208,11 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 	case EWeaponType::EWT_Shotgun:
 		if (isForceGet)
 		{
-			if (ChangeWeapon(0))
+			if (_weapons[0])
+			{
+				ChangeWeapon(0);
 				DropWeapon();
+			}
 		}
 		if (!_weapons[0])
 		{
@@ -133,14 +220,17 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 			weapon->AttachToPlayer();
 			_weapons[0] = weapon;
 			ChangeWeapon(0);
-				//여기 visible true로 변경
+			//여기 visible true로 변경
 		}
 		break;
 	case EWeaponType::EWT_Pistol:
 		if (isForceGet)
 		{
-			if (ChangeWeapon(1))
+			if (_weapons[1])
+			{
+				ChangeWeapon(1);
 				DropWeapon();
+			}
 		}
 		if (!_weapons[1])
 		{
@@ -153,15 +243,29 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 	}
 }
 
-void UCombatComponent::DropWeapon()
-{ //avail visibility and update curWeaponIndex
+void UCombatComponent::Aim(bool tf)
+{
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
-	
-	if (_weaponIndex != 2)
 	{
-		ServerDropWeapon();
+		_isAiming = false;
+		return;
 	}
+	
+	if (_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Rifle ||
+		_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Sniper ||
+		_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Speical)
+	{
+		_isAiming = tf;
+	}
+	else
+	{
+		_isAiming = false;
+	}
+}
+
+void UCombatComponent::UnAim()
+{
+	_isAiming = false;
 }
 
 void UCombatComponent::SetHUDCrosshairs(float spread)
@@ -309,49 +413,7 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 
 void UCombatComponent::ServerFire_Implementation()
 {
-	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
-	FRotator traceRotator = _playerCharacter->GetCamera()->GetComponentRotation();
-	FVector traceDir = traceRotator.Vector();
-
-    float spreadAngleDeg = _curSpread;
-	//UE_LOG(LogTemp, Log, TEXT("%f"), _curSpread);
-	float spreadAngleRad = FMath::DegreesToRadians(spreadAngleDeg);
-    
-    FVector rightVector = FVector::CrossProduct(traceDir, FVector::UpVector).GetSafeNormal();
-    FVector upVector = FVector::CrossProduct(rightVector, traceDir).GetSafeNormal();
-    
-    float randYaw = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
-    float randPitch = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
-    
-    FVector spreadDirection = 
-    	traceDir.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), upVector)
-    	             .RotateAngleAxis(FMath::RadiansToDegrees(randPitch), rightVector)
-    	             .GetSafeNormal();
-
-	FVector traceEnd = traceStart + spreadDirection * 10000.f;
-	
-	FCollisionQueryParams queryParams;
-	queryParams.AddIgnoredActor(GetOwner());
-	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
-	FHitResult hit;
-	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, queryParams))
-	{
-		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
-		NetMulticastFire(hit.Location);
-		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
-	}
-	else
-	{
-		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
-		NetMulticastFire(traceEnd);
-	}
-	
-	//Fire Delay
-	_isCanFire = false;
-	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
-	{
-		_isCanFire = true;
-	}), _fireDelay, false);
+	Fire();
 }
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
@@ -379,26 +441,7 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
-	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
-		return;
-	if (!_playerCharacter)
-		return;
-	
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	if (!armAnim)
-		return;
-	
-	NetMulticastReload();
-	_isCanFire = false;
-	_isCanAim = false;
-	_isAiming = false;
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
-	{
-		_isCanFire = true;
-		_isCanAim = true;
-	}), armAnim->GetReloadTime(),false);
+	Reload();
 }
 
 void UCombatComponent::NetMulticastReload_Implementation()
@@ -418,76 +461,12 @@ void UCombatComponent::NetMulticastReload_Implementation()
 
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 {
-	if (idx == -1 || !_weapons[idx])
-		return;
-		
-	_befIndex = _weaponIndex;
-	_weaponIndex = idx;
-		
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	if (!armAnim)
-		return;
-	
-	_isCanFire = false;
-	_isCanAim = false;
-	_isAiming = false;
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
-	{
-		_isCanFire = true;
-		_isCanAim = true;
-	}),
-	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
-	OnRep_WeaponID();
-	//리슨 서버 테스트용
-}
-
-void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
-{
-	//deprecated
-	if (!_playerCharacter || !_weapons[idx])
-		return;
-	
-	_isCanFire = false;
-	_isCanAim = false;
-	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-
-	_weapons[idx]->SetHUDAmmo();
-	if (bodyAnim)
-	{
-		bodyAnim->PlayEquipMontage(_weapons[idx]);
-	}
-	if (armAnim)
-	{
-		armAnim->PlayEquipMontage(_weapons[idx]);
-	}
-	_fireDelay = (_weapons[idx]->FireDelay);
+	ChangeWeapon(idx);
 }
 
 void UCombatComponent::ServerDropWeapon_Implementation()
 {
-	if (!_playerCharacter)
-		return;
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
-	
-	_isAiming = false;
-	FRotator controlRot = _playerCharacter->GetControlRotation();
-	FVector lookDirection = controlRot.Vector();
-
-	NetMulticastDropWeapon(_weapons[_weaponIndex]);
-	_weapons[_weaponIndex]->Dropped(lookDirection);
-	_weapons[_weaponIndex] = nullptr;
-
-	for (int i = 0; i < _weapons.Num(); i++)
-	{
-		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
-		{
-			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
-			return;
-		}
-	}
+	DropWeapon();
 }
 
 void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
@@ -496,9 +475,9 @@ void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 	weapon->GetWeaponMesh3p()->SetVisibility(false);
 }
 
-void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
+void UCombatComponent::ServerAim_Implementation(bool tf)
 {
-	_isCanFire = tf;
+	Aim(tf);
 }
 
 void UCombatComponent::OnRep_WeaponID()
@@ -531,6 +510,36 @@ void UCombatComponent::OnRep_WeaponID()
 	}
 	
 	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
+}
+
+
+//deprecated
+void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
+{
+	if (!_playerCharacter || !_weapons[idx])
+		return;
+	
+	_isCanFire = false;
+	_isCanAim = false;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+
+	_weapons[idx]->SetHUDAmmo();
+	if (bodyAnim)
+	{
+		bodyAnim->PlayEquipMontage(_weapons[idx]);
+	}
+	if (armAnim)
+	{
+		armAnim->PlayEquipMontage(_weapons[idx]);
+	}
+	_fireDelay = (_weapons[idx]->FireDelay);
+}
+
+void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
+{
+	_isCanFire = tf;
 }
 
 void UCombatComponent::ServerSetFireAvail_Implementation()

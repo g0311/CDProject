@@ -20,7 +20,7 @@ ACDCharacter::ACDCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	bReplicates = true;
 	
 	_camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -45,16 +45,17 @@ ACDCharacter::ACDCharacter()
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
-
+	
 	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
 	if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
 	//접근 안됨
 }
+
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	APlayerController* playerController = Cast<APlayerController>(Controller);
 	if (playerController)
 	{
@@ -75,16 +76,17 @@ void ACDCharacter::BeginPlay()
 void ACDCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
 	if (IsLocallyControlled())
 	{
 		if (Controller != nullptr)
 			_controlRotation = Controller->GetControlRotation();
 		_cameraRotation = _camera->GetRelativeRotation();
-		SetControlCameraRotation(_controlRotation, _cameraRotation);
+		ServerSetControlCameraRotation(_controlRotation, _cameraRotation);
 	}
 	if (!IsLocallyControlled())
 	{
+		//for Spector Update?
 		_camera->SetRelativeRotation(_cameraRotation);
 	}
 	
@@ -92,7 +94,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	FRotator ControlRot = _controlRotation;
 	FRotator ActorRot = GetActorRotation();
 	float AimYaw = FMath::UnwindDegrees(ControlRot.Yaw - ActorRot.Yaw);
-		
+	
 	if (AimYaw <= -45.f || AimYaw >= 45.f)
 	{
 		FRotator TargetRotation = FRotator(0.f, ControlRot.Yaw, 0.f);
@@ -128,7 +130,7 @@ void ACDCharacter::Tick(float DeltaTime)
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+	
 	UEnhancedInputComponent* enhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (enhancedInputComponent)
 	{
@@ -139,7 +141,7 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Completed, this, &ACDCharacter::StopJumping);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
-		//
+		//need to fix
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Triggered, this, &ACDCharacter::Walk);
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Completed, this, &ACDCharacter::UnWalk);
 
@@ -261,7 +263,7 @@ void ACDCharacter::UnWalk()
 
 void ACDCharacter::RequestFire()
 {
-	if (!IsLocallyControlled() || !_combat) return;
+	if (!_combat) return;
 	
 	if (_combat->IsFireAvail())
 	{
@@ -271,7 +273,7 @@ void ACDCharacter::RequestFire()
 		}
 		else
 		{
-			_combat->Fire();
+			_combat->ServerFire();
 		}
 	}
 }
@@ -282,62 +284,34 @@ void ACDCharacter::RequestAim()
 		return;
 	
 	// _isAim set -> server _isAim set => On_Rep
-	if (IsLocallyControlled())
-	{
-		if (_combat->IsAimng())
-		{
-			_combat->Aim();
-		}
-		else
-		{
-			_combat->UnAim();
-		}
-	}
-	ServerAim();
-}
-
-void ACDCharacter::RequestUnAim()
-{
-	if (!_combat)
-		return;
-	
-	// _isAim set -> server _isAim set => On_Rep
-	if (IsLocallyControlled())
-	{
-		_combat->UnAim();
-	}
-	ServerUnAim();
+	// 반응 시간 최적화?
+	bool nextAiming = !_combat->IsAimng();
+	_combat->Aim(nextAiming);
+	_combat->ServerAim(nextAiming);
 }
 
 void ACDCharacter::RequestReload()
 {
 	if (!_combat)
 		return;
-	
-	_combat->Reload();
+	_combat->ServerReload();
 }
 
 void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
-	//if (_combat->ChangeWeapon(weaponIndex))
-	//{
-	//	RequestUnAim();
-	//}
-	_combat->ChangeWeapon(weaponIndex);
+	_combat->ServerChangeWeapon(weaponIndex);
 }
 
 void ACDCharacter::RequestDropWeapon()
 {
 	if (!_combat)
 		return;
-
-	//RequestUnAim();
-
-	_combat->DropWeapon();
+	_combat->ServerDropWeapon();
 }
 
+//Always Called By Server
 void ACDCharacter::GetWeapon(AWeapon* weapon)
 {
 	if (!_combat)
@@ -345,31 +319,10 @@ void ACDCharacter::GetWeapon(AWeapon* weapon)
 	_combat->GetWeapon(weapon);
 }
 
-void ACDCharacter::SetControlCameraRotation_Implementation(FRotator control, FRotator camera)
+void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator control, FRotator camera)
 {
 	_controlRotation = control;
 	_cameraRotation = camera;
-}
-
-void ACDCharacter::ServerAim_Implementation()
-{
-	if (!_combat)
-		return;
-	if(_combat->IsAimng())
-	{
-		ServerUnAim();
-	}
-	else if (_combat->IsAimAvail())
-	{
-		_combat->Aim();
-	}
-}
-
-void ACDCharacter::ServerUnAim_Implementation()
-{
-	if (!_combat)
-    	return;
-	_combat->UnAim();
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
