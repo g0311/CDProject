@@ -26,8 +26,8 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	if (!combat)
 		return;
 
-	combat->SetFireAvail();
-	combat->SetAimAvail();
+	// combat->SetFireAvail();
+	// combat->SetAimAvail();
 	//보안상 취약점
 	
 	Super::Notify(MeshComp, Animation);

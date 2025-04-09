@@ -28,6 +28,7 @@ void UCombatComponent::BeginPlay()
 	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	if (_playerCharacter->HasAuthority())
 	{
+		UE_LOG(LogTemp, Log, TEXT("Combat Begin"));
 		CreateDefaultWeapons();
 		ServerChangeWeapon(1);
 	}
@@ -100,19 +101,18 @@ void UCombatComponent::UnAim()
 	_isAiming = false;
 }
 
-bool UCombatComponent::ChangeWeapon(int idx)
+void UCombatComponent::ChangeWeapon(int idx)
 {
 	if (idx == _weaponIndex || idx < 0 || idx >= _weapons.Num())
 	{
-		return false;
+		return;
 	}
 	
 	if (_weapons[idx])
 	{
 		ServerChangeWeapon(idx);
-		return true;
 	}
-	return false;
+	return;
 }
 
 void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
@@ -238,15 +238,21 @@ void UCombatComponent::CreateDefaultWeapons()
 	if (_defaultSubWeapon)
 	{
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
-		_weapons[1]->SetOwner(_playerCharacter);
-		_weapons[1]->AttachToPlayer();
+		if (_weapons[1])
+		{
+			UE_LOG(LogTemp, Log, TEXT("Combat Create"));
+			_weapons[1]->SetOwner(_playerCharacter);
+			_weapons[1]->AttachToPlayer();
+		}
 	}
-	//Debug
 	if (_defaultMeleeWeapon)
 	{
 		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
-		_weapons[0]->SetOwner(_playerCharacter);
-		_weapons[0]->AttachToPlayer();
+		if (_weapons[0])
+		{
+			_weapons[0]->SetOwner(_playerCharacter);
+			_weapons[0]->AttachToPlayer();
+		}
 	}
 }
 
@@ -341,10 +347,10 @@ void UCombatComponent::ServerFire_Implementation()
 	}
 	
 	//Fire Delay
-	NetMulticastSetIsCanFire(false);
+	_isCanFire = false;
 	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
-		NetMulticastSetIsCanFire(true);
+		_isCanFire = true;
 	}), _fireDelay, false);
 }
 
@@ -380,8 +386,19 @@ void UCombatComponent::ServerReload_Implementation()
 	if (!_playerCharacter)
 		return;
 	
-	NetMulticastSetIsCanFire(false);
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (!armAnim)
+		return;
+	
 	NetMulticastReload();
+	_isCanFire = false;
+	_isCanAim = false;
+	_isAiming = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		_isCanFire = true;
+		_isCanAim = true;
+	}), armAnim->GetReloadTime(),false);
 }
 
 void UCombatComponent::NetMulticastReload_Implementation()
@@ -393,7 +410,6 @@ void UCombatComponent::NetMulticastReload_Implementation()
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	_isCanAim = false;
 	if (bodyAnim)
 		bodyAnim->PlayReloadMontage();
 	if (armAnim)
@@ -402,12 +418,25 @@ void UCombatComponent::NetMulticastReload_Implementation()
 
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
 {
-	//NetMulticastChangeWeapon(idx);
-	_isCanFire = false;
-	_isCanAim = false;
+	if (idx == -1 || !_weapons[idx])
+		return;
+		
 	_befIndex = _weaponIndex;
 	_weaponIndex = idx;
-
+		
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (!armAnim)
+		return;
+	
+	_isCanFire = false;
+	_isCanAim = false;
+	_isAiming = false;
+	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
+	{
+		_isCanFire = true;
+		_isCanAim = true;
+	}),
+	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 	OnRep_WeaponID();
 	//리슨 서버 테스트용
 }
@@ -442,7 +471,8 @@ void UCombatComponent::ServerDropWeapon_Implementation()
 		return;
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-		
+	
+	_isAiming = false;
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FVector lookDirection = controlRot.Vector();
 
@@ -499,6 +529,7 @@ void UCombatComponent::OnRep_WeaponID()
 	{
 		armAnim->PlayEquipMontage(_weapons[_weaponIndex]);
 	}
+	
 	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
 }
 

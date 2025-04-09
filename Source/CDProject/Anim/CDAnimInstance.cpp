@@ -173,3 +173,49 @@ void UCDAnimInstance::UpdateUpperBodyProperty()
 		//	_leftHandTransform = combatComponent->GetCurWeapon()->GetMesh()->GetSocketTransform()
 	}
 }
+
+float UCDAnimInstance::GetReloadTime()
+{
+	switch (_weaponType)
+	{
+	case static_cast<uint8>(EWeaponType::EWT_Rifle):
+	case static_cast<uint8>(EWeaponType::EWT_Sniper):
+		if (_rifleReloadMontage)
+			return _rifleReloadMontage->GetPlayLength();
+		break;
+	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+		if (_shotgunReloadMontage)
+			return _shotgunReloadMontage->GetPlayLength();
+		break;
+	case static_cast<uint8>(EWeaponType::EWT_Pistol):
+		if (_pistolReloadMontage)
+			return _pistolReloadMontage->GetPlayLength();
+		break;	
+	}
+	return 0.f;
+}
+
+float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
+{
+	if (!nextWeapon)
+		return 0.f;
+	
+	switch (nextWeapon->GetWeaponType())
+	{
+	case (EWeaponType::EWT_Rifle):
+	case (EWeaponType::EWT_Sniper):
+	case (EWeaponType::EWT_Shotgun):
+		if (_equipRifleMontage)
+		{
+			return _equipRifleMontage->GetPlayLength();
+		}
+		break;
+	case (EWeaponType::EWT_Pistol):
+		if (_equipPistolMontage)
+		{
+			return _equipPistolMontage->GetPlayLength();
+		}
+		break;
+	}
+	return 0.f;
+}

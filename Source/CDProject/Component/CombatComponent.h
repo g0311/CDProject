@@ -23,16 +23,16 @@ public:
 	void Reload();
 	void Aim();
 	void UnAim();
-	bool ChangeWeapon(int idx);
+	void ChangeWeapon(int idx);
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 	void DropWeapon();
 	void SetHUDCrosshairs(float spread);
 	
 	FORCEINLINE	bool IsAimng() { return _isAiming; }
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
-	FORCEINLINE void SetAimAvail() { ServerSetAimAvail(); }
+	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
-	FORCEINLINE void SetFireAvail() { ServerSetFireAvail(); }
+	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 
@@ -70,6 +70,7 @@ private:
 	
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
+	FTimerHandle _fireAimAbleTimerHandle;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanFire = true;
@@ -94,18 +95,19 @@ private:
 	void NetMulticastReload();
 	UFUNCTION(Server, Reliable)
 	void ServerChangeWeapon(int idx);
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastChangeWeapon(int idx);
 	UFUNCTION(Server, Reliable)
 	void ServerDropWeapon();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
-
 	
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastSetIsCanFire(bool tf);
 	UFUNCTION()
 	void OnRep_WeaponID();
+
+	//deprecated
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastChangeWeapon(int idx);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastSetIsCanFire(bool tf);
 	UFUNCTION(Server, Reliable)
 	void ServerSetFireAvail();
 	UFUNCTION(Server, Reliable)

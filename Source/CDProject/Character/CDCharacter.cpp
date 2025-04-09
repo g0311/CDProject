@@ -314,12 +314,6 @@ void ACDCharacter::RequestReload()
 	if (!_combat)
 		return;
 	
-	//Check Reload Avail
-	if (_combat->IsTotalAmmoEmpty())
-		return;
-	
-	RequestUnAim();
-	
 	_combat->Reload();
 }
 
@@ -327,17 +321,20 @@ void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
-	if (_combat->ChangeWeapon(weaponIndex))
-	{
-		RequestUnAim();
-	}
+	//if (_combat->ChangeWeapon(weaponIndex))
+	//{
+	//	RequestUnAim();
+	//}
+	_combat->ChangeWeapon(weaponIndex);
 }
 
 void ACDCharacter::RequestDropWeapon()
 {
 	if (!_combat)
 		return;
-	RequestUnAim();
+
+	//RequestUnAim();
+
 	_combat->DropWeapon();
 }
 

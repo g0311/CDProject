@@ -29,6 +29,9 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
 	WeaponMesh->SetVisibility(false);
+
+	WeaponMesh->bCastDynamicShadow = false;
+	WeaponMesh->CastShadow = false;
 	
 	WeaponMesh3p = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh3p"));
 	//WeaponMesh3p->SetupAttachment(RootComponent); 
