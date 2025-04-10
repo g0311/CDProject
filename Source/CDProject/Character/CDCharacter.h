@@ -34,6 +34,8 @@ public:
 private:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class USpringArmComponent> _springArm;
+	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UCameraComponent> _camera;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USkeletalMeshComponent> _armMesh;

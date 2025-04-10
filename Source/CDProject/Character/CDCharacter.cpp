@@ -12,6 +12,7 @@
 #include "CDProject/Controller/CDPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 
@@ -22,9 +23,12 @@ ACDCharacter::ACDCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	bReplicates = true;
+
+	_springArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
+	_springArm->SetupAttachment(RootComponent);
 	
 	_camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	_camera->SetupAttachment(RootComponent);
+	_camera->SetupAttachment(_springArm);
 	_camera->SetRelativeLocation(FVector(0, 0, _eyeHeight));
 	
 	_armMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Arm Mesh"));

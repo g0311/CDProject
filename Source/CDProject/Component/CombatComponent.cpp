@@ -159,8 +159,13 @@ FVector UCombatComponent::CreateTraceDir()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return FVector::ZeroVector;
-
-	FRotator camRotation = _playerCharacter->GetCamera()->GetComponentRotation();
+	if (!_playerCharacter || !_playerCharacter->GetController())
+		return FVector::ZeroVector;
+	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
+	if (!playerController)
+		return FVector::ZeroVector;
+	
+	FRotator camRotation = playerController->PlayerCameraManager->GetCameraRotation();
 	FVector baseDirection = camRotation.Vector();
 	
 	float spreadAngleRad = FMath::DegreesToRadians(_curSpread);
@@ -385,7 +390,7 @@ void UCombatComponent::ChangeWeapon(int idx)
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 	OnRep_WeaponID();
-	//리슨 서버 테스트용
+	//리슨 서버용
 }
 
 void UCombatComponent::DropWeapon()
@@ -471,7 +476,7 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
 	if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
 	{
-		// playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
+		playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
 	}
 }
 
