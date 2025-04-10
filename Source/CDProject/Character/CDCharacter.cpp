@@ -7,6 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
+#include "CDCharacterMovementComponent.h"
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
@@ -23,7 +24,7 @@ ACDCharacter::ACDCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	bReplicates = true;
-
+	
 	_springArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
 	_springArm->SetupAttachment(RootComponent);
 	
@@ -255,14 +256,16 @@ void ACDCharacter::Crouch(bool bClientSimulation)
 
 void ACDCharacter::Walk()
 {
-	//need to change mechanism
-	//server RPC or MovementComponent Refactoring
-	GetCharacterMovement()->MaxWalkSpeed = 250.f;
+	UCDCharacterMovementComponent* CDCMC = Cast<UCDCharacterMovementComponent>(GetCharacterMovement());
+	if (CDCMC)
+		CDCMC->bWantsToWalk = true;
 }
 
 void ACDCharacter::UnWalk()
 {
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	UCDCharacterMovementComponent* CDCMC = Cast<UCDCharacterMovementComponent>(GetCharacterMovement());
+	if (CDCMC)
+		CDCMC->bWantsToWalk = false;
 }
 
 void ACDCharacter::RequestFire()
