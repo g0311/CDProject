@@ -273,7 +273,7 @@ void ACDCharacter::RequestFire()
 		}
 		else
 		{
-			_combat->ServerFire();
+			_combat->RequestFire();
 		}
 	}
 }

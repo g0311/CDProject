@@ -71,14 +71,15 @@ private:
 	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
-
+	FVector CreateTraceDir();
 public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
-	
+
+	void RequestFire();
 	//ServerCall
 	UFUNCTION(Server, Reliable)
-	void ServerFire();
+	void ServerFire(FVector fireDir);
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
 	UFUNCTION(Server, Reliable)
@@ -92,7 +93,7 @@ public:
 		void Aim(bool tf);
 private:
 	//Implementation
-	void Fire();
+	void Fire(FVector fireDir);
 	void Reload();
 	void ChangeWeapon(int idx);
 	void DropWeapon();

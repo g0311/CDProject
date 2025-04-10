@@ -155,6 +155,39 @@ float UCombatComponent::CalculateSpread()
 	return FMath::Clamp(spread, 0.1f, 5.f);
 }
 
+FVector UCombatComponent::CreateTraceDir()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return FVector::ZeroVector;
+
+	FRotator camRotation = _playerCharacter->GetCamera()->GetComponentRotation();
+	FVector baseDirection = camRotation.Vector();
+	
+	float spreadAngleRad = FMath::DegreesToRadians(_curSpread);
+	FVector right = FVector::CrossProduct(baseDirection, FVector::UpVector).GetSafeNormal();
+	FVector up = FVector::CrossProduct(right, baseDirection).GetSafeNormal();
+
+	float randYaw = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
+	float randPitch = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
+
+	FVector spreadDirection = baseDirection
+		.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), up)
+		.RotateAngleAxis(FMath::RadiansToDegrees(randPitch), right)
+		.GetSafeNormal();
+	
+	return spreadDirection;
+}
+
+void UCombatComponent::RequestFire()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	_isCanFire = false;
+	FVector traceDir = CreateTraceDir();
+	ServerFire(traceDir);
+}
+
 void UCombatComponent::SetWeaponVisible(bool tf)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
@@ -181,9 +214,9 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 	_befIndex = _weaponIndex;
 }
 
-void UCombatComponent::ServerFire_Implementation()
+void UCombatComponent::ServerFire_Implementation(FVector fireDir)
 {
-	Fire();
+	Fire(fireDir);
 }
 
 void UCombatComponent::ServerReload_Implementation()
@@ -271,31 +304,13 @@ void UCombatComponent::Aim(bool tf)
 	}
 }
 
-void UCombatComponent::Fire()
+void UCombatComponent::Fire(FVector fireDir)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
 	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
-	FRotator traceRotator = _playerCharacter->GetCamera()->GetComponentRotation();
-	FVector traceDir = traceRotator.Vector();
-
-	float spreadAngleDeg = _curSpread;
-	//UE_LOG(LogTemp, Log, TEXT("%f"), _curSpread);
-	float spreadAngleRad = FMath::DegreesToRadians(spreadAngleDeg);
-    
-	FVector rightVector = FVector::CrossProduct(traceDir, FVector::UpVector).GetSafeNormal();
-	FVector upVector = FVector::CrossProduct(rightVector, traceDir).GetSafeNormal();
-    
-	float randYaw = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
-	float randPitch = FMath::FRandRange(-spreadAngleRad, spreadAngleRad);
-    
-	FVector spreadDirection = 
-		traceDir.RotateAngleAxis(FMath::RadiansToDegrees(randYaw), upVector)
-					 .RotateAngleAxis(FMath::RadiansToDegrees(randPitch), rightVector)
-					 .GetSafeNormal();
-
-	FVector traceEnd = traceStart + spreadDirection * 10000.f;
+	FVector traceEnd = traceStart + fireDir * 10000.f;
 	
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(GetOwner());
@@ -327,7 +342,7 @@ void UCombatComponent::Reload()
 		return;
 	if (_weapons[_weaponIndex]->GetCarriedAmmo() == 0)
 		return;
-	if (!_playerCharacter)
+	if (!_playerCharacter)	
 		return;
 	
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
@@ -439,6 +454,8 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
+	
+	//Except Local Player
 	if (!_playerCharacter)
 		return;
 	
