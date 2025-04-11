@@ -411,7 +411,7 @@ void UCombatComponent::ServerFire_Implementation(FVector traceStart, FVector tra
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex] || !_weapons.IsValidIndex(_weaponIndex))
 		return;
 	if (!_playerCharacter)
 		return;

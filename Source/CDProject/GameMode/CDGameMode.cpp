@@ -20,9 +20,11 @@ ACDGameMode::ACDGameMode()
 void ACDGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	Countdown=FMath::CeilToInt(WarmUpTime-LevelStartingTime);
+	
 	if (MatchState==MatchState::WaitingToStart)
 	{
+		Countdown=FMath::CeilToInt(WarmUpTime+LevelStartingTime-GetWorld()->GetTimeSeconds());
+		UE_LOG(LogTemp,Display,TEXT("%f"), Countdown);
 		if (Countdown==-1)
 		{
 			StartMatch();
@@ -33,7 +35,7 @@ void ACDGameMode::Tick(float DeltaSeconds)
 void ACDGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	LevelStartingTime=GetWorld()->GetTimeSeconds();
+	//LevelStartingTime=GetWorld()->GetTimeSeconds();
 }
 
 void ACDGameMode::OnMatchStateSet()

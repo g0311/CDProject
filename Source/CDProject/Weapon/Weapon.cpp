@@ -150,15 +150,15 @@ void AWeapon::Fire(const FVector& HitTarget)
 						AmmoEjectTransform.GetLocation(),
 						AmmoEjectTransform.GetRotation().Rotator()
 					);
-					if (Cartridge)
-					{
-						UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(Cartridge->GetRootComponent());
-						if (PrimitiveComp && PrimitiveComp->IsSimulatingPhysics())
-						{
-							FVector Impulse = FVector(-150.f, 100.f, 150.f);
-							PrimitiveComp->AddImpulse(Impulse, NAME_None, true);
-						}
-					}
+					// if (Cartridge)
+					// {
+					// 	UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(Cartridge->GetRootComponent());
+					// 	if (PrimitiveComp && PrimitiveComp->IsSimulatingPhysics())
+					// 	{
+					// 		FVector Impulse = FVector(-150.f, 100.f, 150.f);
+					// 		PrimitiveComp->AddImpulse(Impulse, NAME_None, true);
+					// 	}
+					// }
 				}
 				//Edit Need
 			}
