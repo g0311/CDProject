@@ -13,6 +13,7 @@
 #include "CDProject/Controller/CDPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Engine/DamageEvents.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -166,15 +167,58 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
+	float finalDamage = DamageAmount;
+
+	
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent* pointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+		USkeletalMeshComponent* MeshComp = GetMesh();
+		FName Bone = pointEvent->HitInfo.BoneName;
+		UE_LOG(LogTemp, Log, TEXT("Comp: %s, Bone: %s"), *pointEvent->HitInfo.Component->GetName(), *Bone.ToString());
+		
+		FName ParentBone = MeshComp->GetParentBone(Bone);
+		while (ParentBone != NAME_None)
+		{
+			if (ParentBone.ToString().Contains("head"))
+			{
+				finalDamage *= 2.f;
+				break;
+			}
+			if (ParentBone.ToString().Contains("upperarm"))
+			{
+				finalDamage *= 0.5f;
+				break;
+			}
+			if (ParentBone.ToString().Contains("thigh"))
+			{
+				finalDamage *= 0.75f;
+				break;
+			}
+			
+			ParentBone = MeshComp->GetParentBone(ParentBone);
+		}
+	}
+	
+	float curShield = _attributeSet->GetShield();
 	float curHealth = _attributeSet->GetHealth();
-	curHealth -= DamageAmount;
-	_attributeSet->SetHealth(curHealth);
+	if (curShield > 0.f)
+	{
+		curShield = FMath::Clamp(curShield - finalDamage, 0.f, 100.f);
+		_attributeSet->SetShield(curShield);
+	}
+	else
+	{
+		curHealth = FMath::Clamp(curHealth - finalDamage, 0.f, 100.f);
+		_attributeSet->SetHealth(curHealth);
+	}
+	
 	if (curHealth <= 0)
 	{
 		UE_LOG(LogTemp, Log, TEXT("player Dead"));
 	}
 	
-	return DamageAmount;
+	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 
 void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

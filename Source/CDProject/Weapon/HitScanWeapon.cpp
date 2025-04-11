@@ -27,8 +27,8 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	{
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start=SocketTransform.GetLocation();
-		FVector End=Start+(HitTarget-Start)*1.25f;
-
+		FVector End = HitTarget;
+		
 		FHitResult FireHitResult;
 		UWorld* World=GetWorld();
 		if (World)
@@ -37,21 +37,55 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				FireHitResult,
 				Start,
 				End,
-				ECC_Visibility);
+				ECC_EngineTraceChannel1);
 		};
+		
+		{
+			DrawDebugLine(
+			   GetWorld(),
+			   Start,
+			   End,
+			   FColor::Red,
+			   false, 2.f, 0, 1.f
+		   );
+			DrawDebugSphere(
+				GetWorld(),
+				FireHitResult.Location,
+				10,
+				20,
+				FColor::Green,
+				false,
+				2.f
+			);
+			UE_LOG(LogTemp, Log, TEXT("Trace channel: %d"), (int32)ECC_EngineTraceChannel1);
+		}
+		
 		FVector BeamEnd=End;
 		if (FireHitResult.bBlockingHit)
 		{
+			//Not Called
+			UE_LOG(LogTemp, Log, TEXT("Trace channel: %d"), (int32)ECC_EngineTraceChannel1);
+
+			
 			BeamEnd=FireHitResult.ImpactPoint;
 			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHitResult.GetActor());
-			if (CDCharacter)
+			if (CDCharacter && OwnerController)
 			{
-				UGameplayStatics::ApplyDamage(CDCharacter,
-					Damage,
-					InstigatorController,
-					this,
-					UDamageType::StaticClass()
-					);
+				// UGameplayStatics::ApplyDamage(CDCharacter,
+				// 	Damage,
+				// 	InstigatorController,
+				// 	this,
+				// 	UDamageType::StaticClass()
+				// 	);
+				UGameplayStatics::ApplyPointDamage(
+                			CDCharacter,
+                			Damage,
+                			GetActorForwardVector(),
+                			FireHitResult,
+                			InstigatorController,
+                			this,
+                			UDamageType::StaticClass()
+                		);
 			}
 			if (ImpactParticles)
 			{

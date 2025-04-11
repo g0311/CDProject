@@ -2,7 +2,6 @@
 
 
 #include "CDCharacterMovementComponent.h"
-
 #include "GameFramework/Character.h"
 
 void FSavedMove_CDCharacter::Clear()

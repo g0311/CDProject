@@ -137,7 +137,8 @@ void UCDAnimInstance::UpdateFullBodyProperty()
 		
 	_movementSpeed = FVector(velocity.X, velocity.Y, 0.f).Size();
 	_direction = UKismetAnimationLibrary::CalculateDirection(velocity, _playerCharacter->GetActorRotation());
-		
+	//UE_LOG(LogTemp, Log, TEXT("anim : %f"), _direction);
+	
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FRotator actorRot = _playerCharacter->GetActorRotation();
 	FRotator deltaRot = controlRot - actorRot;
