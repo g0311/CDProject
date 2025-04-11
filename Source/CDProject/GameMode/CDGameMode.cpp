@@ -10,6 +10,10 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
+namespace MatchState
+{
+	const FName Cooldown=FName("Cooldown");
+}
 
 ACDGameMode::ACDGameMode()
 {
@@ -28,6 +32,22 @@ void ACDGameMode::Tick(float DeltaSeconds)
 		if (Countdown==-1)
 		{
 			StartMatch();
+		}
+	}
+	else if (MatchState==MatchState::InProgress)
+	{
+		Countdown=WarmUpTime+MatchTime+LevelStartingTime-GetWorld()->GetTimeSeconds();
+		if (Countdown<=0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState==MatchState::Cooldown)
+	{
+		Countdown= CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (Countdown<=0.f)
+		{
+			RestartGame();
 		}
 	}
 }

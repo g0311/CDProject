@@ -61,14 +61,16 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 					FireHitResult.ImpactPoint,
 					FireHitResult.ImpactNormal.Rotation());
 			}
-			if (HitSound)
+			USoundCue* SoundToPlay = FireHitResult.GetActor() ? HitBodySound : HitSurfaceSound;
+			if (SoundToPlay)
 			{
 				UGameplayStatics::PlaySoundAtLocation(
 					this,
-					HitSound,
+					SoundToPlay,
 					FireHitResult.ImpactPoint
-					);
+				);
 			}
+			
 			if (BeamParticleSystem)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(

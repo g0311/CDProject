@@ -42,6 +42,10 @@ private:
 	USoundCue* FireSound;
 
 	UPROPERTY(EditAnyWhere)
-	USoundCue* HitSound;
+	USoundCue* HitBodySound;
+
+	UPROPERTY(EditAnyWhere)
+	USoundCue* HitSurfaceSound;
+	
 	
 };
