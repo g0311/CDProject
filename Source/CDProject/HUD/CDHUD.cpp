@@ -58,8 +58,14 @@ void ACDHUD::AddCharacterOverlay()
 {
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
-		CharacterOverlay=CreateWidget<UCharacterOverlay>(PlayerController,CharacterOverlayClass);
-		CharacterOverlay->AddToViewport();
+		if (CharacterOverlayClass)
+		{
+			CharacterOverlay=CreateWidget<UCharacterOverlay>(PlayerController,CharacterOverlayClass);
+			if (CharacterOverlay)
+			{
+				CharacterOverlay->AddToViewport();
+			}
+		}
 	}
 }
 
@@ -85,7 +91,7 @@ void ACDHUD::AddAnnouncement()
 void ACDHUD::BeginPlay()
 {
 	Super::BeginPlay();
-	AddCharacterOverlay();
+	//AddCharacterOverlay();
 }
 
 void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor)

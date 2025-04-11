@@ -10,6 +10,10 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
+namespace MatchState
+{
+	const FName Cooldown=FName("Cooldown");
+}
 
 ACDGameMode::ACDGameMode()
 {
@@ -17,10 +21,41 @@ ACDGameMode::ACDGameMode()
 	bDelayedStart=true;
 }
 
+void ACDGameMode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	if (MatchState==MatchState::WaitingToStart)
+	{
+		Countdown=FMath::CeilToInt(WarmUpTime+LevelStartingTime-GetWorld()->GetTimeSeconds());
+		UE_LOG(LogTemp,Display,TEXT("%f"), Countdown);
+		if (Countdown==-1)
+		{
+			StartMatch();
+		}
+	}
+	else if (MatchState==MatchState::InProgress)
+	{
+		Countdown=WarmUpTime+MatchTime+LevelStartingTime-GetWorld()->GetTimeSeconds();
+		if (Countdown<=0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState==MatchState::Cooldown)
+	{
+		Countdown= CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (Countdown<=0.f)
+		{
+			RestartGame();
+		}
+	}
+}
+
 void ACDGameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	LevelStartingTime=GetWorld()->GetTimeSeconds();
+	//LevelStartingTime=GetWorld()->GetTimeSeconds();
 }
 
 void ACDGameMode::OnMatchStateSet()
@@ -36,8 +71,6 @@ void ACDGameMode::OnMatchStateSet()
 		}
 	}
 }
-
-
 
 void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController,
                                    ACDPlayerController* AttackerController)

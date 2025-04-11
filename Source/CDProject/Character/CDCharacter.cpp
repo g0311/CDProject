@@ -53,7 +53,7 @@ ACDCharacter::ACDCharacter()
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
 	
 	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
-	if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
+	//if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
 	//접근 안됨
 }
 

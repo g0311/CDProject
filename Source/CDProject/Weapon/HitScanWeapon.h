@@ -14,11 +14,17 @@ class CDPROJECT_API AHitScanWeapon : public AWeapon
 public:
 	AHitScanWeapon();
 	virtual void Fire(const FVector& HitTarget) override;
+
+	bool bShowSniperScope();
+
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void ShowSniperScope();
+
+	
 private:
 	UPROPERTY(EditAnywhere)
 	float Damage=20.f;
@@ -36,6 +42,10 @@ private:
 	USoundCue* FireSound;
 
 	UPROPERTY(EditAnyWhere)
-	USoundCue* HitSound;
+	USoundCue* HitBodySound;
+
+	UPROPERTY(EditAnyWhere)
+	USoundCue* HitSurfaceSound;
+	
 	
 };

@@ -4,6 +4,7 @@
 #include "HitScanWeapon.h"
 
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Controller/CDPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
@@ -94,14 +95,16 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 					FireHitResult.ImpactPoint,
 					FireHitResult.ImpactNormal.Rotation());
 			}
-			if (HitSound)
+			USoundCue* SoundToPlay = FireHitResult.GetActor() ? HitBodySound : HitSurfaceSound;
+			if (SoundToPlay)
 			{
 				UGameplayStatics::PlaySoundAtLocation(
 					this,
-					HitSound,
+					SoundToPlay,
 					FireHitResult.ImpactPoint
-					);
+				);
 			}
+			
 			if (BeamParticleSystem)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(
@@ -130,11 +133,34 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	}
 }
 
+bool AHitScanWeapon::bShowSniperScope()
+{
+	ACDCharacter* CDCharacter=Cast<ACDCharacter>(GetOwner());
+	if (HasAuthority()&&CDCharacter&&GetWeaponType()==EWeaponType::EWT_Sniper)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 // Called when the game starts or when spawned
 void AHitScanWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void AHitScanWeapon::ShowSniperScope()
+{
+	ACDCharacter* CDCharacter=Cast<ACDCharacter>(GetOwner());
+	ACDPlayerController* PC=Cast<ACDPlayerController>(CDCharacter->GetController());
+	if (bShowSniperScope())
+	{
+		//PC->SetHUDSniperScope();
+	}
 }
 
 
