@@ -28,8 +28,11 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	{
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start=SocketTransform.GetLocation();
-		FVector End=Start+(HitTarget-Start)*1.25f;
-
+		FVector End = HitTarget;
+		
+		FCollisionQueryParams queryParams;
+		queryParams.AddIgnoredActor(this);
+		queryParams.AddIgnoredActor(GetOwner());
 		FHitResult FireHitResult;
 		UWorld* World=GetWorld();
 		if (World)
@@ -38,21 +41,48 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				FireHitResult,
 				Start,
 				End,
-				ECC_Visibility);
+				ECC_GameTraceChannel1,
+				queryParams);
 		};
+		
+		{
+			DrawDebugLine(
+			   GetWorld(),
+			   Start,
+			   End,
+			   FColor::Green,
+			   false, 2.f, 0, 1.f
+		   );
+			DrawDebugSphere(
+				GetWorld(),
+				FireHitResult.Location,
+				10,
+				20,
+				FColor::Green,
+				false,
+				2.f
+			);
+		}
+		
 		FVector BeamEnd=End;
 		if (FireHitResult.bBlockingHit)
 		{
+			if (FireHitResult.GetActor())
+				UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetActor()->GetName());
+
 			BeamEnd=FireHitResult.ImpactPoint;
 			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHitResult.GetActor());
-			if (CDCharacter)
+			if (CDCharacter && OwnerController)
 			{
-				UGameplayStatics::ApplyDamage(CDCharacter,
-					Damage,
-					InstigatorController,
-					this,
-					UDamageType::StaticClass()
-					);
+				UGameplayStatics::ApplyPointDamage(
+                			CDCharacter,
+                			Damage,
+                			GetActorForwardVector(),
+                			FireHitResult,
+                			InstigatorController,
+                			this,
+                			UDamageType::StaticClass()
+                		);
 			}
 			if (ImpactParticles)
 			{

@@ -8,6 +8,8 @@
 #include "AbilitySystemInterface.h"
 #include "CDCharacter.generated.h"
 
+#define  MAXSPEED 470.f
+
 UCLASS()
 class CDPROJECT_API ACDCharacter : public ACharacter, public IAbilitySystemInterface
 {
@@ -24,6 +26,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	//virtual float InternalTakePointDamage(float Damage, struct FPointDamageEvent const& PointDamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
 	
@@ -31,6 +34,8 @@ public:
 	void UpdateVisibilityForSpectator(bool isWatching);
 private:
 	//Component
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class USpringArmComponent> _springArm;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UCameraComponent> _camera;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -47,20 +52,15 @@ private:
 	FTransform _defaultArmTransform;
 	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform  _aimArmTransform;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
-	FTransform  _currentArmTransform;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Components")
-	FTransform  _targetArmTransform;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float _defaultFOV = 90.0f;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Camera")
-	float _targetFOV;
 	
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
+	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
 	
 private:
 	//Input
@@ -94,12 +94,12 @@ private:
 	void Walk();
 	void UnWalk();
 	
-	void Fire();
-	void Aim();
-	void UnAim();
-	void Reload();
-	void ChangeWeapon(int weaponIndex);
-	void DropWeapon();
+	void RequestFire();
+	void RequestAim();
+	void RequestUnAim();
+	void RequestReload();
+	void RequestChangeWeapon(int weaponIndex);
+	void RequestDropWeapon();
 public:
 	void GetWeapon(class AWeapon* weapon);
 	
@@ -110,11 +110,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _cameraRotation;
 	UFUNCTION(Server, Reliable)
-	void SetControlCameraRotation(FRotator control, FRotator camera);
-	UFUNCTION(Server, Reliable)
-	void ServerAim();
-	UFUNCTION(Server, Reliable)
-	void ServerUnAim();
+	void ServerSetControlCameraRotation(FRotator control, FRotator camera);
 	
 public:
 	FORCEINLINE FRotator GetControlRotation() { return _controlRotation; }
