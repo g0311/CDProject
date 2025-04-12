@@ -30,6 +30,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FVector Start=SocketTransform.GetLocation();
 		FVector End = HitTarget;
 		
+		FCollisionQueryParams queryParams;
+		queryParams.AddIgnoredActor(this);
+		queryParams.AddIgnoredActor(GetOwner());
 		FHitResult FireHitResult;
 		UWorld* World=GetWorld();
 		if (World)
@@ -38,7 +41,8 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				FireHitResult,
 				Start,
 				End,
-				ECC_EngineTraceChannel1);
+				ECC_GameTraceChannel1,
+				queryParams);
 		};
 		
 		{
@@ -46,7 +50,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			   GetWorld(),
 			   Start,
 			   End,
-			   FColor::Red,
+			   FColor::Green,
 			   false, 2.f, 0, 1.f
 		   );
 			DrawDebugSphere(
@@ -58,26 +62,18 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				false,
 				2.f
 			);
-			UE_LOG(LogTemp, Log, TEXT("Trace channel: %d"), (int32)ECC_EngineTraceChannel1);
 		}
 		
 		FVector BeamEnd=End;
 		if (FireHitResult.bBlockingHit)
 		{
-			//Not Called
-			UE_LOG(LogTemp, Log, TEXT("Trace channel: %d"), (int32)ECC_EngineTraceChannel1);
+			if (FireHitResult.GetActor())
+				UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetActor()->GetName());
 
-			
 			BeamEnd=FireHitResult.ImpactPoint;
 			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHitResult.GetActor());
 			if (CDCharacter && OwnerController)
 			{
-				// UGameplayStatics::ApplyDamage(CDCharacter,
-				// 	Damage,
-				// 	InstigatorController,
-				// 	this,
-				// 	UDamageType::StaticClass()
-				// 	);
 				UGameplayStatics::ApplyPointDamage(
                 			CDCharacter,
                 			Damage,
