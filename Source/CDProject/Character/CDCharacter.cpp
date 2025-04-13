@@ -51,10 +51,6 @@ ACDCharacter::ACDCharacter()
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
-	
-	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
-	//if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
-	//접근 안됨
 }
 
 // Called when the game starts or when spawned
@@ -237,6 +233,23 @@ inline void ACDCharacter::PossessedBy(AController* NewController)
 		UE_LOG(LogTemp, Warning, TEXT("Possessed Called"));
 		_abilitySystemComponent->InitAbilityActorInfo(this, this);
 		InitializeAttributes();
+	}
+	
+}
+
+void ACDCharacter::OnRep_Controller()
+{
+	Super::OnRep_Controller();
+	if (GetAbilitySystemComponent())
+	{
+		GetAbilitySystemComponent()->InitAbilityActorInfo(this, this);
+	}
+	
+	ACDPlayerController* acpc = Cast<ACDPlayerController>(GetController());
+	if (acpc)
+	{
+		acpc->SetHUDHealth(_attributeSet->GetHealth());
+		acpc->SetHUDShield(_attributeSet->GetShield());
 	}
 }
 

@@ -19,7 +19,7 @@ void UCDCharacterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHea
 			{
 				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PC))
 				{
-					CDPC->SetHUDHealth(GetHealth(), GetMaxHealth());
+					CDPC->SetHUDHealth(GetHealth());
 				}
 			}
 		}
@@ -34,6 +34,19 @@ void UCDCharacterAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& Old
 void UCDCharacterAttributeSet::OnRep_Shield(const FGameplayAttributeData& OldShield)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCDCharacterAttributeSet, Shield, OldShield);
+	if (AActor* Owner = GetOwningActor())
+	{
+		if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(Owner))
+		{
+			if (APlayerController* PC = Cast<APlayerController>(CDCharacter->GetController()))
+			{
+				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PC))
+				{
+					CDPC->SetHUDShield(GetHealth());
+				}
+			}
+		}
+	}
 }
 
 void UCDCharacterAttributeSet::OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield)

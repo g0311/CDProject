@@ -294,6 +294,7 @@ void AWeapon::SetHUDAmmo()
 	if (OwnerController)
 	{
 		OwnerController->SetHUDWeaponAmmo(Ammo);
+		OwnerController->SetHUDCarriedAmmo(CarriedAmmo);
 		OwnerController->SetHUDWeaponInfo(this);
 	}
 }

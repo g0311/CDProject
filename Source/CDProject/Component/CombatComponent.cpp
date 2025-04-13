@@ -75,6 +75,20 @@ void UCombatComponent::Reset()
 	}
 }
 
+int UCombatComponent::GetCurAmmo()
+{
+	if (_weapons[_weaponIndex])
+		return _weapons[_weaponIndex]->GetAmmo();
+	return 0;
+}
+
+int UCombatComponent::GetCarriedAmmo()
+{
+	if (_weapons[_weaponIndex])
+		return _weapons[_weaponIndex]->GetCarriedAmmo();
+	return 0;
+}
+
 AWeapon* UCombatComponent::GetCurWeapon()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
@@ -389,6 +403,7 @@ void UCombatComponent::ChangeWeapon(int idx)
 		_isCanAim = true;
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
+
 	OnRep_WeaponID();
 	//리슨 서버용
 }
@@ -513,7 +528,7 @@ void UCombatComponent::OnRep_WeaponID()
 			OnRep_WeaponID();
 		});
 		return;
-	}
+	} //Wait Until Weapon Replicated
 	if (!_playerCharacter)
 		return;
 	

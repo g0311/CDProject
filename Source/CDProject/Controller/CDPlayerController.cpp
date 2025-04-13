@@ -138,13 +138,13 @@ void ACDPlayerController::HandleCooldown()
 }
 
 
-void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
+void ACDPlayerController::SetHUDHealth(float Health)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
-		const float HealthPercent = Health/MaxHealth;
+		const float HealthPercent = Health/100.f;
 		CDHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
-		FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
+		FString HealthText=FString::Printf(TEXT("%d"), FMath::CeilToInt(Health));
 		CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
 	else
@@ -153,7 +153,7 @@ void ACDPlayerController::SetHUDHealth(float Health, float MaxHealth)
 	}
 }
 
-void ACDPlayerController::SetHUDShield(float Shield, float MaxShield)
+void ACDPlayerController::SetHUDShield(float Shield)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
@@ -311,17 +311,6 @@ void ACDPlayerController::InitializeHUD()
 	}
 }
 
-void ACDPlayerController::AcknowledgePossession(class APawn* P)
-{ //Client Part
-	Super::AcknowledgePossession(P);
-	UE_LOG(LogTemp, Warning, TEXT("ACK Called"));
-	ACDCharacter* CDCharacter = Cast<ACDCharacter>(P);
-	if (CDCharacter && CDCharacter->GetAbilitySystemComponent())
-	{
-		CDCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(CDCharacter, this);
-	}
-}
-
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -371,7 +360,6 @@ void ACDPlayerController::HandleMatchHasStarted()
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
-		
 	}
 }
 
