@@ -316,14 +316,14 @@ void UCombatComponent::Fire(FVector fireDir)
 	
 	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
 	FVector traceEnd = traceStart + fireDir * 10000.f;
-	
+	//DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Blue, false, 0.5);
+
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(GetOwner());
 	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
 	FHitResult hit;
-	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_EngineTraceChannel1, queryParams))
+	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
 	{
-		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
 		NetMulticastFire(hit.Location);
 		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
 	}

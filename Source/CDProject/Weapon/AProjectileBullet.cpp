@@ -37,7 +37,7 @@ void AAProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 {
 	ACharacter* OwnerCharacter=Cast<ACharacter>(GetOwner());
 	AController* OwnerController=OwnerCharacter->GetController();
-	if (OwnerCharacter && OwnerController)
+	if (OwnerCharacter && OwnerController && HasAuthority())
 	{
 		//UGameplayStatics::ApplyDamage(OtherActor, Damage, OwnerController, this, UDamageType::StaticClass());
 		UGameplayStatics::ApplyPointDamage(
@@ -50,6 +50,16 @@ void AAProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 			UDamageType::StaticClass()
 		);
 	}
+	
+	DrawDebugSphere(
+		GetWorld(),
+		Hit.Location,
+		10,
+		20,
+		FColor::Blue,
+		false,
+		2.f
+	);
 	
 	Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }
