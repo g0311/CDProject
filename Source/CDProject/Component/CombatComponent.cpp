@@ -321,7 +321,7 @@ void UCombatComponent::Fire(FVector fireDir)
 	queryParams.AddIgnoredActor(GetOwner());
 	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
 	FHitResult hit;
-	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, queryParams))
+	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_EngineTraceChannel1, queryParams))
 	{
 		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
 		NetMulticastFire(hit.Location);
