@@ -87,7 +87,6 @@ void ACDHUD::AddAnnouncement()
 	}
 }
 
-
 void ACDHUD::BeginPlay()
 {
 	Super::BeginPlay();

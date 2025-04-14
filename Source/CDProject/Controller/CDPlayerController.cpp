@@ -4,6 +4,7 @@
 #include "CDPlayerController.h"
 
 #include "AbilitySystemComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CombatComponent.h"
@@ -33,7 +34,6 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 	SetHUDTime();
 	//InitializeHUD();
 	CheckTimeSync(DeltaSeconds);
-	
 }
 
 void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -76,6 +76,18 @@ void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	CDHUD=Cast<ACDHUD>(GetHUD());
+	ACDCharacter* _character = Cast<ACDCharacter>(GetCharacter());
+	if (CDHUD && _character)
+	{
+		if (bInitializeHealth)
+		{
+			SetHUDHealth(_character->GetAttributeSet()->GetHealth());
+		}
+		if (bInitializeShield)
+		{
+			SetHUDShield(_character->GetAttributeSet()->GetShield());
+		}
+	}
 	ServerCheckMatchState();
 }
 
@@ -140,8 +152,10 @@ void ACDPlayerController::HandleCooldown()
 
 void ACDPlayerController::SetHUDHealth(float Health)
 {
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("SETHEALTH2"));
 		const float HealthPercent = Health/100.f;
 		CDHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
 		FString HealthText=FString::Printf(TEXT("%d"), FMath::CeilToInt(Health));
@@ -149,12 +163,15 @@ void ACDPlayerController::SetHUDHealth(float Health)
 	}
 	else
 	{
+		UE_LOG(LogTemp, Warning, TEXT("SETHEALTH1_1"));
+
 		bInitializeHealth=true;
 	}
 }
 
 void ACDPlayerController::SetHUDShield(float Shield)
 {
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
 		// const float ShieldPercent = Shield/MaxShield;
@@ -308,6 +325,31 @@ void ACDPlayerController::InitializeHUD()
 		// if (bInitializeKill)SetHUDKill(HUDKillCount);
 		// if (bInitializeDeath)SetHUDDeath(HUDDeathCount);
 		
+	}
+}
+
+void ACDPlayerController::AcknowledgePossession(class APawn* P)
+{
+	Super::AcknowledgePossession(P);
+	
+	EnableInput(this); 
+
+	if (IsLocalController()) 
+	{
+		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
+		ACDCharacter* acdCharacter = dynamic_cast<ACDCharacter*>(P);
+		if (subSystem && acdCharacter)
+		{
+			subSystem->AddMappingContext(acdCharacter->GetInputMapping(), 0);
+		}
+		if (acdCharacter->GetAbilitySystemComponent())
+		{
+			acdCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("SETHEALTH1"));
+		SetHUDHealth(acdCharacter->GetAttributeSet()->GetHealth());
+		SetHUDShield(acdCharacter->GetAttributeSet()->GetShield());
 	}
 }
 

@@ -62,6 +62,8 @@ public:
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
+	FORCEINLINE class UInputMappingContext* GetInputMapping() { return _inputMappingContext; }
+	
 	
 private:
 	//Input

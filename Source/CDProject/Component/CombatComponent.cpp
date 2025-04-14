@@ -28,7 +28,7 @@ void UCombatComponent::BeginPlay()
 	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	if (_playerCharacter->HasAuthority())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Combat Begin"));
+		//UE_LOG(LogTemp, Log, TEXT("Combat Begin"));
 		CreateDefaultWeapons();
 		ServerChangeWeapon(1);
 	}
@@ -128,7 +128,7 @@ void UCombatComponent::CreateDefaultWeapons()
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[1])
 		{
-			UE_LOG(LogTemp, Log, TEXT("Combat Create"));
+			//UE_LOG(LogTemp, Log, TEXT("Combat Create"));
 			_weapons[1]->SetOwner(_playerCharacter);
 			_weapons[1]->AttachToPlayer();
 		}
@@ -224,8 +224,8 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 		return;
 	}
 
-	if (_playerCharacter->IsLocallyControlled())
-		UE_LOG(LogTemp,Log,TEXT("%d"), _befIndex);
+	// if (_playerCharacter->IsLocallyControlled())
+	// 	UE_LOG(LogTemp,Log,TEXT("%d"), _befIndex);
 
 	_weapons[_befIndex]->GetWeaponMesh()->SetVisibility(tf);
 	_weapons[_befIndex]->GetWeaponMesh3p()->SetVisibility(tf);
