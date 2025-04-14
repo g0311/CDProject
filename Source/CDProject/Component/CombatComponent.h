@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CDProject/HUD/CDHUD.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "Components/ActorComponent.h"
 #include "CombatComponent.generated.h"
 
@@ -25,6 +26,8 @@ public:
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
 	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
+	FORCEINLINE int GetCurAmmo();
+	FORCEINLINE int GetCarriedAmmo();
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 
 	AWeapon* GetCurWeapon();

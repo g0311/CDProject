@@ -28,7 +28,7 @@ void UCombatComponent::BeginPlay()
 	_playerCharacter = Cast<ACDCharacter>(GetOwner());
 	if (_playerCharacter->HasAuthority())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Combat Begin"));
+		//UE_LOG(LogTemp, Log, TEXT("Combat Begin"));
 		CreateDefaultWeapons();
 		ServerChangeWeapon(1);
 	}
@@ -75,6 +75,20 @@ void UCombatComponent::Reset()
 	}
 }
 
+int UCombatComponent::GetCurAmmo()
+{
+	if (_weapons[_weaponIndex])
+		return _weapons[_weaponIndex]->GetAmmo();
+	return 0;
+}
+
+int UCombatComponent::GetCarriedAmmo()
+{
+	if (_weapons[_weaponIndex])
+		return _weapons[_weaponIndex]->GetCarriedAmmo();
+	return 0;
+}
+
 AWeapon* UCombatComponent::GetCurWeapon()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
@@ -114,7 +128,7 @@ void UCombatComponent::CreateDefaultWeapons()
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[1])
 		{
-			UE_LOG(LogTemp, Log, TEXT("Combat Create"));
+			//UE_LOG(LogTemp, Log, TEXT("Combat Create"));
 			_weapons[1]->SetOwner(_playerCharacter);
 			_weapons[1]->AttachToPlayer();
 		}
@@ -210,8 +224,8 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 		return;
 	}
 
-	if (_playerCharacter->IsLocallyControlled())
-		UE_LOG(LogTemp,Log,TEXT("%d"), _befIndex);
+	// if (_playerCharacter->IsLocallyControlled())
+	// 	UE_LOG(LogTemp,Log,TEXT("%d"), _befIndex);
 
 	_weapons[_befIndex]->GetWeaponMesh()->SetVisibility(tf);
 	_weapons[_befIndex]->GetWeaponMesh3p()->SetVisibility(tf);
@@ -316,14 +330,14 @@ void UCombatComponent::Fire(FVector fireDir)
 	
 	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
 	FVector traceEnd = traceStart + fireDir * 10000.f;
-	
+	//DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Blue, false, 0.5);
+
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(GetOwner());
 	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
 	FHitResult hit;
-	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_Visibility, queryParams))
+	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
 	{
-		//DrawDebugLine(GetWorld(), traceStart, hit.Location, FColor::Red, false, 5.0f, 0, 0.5f);
 		NetMulticastFire(hit.Location);
 		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
 	}
@@ -389,6 +403,7 @@ void UCombatComponent::ChangeWeapon(int idx)
 		_isCanAim = true;
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
+
 	OnRep_WeaponID();
 	//리슨 서버용
 }
@@ -513,7 +528,7 @@ void UCombatComponent::OnRep_WeaponID()
 			OnRep_WeaponID();
 		});
 		return;
-	}
+	} //Wait Until Weapon Replicated
 	if (!_playerCharacter)
 		return;
 	
