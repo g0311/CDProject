@@ -29,10 +29,22 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(UCDCharacterAttributeSet, MaxHealth)
 	
+	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_Health)
+	FGameplayAttributeData Shield;
+	ATTRIBUTE_ACCESSORS(UCDCharacterAttributeSet, Shield)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Health", ReplicatedUsing = OnRep_MaxHealth)
+	FGameplayAttributeData MaxShield;
+	ATTRIBUTE_ACCESSORS(UCDCharacterAttributeSet, MaxShield)
+	
 	UFUNCTION()
 	virtual void OnRep_Health(const FGameplayAttributeData& OldHealth);
 	UFUNCTION()
 	virtual void OnRep_MaxHealth(const FGameplayAttributeData& OldMaxHealth);
+	UFUNCTION()
+	virtual void OnRep_Shield(const FGameplayAttributeData& OldShield);
+	UFUNCTION()
+	virtual void OnRep_MaxShield(const FGameplayAttributeData& OldMaxShield);
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

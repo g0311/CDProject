@@ -28,7 +28,13 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
+	WeaponMesh->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetVisibility(false);
+
+	WeaponMesh->bCastDynamicShadow = false;
+	WeaponMesh->CastShadow = false;
 	
 	WeaponMesh3p = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh3p"));
 	//WeaponMesh3p->SetupAttachment(RootComponent); 
@@ -43,8 +49,10 @@ AWeapon::AWeapon()
 	
 	AreaSphere=CreateDefaultSubobject<USphereComponent>("AreaSphere");
 	AreaSphere->SetupAttachment(RootComponent);
-	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+	AreaSphere->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECollisionResponse::ECR_Ignore);
+	AreaSphere->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECollisionResponse::ECR_Ignore);
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }
 
 void AWeapon::Tick(float DeltaTime)

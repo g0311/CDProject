@@ -24,8 +24,9 @@ void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, U
 
 	combat->SetBefWeaponVisible(false);
 	combat->SetWeaponVisible(true);
-	
-	combat->GetCurWeapon()->SetHUDAmmo();
+
+	if (combat->GetCurWeapon())
+		combat->GetCurWeapon()->SetHUDAmmo();
 	
 	Super::Notify(MeshComp, Animation);
 }

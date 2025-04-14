@@ -80,4 +80,7 @@ public:
 	
 	void UpdateFullBodyProperty();
 	void UpdateUpperBodyProperty();
+
+	float GetReloadTime();
+	float GetEquipTime(AWeapon* nextWeapon);
 };
