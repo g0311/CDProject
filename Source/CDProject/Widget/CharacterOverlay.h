@@ -9,6 +9,7 @@
 /**
  * 
  */
+
 UCLASS()
 class CDPROJECT_API UCharacterOverlay : public UUserWidget
 {
@@ -21,7 +22,14 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* HealthText;
-
+//Team Round Score
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* RedTeamScore;
+	
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* BlueTeamScore;
+	
+	
 	//Weapon
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* WeaponName;

@@ -3,6 +3,8 @@
 
 #include "CDPlayerController.h"
 
+#include <filesystem>
+
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "CDProject/Character/CDCharacter.h"
@@ -14,6 +16,7 @@
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/KDOverlay.h"
+#include "CDProject/Widget/SniperScope.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
@@ -312,6 +315,12 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	
 }
 
+void ACDPlayerController::SetTeamScore()
+{
+	
+}
+
+
 //120 -> 119 -> 118
 void ACDPlayerController::InitializeHUD()
 {
@@ -366,12 +375,12 @@ void ACDPlayerController::OnPossess(APawn* InPawn)
 }
 
 
-void ACDPlayerController::OnMatchStateSet(FName State)
+void ACDPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch)
 {
 	MatchState=State;
 	if (MatchState==MatchState::InProgress)
 	{
-		HandleMatchHasStarted();
+		HandleMatchHasStarted(bTeamsMatch);
 	}
 	else if (MatchState==MatchState::Cooldown)
 	{
@@ -392,7 +401,7 @@ void ACDPlayerController::OnRep_MatchState()
 }
 
 
-void ACDPlayerController::HandleMatchHasStarted()
+void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
@@ -409,7 +418,22 @@ void ACDPlayerController::HandleMatchHasStarted()
 
 void ACDPlayerController::ShowSniperScope()
 {
-	// ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetPawn());
-	// UCombatComponent* CombatComponent = Cast<UCombatComponent>(CDCharacter->GetComponentByClass(UCombatComponent::StaticClass()));
-	// if (CombatComponent->GetCurWeaponType()==EWeaponType::EWT_Sniper)
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD->SniperScope)
+	{
+		CDHUD->AddSniperScope();
+	}
+
+	if (CDHUD&&CDHUD->SniperScope&&CDHUD->SniperScope&&CDHUD->SniperScope->ScopeZoomIn)
+	{
+		ACDCharacter* CDCharacter=Cast<ACDCharacter>(GetCharacter());
+		if (CDCharacter->GetCombatComponent()->IsAiming()) 
+		{
+			CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn);
+		}
+		else
+		{
+			CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn, 0.f,1,EUMGSequencePlayMode::Reverse);
+		}
+	}
 }

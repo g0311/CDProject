@@ -20,7 +20,7 @@ public:
 
 	void Reset();
 	
-	FORCEINLINE	bool IsAimng() { return _isAiming; }
+	FORCEINLINE	bool IsAiming() { return _isAiming; }//오타 수정
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }

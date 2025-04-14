@@ -168,7 +168,7 @@ void UCDAnimInstance::UpdateUpperBodyProperty()
 	if (combatComponent)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
-		_isAiming = combatComponent->IsAimng();
+		_isAiming = combatComponent->IsAiming();
 
 		//if (combatComponent->GetCurWeapon()->GetWeaponInfo() != Melee)
 		//	_leftHandTransform = combatComponent->GetCurWeapon()->GetMesh()->GetSocketTransform()

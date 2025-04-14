@@ -13,7 +13,7 @@ UCLASS()
 class CDPROJECT_API USniperScope : public UUserWidget
 {
 	GENERATED_BODY()
-
+public:
 	UPROPERTY(meta=(BindWidgetAnim), Transient)
-	UWidgetAnimation* ShowScopeAnim;
+	UWidgetAnimation* ScopeZoomIn;
 };

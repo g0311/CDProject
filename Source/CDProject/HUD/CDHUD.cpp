@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
+#include "CDProject/Widget/SniperScope.h"
 
 void ACDHUD::DrawHUD()
 {
@@ -52,6 +53,21 @@ void ACDHUD::DrawHUD()
 		}
 	}
 	
+}
+
+void ACDHUD::AddSniperScope()
+{
+	if (APlayerController* PlayerController=GetOwningPlayerController())
+	{
+		if (SniperScopeClass)
+		{
+			SniperScope=CreateWidget<USniperScope>(PlayerController, SniperScopeClass);
+			if (SniperScope)
+			{
+				SniperScope->AddToViewport();
+			}
+		}
+	}
 }
 
 void ACDHUD::AddCharacterOverlay()

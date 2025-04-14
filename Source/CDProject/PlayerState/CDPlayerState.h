@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CDProject/Types/Team.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "GameFramework/PlayerState.h"
 #include "CDPlayerState.generated.h"
@@ -19,10 +20,17 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	
-	UPROPERTY()
-	class ACDCharacter* Character;
-	UPROPERTY()
-	class ACDPlayerController* Controller;
+
+	UFUNCTION()
+	void OnRep_Team();
+
+protected:
+	UPROPERTY(ReplicatedUsing=OnRep_Team)
+	ETeam Team=ETeam::ET_NoTeam;
+
 	
-	//Team
+public:
+	FORCEINLINE ETeam GetTeam() const {return Team;}
+	
+	void SetTeam(ETeam TeamToSet);
 };

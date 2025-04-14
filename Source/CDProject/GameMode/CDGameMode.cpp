@@ -67,7 +67,7 @@ void ACDGameMode::OnMatchStateSet()
 		ACDPlayerController* PlayerController=Cast<ACDPlayerController> (*PCIter);
 		if (PlayerController)
 		{
-			PlayerController->OnMatchStateSet(MatchState);
+			PlayerController->OnMatchStateSet(MatchState, bTeamsMatch);
 		}
 	}
 }

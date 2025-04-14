@@ -28,20 +28,26 @@ public:
 	void SetHUDCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCount(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float Countdown);
+	void SetTeamScore();
+	
 	//Weapon
 	void ShowSniperScope();
 
 	//HUD initialize
 	void InitializeHUD();
+
+	//TeamMatch Controller
+	void SetHUDRedTeam(int32 RedScore);
+	void SetHUDBlueTeam(int32 BlueScore);
 	
 	//MatchState
 	virtual void AcknowledgePossession(class APawn* P) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void ReceivedPlayer() override;
 	virtual float GetServerTime();
-
-	void OnMatchStateSet(FName State);
-	void HandleMatchHasStarted();
+	
+	void OnMatchStateSet(FName State, bool bTeamsMatch=false);
+	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
 	UFUNCTION(Server, Reliable)

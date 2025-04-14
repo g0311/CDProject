@@ -91,7 +91,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	}
 	
 	//Update Arm Mesh Location
-	if (_combat->IsAimng())
+	if (_combat->IsAiming())
 	{
 		float InterpSpeed = 10.0f;
 		
@@ -330,7 +330,7 @@ void ACDCharacter::RequestAim()
 	
 	// _isAim set -> server _isAim set => On_Rep
 	// 반응 시간 최적화?
-	bool nextAiming = !_combat->IsAimng();
+	bool nextAiming = !_combat->IsAiming();
 	_combat->Aim(nextAiming);
 	_combat->ServerAim(nextAiming);
 }

@@ -38,6 +38,7 @@ public:
 	float Countdown=0.f;
 	float LevelStartingTime=0.f;
 
+	bool bTeamsMatch=false;
 	
 	
 protected:
