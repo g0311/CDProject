@@ -1,6 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+//Custom Depth Color
+#define CUSTOM_DEPTH_PURPLE 250
+#define CUSTOM_DEPTH_BLUE 251
+#define CUSTOM_DEPTH_TAN 252
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -42,7 +46,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnRep_Owner() override;
 	//Using This function -> ProjectileWeapon
-
+	
 	//* Widget Set function
 	void SetHUDAmmo();
 	
@@ -94,6 +98,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* ReloadSound;
+
+	void EnableCustomDepth(bool bEnable);
 	
 	bool AmmoIsEmpty();
 	void SpendCarriedAmmo(int32 ReloadAmount);

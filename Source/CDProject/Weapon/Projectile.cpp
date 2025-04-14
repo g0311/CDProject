@@ -6,6 +6,8 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 
 // Sets default values
 AProjectile::AProjectile()
@@ -21,7 +23,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
 
-
+	
 	//CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 
 	
@@ -41,6 +43,62 @@ void AProjectile::BeginPlay()
 			EAttachLocation::KeepWorldPosition);
 	}
 	CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
+}
+
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectile::FinishedDestroyTimer,
+		DestroyTime
+		);
+}
+
+void AProjectile::FinishedDestroyTimer()
+{
+	Destroy();
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (TrailSystem)
+	{
+		TrailSystemComponent=UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false
+			);
+	}
+}
+
+void AProjectile::ExplodeDamage()
+{//Explode need Instigator
+	APawn* FiringPawn=GetInstigator();
+	if (FiringPawn&&HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+					this,
+					Damage,
+					10.f,
+					GetActorLocation(),
+					DamageInnerRadius,
+					DamageOuterRadius,
+					1.f,
+					UDamageType::StaticClass(),
+					TArray<AActor*>(),
+					this,
+					FiringController
+				);
+		}
+	}
 }
 
 void AProjectile::Destroyed()

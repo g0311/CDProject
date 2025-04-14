@@ -24,9 +24,40 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UBoxComponent* CollisionBox;
+	//Niagara
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* TrailSystem;
 
+	UPROPERTY()
+	class UNiagaraComponent* TrailSystemComponent;
+	
+	//Impact Particle
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ImpactParticle;
+	
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ImpactSound;
+	//
+	UPROPERTY(VisibleAnywhere)
+	class UProjectileMovementComponent* ProjectileMovementComponent;
+	
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* ProjectileMesh;
+
+	UPROPERTY(EditAnywhere)
+	float DamageInnerRadius=200.f;
+	
+	UPROPERTY(EditAnywhere)
+	float DamageOuterRadius=500.f;
+	
+	
 protected:
 	virtual void BeginPlay() override;
+
+	void StartDestroyTimer();
+	void FinishedDestroyTimer();
+	void SpawnTrailSystem();
+	void ExplodeDamage();
 
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComponent,
@@ -35,20 +66,14 @@ protected:
 	FVector NormalImpulse,
 	const FHitResult& Hit);
 	
-	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* ProjectileMesh;
 
-	UPROPERTY(VisibleAnywhere)
-	class UProjectileMovementComponent* ProjectileMovementComponent;
-	
-
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* ImpactParticle;
-	
-	UPROPERTY(EditAnywhere)
-	class USoundCue* ImpactSound;
-	
+	//
 private:
+	FTimerHandle DestroyTimer;
+
+	UPROPERTY(EditAnywhere)
+	float DestroyTime=3.f;
+	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* Tracer;
 

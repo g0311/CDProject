@@ -13,17 +13,21 @@ class CDPROJECT_API AProjectileRocket : public AProjectile
 
 public:
 	AProjectileRocket();
+	
+protected:
+	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+	virtual void BeginPlay() override;
+	
+
+	UPROPERTY(EditAnywhere)
+	USoundCue* ProjectileLoop;
 
 	UPROPERTY()
 	UAudioComponent* ProjectileLoopComponent;
-
+	
 	UPROPERTY()
 	USoundAttenuation* LoopingSoundAttenuation;
-	
-protected:
-	virtual void BeginPlay() override;
+
 
 private:
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* RocketMesh;
 };

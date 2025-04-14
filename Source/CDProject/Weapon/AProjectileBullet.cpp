@@ -29,6 +29,10 @@ AAProjectileBullet::AAProjectileBullet()
 void AAProjectileBullet::BeginPlay()
 {
 	Super::BeginPlay();
+	if (GetOwner())
+	{
+		CollisionBox->IgnoreActorWhenMoving(GetOwner(), true);
+	}
 	
 }
 
