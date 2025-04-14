@@ -50,7 +50,6 @@ public:
 	void AddCharacterOverlay();
 	void AddGameStateOverlay();//KDOverlay or GameStateOverlay
 	void AddAnnouncement();
-	
 protected:
 	virtual void BeginPlay() override;
 private:

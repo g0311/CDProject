@@ -19,8 +19,8 @@ public:
 	//HUD
 	bool EnsureHUD();
 	void SetHUDTime();
-	void SetHUDHealth(float Health, float MaxHealth);
-	void SetHUDShield(float Shield, float MaxShield);
+	void SetHUDHealth(float Health);
+	void SetHUDShield(float Shield);
 	void SetHUDKill(float killcount);
 	void SetHUDDeath(float deathcount);
 	void SetHUDWeaponAmmo(int32 Ammo);
