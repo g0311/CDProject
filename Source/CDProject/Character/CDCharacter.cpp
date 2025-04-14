@@ -51,10 +51,6 @@ ACDCharacter::ACDCharacter()
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
-	
-	ACDPlayerController* CDPlayerController=Cast<ACDPlayerController>(GetController());
-	//if (CDPlayerController) CDPlayerController->SetHUDHealth(90,100);
-	//접근 안됨
 }
 
 // Called when the game starts or when spawned
@@ -62,20 +58,6 @@ void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	APlayerController* playerController = Cast<APlayerController>(Controller);
-	if (playerController)
-	{
-		EnableInput(playerController); 
-
-		if (IsLocallyControlled()) 
-		{
-			UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(playerController->GetLocalPlayer()); 
-			if (subSystem)
-			{
-				subSystem->AddMappingContext(_inputMappingContext, 0);
-			}
-		}
-	}
 }
 
 // Called every frame
@@ -147,7 +129,6 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_jumpAction, ETriggerEvent::Completed, this, &ACDCharacter::StopJumping);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Triggered, this, &ACDCharacter::Crouch, false);
 		enhancedInputComponent->BindAction(_crouchAction, ETriggerEvent::Completed, this, &ACDCharacter::UnCrouch, false);
-		//need to fix
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Triggered, this, &ACDCharacter::Walk);
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Completed, this, &ACDCharacter::UnWalk);
 
@@ -180,7 +161,8 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		FName ParentBone = MeshComp->GetParentBone(Bone);
 		while (ParentBone != NAME_None)
 		{
-			if (ParentBone.ToString().Contains("head"))
+			if (ParentBone.ToString().Contains("head") ||
+				ParentBone.ToString().Contains("neck"))
 			{
 				finalDamage *= 2.f;
 				break;
@@ -212,6 +194,14 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		curHealth = FMath::Clamp(curHealth - finalDamage, 0.f, 100.f);
 		_attributeSet->SetHealth(curHealth);
 	}
+
+	//for listen server
+	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
+	if (ACPC)
+	{
+		ACPC->SetHUDHealth(_attributeSet->GetHealth());
+		ACPC->SetHUDShield(_attributeSet->GetShield());
+	}
 	
 	if (curHealth <= 0)
 	{
@@ -234,10 +224,14 @@ inline void ACDCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	if (_abilitySystemComponent)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Possessed Called"));
 		_abilitySystemComponent->InitAbilityActorInfo(this, this);
 		InitializeAttributes();
 	}
+}
+
+void ACDCharacter::OnRep_Controller()
+{
+	Super::OnRep_Controller();
 }
 
 void ACDCharacter::RespawnPlayer()

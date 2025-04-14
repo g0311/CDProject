@@ -60,6 +60,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 					);
 			}
 		}
+		DrawDebugLine(GetWorld(), SocketTransform.GetLocation(), HitTarget, FColor::Red, false, 0.5);
 		
 	}
 }

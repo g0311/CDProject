@@ -29,6 +29,7 @@ public:
 	//virtual float InternalTakePointDamage(float Damage, struct FPointDamageEvent const& PointDamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_Controller() override;
 	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
@@ -61,6 +62,8 @@ public:
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
+	FORCEINLINE class UInputMappingContext* GetInputMapping() { return _inputMappingContext; }
+	
 	
 private:
 	//Input
