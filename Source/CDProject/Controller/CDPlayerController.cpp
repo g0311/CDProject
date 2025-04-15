@@ -419,12 +419,12 @@ void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 void ACDPlayerController::ShowSniperScope()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD->SniperScope)
+	if (!CDHUD->SniperScope)
 	{
 		CDHUD->AddSniperScope();
 	}
 
-	if (CDHUD&&CDHUD->SniperScope&&CDHUD->SniperScope&&CDHUD->SniperScope->ScopeZoomIn)
+	if (CDHUD&&CDHUD->SniperScope&&CDHUD->SniperScope->ScopeZoomIn)
 	{
 		ACDCharacter* CDCharacter=Cast<ACDCharacter>(GetCharacter());
 		if (CDCharacter->GetCombatComponent()->IsAiming()) 
