@@ -24,6 +24,7 @@ public:
 	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
+	FORCEINLINE bool IsChanging() { return _isChanging; }
 	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE int GetCurAmmo();
@@ -61,6 +62,8 @@ private:
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool _isChanging = false;
 	
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
@@ -80,6 +83,7 @@ public:
 	float _curSpread = 0.f;
 
 	void RequestFire();
+	void RequestChange(int idx);
 	//ServerCall
 	UFUNCTION(Server, Reliable)
 	void ServerFire(FVector fireDir);

@@ -57,6 +57,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isCanAim);
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
+	DOREPLIFETIME(UCombatComponent, _isChanging);
 }
 
 void UCombatComponent::Reset()
@@ -207,6 +208,12 @@ void UCombatComponent::RequestFire()
 	ServerFire(traceDir);
 }
 
+void UCombatComponent::RequestChange(int idx)
+{
+	_isChanging = true;
+	ServerChangeWeapon(idx);
+}
+
 void UCombatComponent::SetWeaponVisible(bool tf)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
@@ -307,7 +314,18 @@ void UCombatComponent::Aim(bool tf)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 	{
-		_isAiming = false;
+		if (_isAiming)
+		{
+			_isAiming = false;
+			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
+			{
+				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+				if(pc)
+				{
+					pc->ShowSniperScope();
+				}
+			}
+		}
 		return;
 	}
 	
@@ -315,11 +333,33 @@ void UCombatComponent::Aim(bool tf)
 		_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Sniper ||
 		_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Speical)
 	{
-		_isAiming = tf;
+		if (_isAiming != tf)
+		{
+			_isAiming = tf;
+			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
+			{
+				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+				if(pc)
+				{
+					pc->ShowSniperScope();
+				}
+			}
+		}
 	}
 	else
 	{
-		_isAiming = false;
+		if (_isAiming)
+		{
+			_isAiming = false;
+			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
+			{
+				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+				if(pc)
+				{
+					pc->ShowSniperScope();
+				}
+			}
+		}
 	}
 }
 
@@ -371,7 +411,8 @@ void UCombatComponent::Reload()
 	NetMulticastReload();
 	_isCanFire = false;
 	_isCanAim = false;
-	_isAiming = false;
+	Aim(false);
+
 	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
 		_isCanFire = true;
@@ -386,7 +427,7 @@ void UCombatComponent::ChangeWeapon(int idx)
 	{
 		return;
 	}
-		
+	Aim(false);
 	_befIndex = _weaponIndex;
 	_weaponIndex = idx;
 		
@@ -396,11 +437,12 @@ void UCombatComponent::ChangeWeapon(int idx)
 	
 	_isCanFire = false;
 	_isCanAim = false;
-	_isAiming = false;
+	_isChanging = true;
 	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
 		_isCanFire = true;
 		_isCanAim = true;
+		_isChanging = false;
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
@@ -415,7 +457,7 @@ void UCombatComponent::DropWeapon()
 	if (_weaponIndex == -1 || _weaponIndex == 2 || !_weapons[_weaponIndex])
 		return;
 	
-	_isAiming = false;
+	Aim(false);
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FVector lookDirection = controlRot.Vector();
 
@@ -493,6 +535,12 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 	{
 		playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
 	}
+
+	if (GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
+	{
+		Aim(false);
+		//Play Sniper Action?
+	}
 }
 
 void UCombatComponent::NetMulticastReload_Implementation()
@@ -533,6 +581,7 @@ void UCombatComponent::OnRep_WeaponID()
 		return;
 	
 	_weapons[_weaponIndex]->SetHUDAmmo();
+	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 

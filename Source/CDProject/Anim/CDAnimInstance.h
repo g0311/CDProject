@@ -51,7 +51,9 @@ public:
 	float _rFootOffset;
 	
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
-	FTransform _leftHandTransform;
+	FVector _leftHandLocation;
+	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
+	float _leftHandIKAlpha;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	bool _isFullBody = true;
@@ -63,10 +65,15 @@ public:
 	TObjectPtr<UAnimMontage> _shotgunReloadMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _pistolReloadMontage;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _baseFireMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _aimFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _pistolFireMontage;
+
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipRifleMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
@@ -78,8 +85,8 @@ public:
 	void PlayEquipMontage(class AWeapon* nextWeapon);
 	void PlayDeadMontage();
 	
-	void UpdateFullBodyProperty();
-	void UpdateUpperBodyProperty();
+	void UpdateFullBodyProperty(float DeltaSeconds);
+	void UpdateUpperBodyProperty(float DeltaSeconds);
 
 	float GetReloadTime();
 	float GetEquipTime(AWeapon* nextWeapon);

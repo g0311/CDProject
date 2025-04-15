@@ -339,6 +339,7 @@ void ACDCharacter::RequestReload()
 {
 	if (!_combat)
 		return;
+	_combat->Aim(false);
 	_combat->ServerReload();
 }
 
@@ -346,13 +347,15 @@ void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
-	_combat->ServerChangeWeapon(weaponIndex);
+	_combat->Aim(false);
+	_combat->RequestChange(weaponIndex);
 }
 
 void ACDCharacter::RequestDropWeapon()
 {
 	if (!_combat)
 		return;
+	_combat->Aim(false);
 	_combat->ServerDropWeapon();
 }
 
@@ -361,6 +364,7 @@ void ACDCharacter::GetWeapon(AWeapon* weapon)
 {
 	if (!_combat)
 		return;
+	_combat->Aim(false);
 	_combat->GetWeapon(weapon);
 }
 
