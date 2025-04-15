@@ -57,6 +57,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isCanAim);
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
+	DOREPLIFETIME(UCombatComponent, _isChanging);
 }
 
 void UCombatComponent::Reset()
@@ -205,6 +206,12 @@ void UCombatComponent::RequestFire()
 	_isCanFire = false;
 	FVector traceDir = CreateTraceDir();
 	ServerFire(traceDir);
+}
+
+void UCombatComponent::RequestChange(int idx)
+{
+	_isChanging = true;
+	ServerChangeWeapon(idx);
 }
 
 void UCombatComponent::SetWeaponVisible(bool tf)
@@ -386,7 +393,7 @@ void UCombatComponent::ChangeWeapon(int idx)
 	{
 		return;
 	}
-		
+	_isAiming = false;
 	_befIndex = _weaponIndex;
 	_weaponIndex = idx;
 		
@@ -396,11 +403,12 @@ void UCombatComponent::ChangeWeapon(int idx)
 	
 	_isCanFire = false;
 	_isCanAim = false;
-	_isAiming = false;
+	_isChanging = true;
 	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
 		_isCanFire = true;
 		_isCanAim = true;
+		_isChanging = false;
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
@@ -533,6 +541,7 @@ void UCombatComponent::OnRep_WeaponID()
 		return;
 	
 	_weapons[_weaponIndex]->SetHUDAmmo();
+	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 

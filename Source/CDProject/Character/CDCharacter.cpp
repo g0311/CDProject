@@ -346,7 +346,7 @@ void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
-	_combat->ServerChangeWeapon(weaponIndex);
+	_combat->RequestChange(weaponIndex);
 }
 
 void ACDCharacter::RequestDropWeapon()

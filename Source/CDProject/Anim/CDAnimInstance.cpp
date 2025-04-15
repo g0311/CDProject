@@ -3,6 +3,7 @@
 
 #include "CDAnimInstance.h"
 
+#include "AnimationCompression.h"
 #include "CDProject/Component/FootIKComponent.h"
 #include "KismetAnimationLibrary.h"
 #include "CDProject/Character/CDCharacter.h"
@@ -30,9 +31,9 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (_playerCharacter)
 	{
 		if (_isFullBody)
-			UpdateFullBodyProperty();
+			UpdateFullBodyProperty(DeltaSeconds);
 		else
-			UpdateUpperBodyProperty();
+			UpdateUpperBodyProperty(DeltaSeconds);
 	}
 }
 
@@ -47,14 +48,28 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 		}
 		else
 		{
-			if (_baseFireMontage)
-				Montage_Play(_baseFireMontage, 1.f / fireRate);
+			if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
+			{
+				if (_pistolFireMontage)
+					Montage_Play(_pistolFireMontage, 1.f / fireRate);	
+			}
+			else
+			{
+				if (_baseFireMontage)
+					Montage_Play(_baseFireMontage, 1.f / fireRate);	
+			}
 		}
 	}
 	else
 	{
-		if (_aimFireMontage)
+		if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
+		{
+			if (_pistolFireMontage)
+				Montage_Play(_pistolFireMontage, 1.f / fireRate);	
+		}
+		else if (_aimFireMontage)
 				Montage_Play(_aimFireMontage, 1.f / fireRate);
+		
 	}
 }
 
@@ -129,7 +144,7 @@ void UCDAnimInstance::PlayDeadMontage()
 		Montage_Play(_deadMontage);
 }
 
-void UCDAnimInstance::UpdateFullBodyProperty()
+void UCDAnimInstance::UpdateFullBodyProperty(float DeltaSeconds)
 {
 	//Lower Part
 	FVector velocity = _playerCharacter->GetVelocity();
@@ -158,10 +173,10 @@ void UCDAnimInstance::UpdateFullBodyProperty()
 	_lFootOffset = IKFootComp->_outValue._effectorLocation_Left;
 	_rFootOffset = IKFootComp->_outValue._effectorLocation_Right;
 	
-	UpdateUpperBodyProperty();
+	UpdateUpperBodyProperty(DeltaSeconds);
 }
 
-void UCDAnimInstance::UpdateUpperBodyProperty()
+void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 {
 	//Upper Part
 	UCombatComponent* combatComponent = _playerCharacter->GetComponentByClass<UCombatComponent>();
@@ -169,9 +184,35 @@ void UCDAnimInstance::UpdateUpperBodyProperty()
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAiming();
+		
+		if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
+			_isAiming = true;
 
-		//if (combatComponent->GetCurWeapon()->GetWeaponInfo() != Melee)
-		//	_leftHandTransform = combatComponent->GetCurWeapon()->GetMesh()->GetSocketTransform()
+		if (combatComponent->IsChanging())
+		{
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 10.f);
+		}
+		else
+		{
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 10.f);
+		}
+
+		if (combatComponent->GetCurWeapon())
+		{
+			if (combatComponent->GetCurWeapon()->GetWeaponType() != EWeaponType::EWT_Speical)
+			{
+				if (_isFullBody)
+				{
+					if(combatComponent->GetCurWeapon()->GetWeaponMesh3p()->DoesSocketExist(TEXT("LeftHandGrip")))
+						_leftHandLocation = combatComponent->GetCurWeapon()->GetWeaponMesh3p()->GetSocketLocation(TEXT("LeftHandGrip"));
+				}
+				else
+				{
+					if(combatComponent->GetCurWeapon()->GetWeaponMesh3p()->DoesSocketExist(TEXT("LeftHandGrip")))
+						_leftHandLocation = combatComponent->GetCurWeapon()->GetWeaponMesh()->GetSocketLocation(TEXT("LeftHandGrip"));
+				}
+			}
+		}
 	}
 }
 
