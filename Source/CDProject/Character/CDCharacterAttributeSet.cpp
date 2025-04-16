@@ -10,8 +10,6 @@
 void UCDCharacterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
 {
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCDCharacterAttributeSet, Health, OldHealth);
-	
-	UE_LOG(LogTemp, Log, TEXT("OnRep_He_Called!!"));
 	if (AActor* Owner = GetOwningActor())
 	{
 		if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(Owner))
@@ -23,7 +21,6 @@ void UCDCharacterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHea
 					CDPC->SetHUDHealth(GetHealth());
 				}
 			}
-			//Play Dead Anim
 		}
 	}
 }

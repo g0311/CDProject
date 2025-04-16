@@ -158,7 +158,6 @@ void ACDPlayerController::SetHUDHealth(float Health)
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SETHEALTH2"));
 		const float HealthPercent = Health/100.f;
 		CDHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
 		FString HealthText=FString::Printf(TEXT("%d"), FMath::CeilToInt(Health));
@@ -166,8 +165,6 @@ void ACDPlayerController::SetHUDHealth(float Health)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SETHEALTH1_1"));
-
 		bInitializeHealth=true;
 	}
 }
@@ -356,7 +353,6 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			acdCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
 		}
 		
-		UE_LOG(LogTemp, Warning, TEXT("SETHEALTH1"));
 		SetHUDHealth(acdCharacter->GetAttributeSet()->GetHealth());
 		SetHUDShield(acdCharacter->GetAttributeSet()->GetShield());
 	}

@@ -395,6 +395,10 @@ void UCombatComponent::Fire(FVector fireDir)
 	queryParams.AddIgnoredActor(GetOwner());
 	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
 	FHitResult hit;
+	
+	if (hit.GetActor())
+		UE_LOG(LogTemp, Warning, TEXT("Server Trace Collided %s"), *hit.GetActor()->GetName());
+	
 	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
 	{
 		NetMulticastFire(hit.Location);

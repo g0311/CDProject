@@ -28,7 +28,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	{
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start=SocketTransform.GetLocation();
-		FVector End = HitTarget;
+		FVector Direction = (HitTarget - Start).GetSafeNormal();
+		FVector ExtendedEnd = Start + Direction * 10000.f; // 예: 10000cm = 100m
+
 		
 		FCollisionQueryParams queryParams;
 		queryParams.AddIgnoredActor(this);
@@ -40,7 +42,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			World->LineTraceSingleByChannel(
 				FireHitResult,
 				Start,
-				End,
+				ExtendedEnd,
 				ECC_GameTraceChannel1,
 				queryParams);
 		};
@@ -49,7 +51,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			DrawDebugLine(
 			   GetWorld(),
 			   Start,
-			   End,
+			   ExtendedEnd,
 			   FColor::Green,
 			   false, 2.f, 0, 1.f
 		   );
@@ -64,7 +66,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			);
 		}
 		
-		FVector BeamEnd=End;
+		FVector BeamEnd=ExtendedEnd;
 		if (FireHitResult.bBlockingHit)
 		{
 			if (FireHitResult.GetActor())
