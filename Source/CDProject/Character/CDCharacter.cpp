@@ -219,7 +219,7 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME(ACDCharacter, _cameraRotation);
 }
 
-inline void ACDCharacter::PossessedBy(AController* NewController)
+void ACDCharacter::PossessedBy(AController* NewController)
 { //Server Part
 	Super::PossessedBy(NewController);
 	if (_abilitySystemComponent)
@@ -227,11 +227,6 @@ inline void ACDCharacter::PossessedBy(AController* NewController)
 		_abilitySystemComponent->InitAbilityActorInfo(this, this);
 		InitializeAttributes();
 	}
-}
-
-void ACDCharacter::OnRep_Controller()
-{
-	Super::OnRep_Controller();
 }
 
 void ACDCharacter::RespawnPlayer()
@@ -279,8 +274,15 @@ void ACDCharacter::Look(const FInputActionValue& value)
 	
 	if (Controller)
 	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(-LookAxisVector.Y);
+		// FOV에 비례한 감도 조절
+		float CurrentFOV = _camera->FieldOfView;
+		float DefaultFOV = 90.f; // 기본 FOV 값 (줌 아웃 상태)
+		
+		float FOVScale = CurrentFOV / DefaultFOV;
+		float FinalSensitivity = FOVScale * _mouseSensitivity;
+
+		AddControllerYawInput(LookAxisVector.X * FinalSensitivity);
+		AddControllerPitchInput(-LookAxisVector.Y * FinalSensitivity);
 	}
 }
 

@@ -21,7 +21,6 @@ public:
 	void Reset();
 	
 	FORCEINLINE	bool IsAiming() { return _isAiming; }//오타 수정
-	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
 	FORCEINLINE bool IsChanging() { return _isChanging; }

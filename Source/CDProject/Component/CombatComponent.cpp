@@ -312,6 +312,9 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 
 void UCombatComponent::Aim(bool tf)
 {
+	if (!_isCanAim)
+		return;
+	
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 	{
 		if (_isAiming)
@@ -324,6 +327,7 @@ void UCombatComponent::Aim(bool tf)
 				{
 					pc->ShowSniperScope();
 				}
+				SetWeaponVisible(true);
 			}
 		}
 		return;
@@ -343,6 +347,7 @@ void UCombatComponent::Aim(bool tf)
 				{
 					pc->ShowSniperScope();
 				}
+				SetWeaponVisible(!tf);
 			}
 		}
 	}
@@ -358,6 +363,7 @@ void UCombatComponent::Aim(bool tf)
 				{
 					pc->ShowSniperScope();
 				}
+				SetWeaponVisible(true);
 			}
 		}
 	}

@@ -29,7 +29,6 @@ public:
 	//virtual float InternalTakePointDamage(float Damage, struct FPointDamageEvent const& PointDamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
-	virtual void OnRep_Controller() override;
 	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
@@ -99,10 +98,12 @@ private:
 	
 	void RequestFire();
 	void RequestAim();
-	void RequestUnAim();
 	void RequestReload();
 	void RequestChangeWeapon(int weaponIndex);
 	void RequestDropWeapon();
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	float _mouseSensitivity = 1.f;
 public:
 	void GetWeapon(class AWeapon* weapon);
 	
