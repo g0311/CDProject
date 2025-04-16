@@ -140,8 +140,22 @@ void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 
 void UCDAnimInstance::PlayDeadMontage()
 {
+	_leftHandIKAlpha = 0.f;
 	if (_deadMontage)
 		Montage_Play(_deadMontage);
+	
+}
+
+void UCDAnimInstance::PlayHitMontage()
+{
+	if (_hitMontage.Num() == 0) return;
+
+	int32 RandomIndex = FMath::RandRange(0, _hitMontage.Num() - 1);
+	UAnimMontage* SelectedMontage = _hitMontage[RandomIndex];
+	if (SelectedMontage)
+	{
+		Montage_Play(SelectedMontage);
+	}
 }
 
 void UCDAnimInstance::UpdateFullBodyProperty(float DeltaSeconds)

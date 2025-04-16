@@ -60,24 +60,31 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isChanging);
 }
 
-void UCombatComponent::Reset()
+void UCombatComponent::Reset(bool isDead)
 {
-	//update weapon stock
+	if (!_playerCharacter->HasAuthority())
+		return;
 
-
-	//Switch Weapon
-	for (int i = 0; i < _weapons.Num(); i++)
+	if (isDead)
 	{
-		if (_weapons[i])
+		//update weapon stock
+		CreateDefaultWeapons();
+		ChangeWeapon(1);
+	}
+	else
+	{
+		for (AWeapon* weapon : _weapons)
 		{
-			ChangeWeapon(i);
-			break;
+			if (weapon)
+			{
+				//weapon->ResetAmmo();
+			}
 		}
 	}
 }
 
 int UCombatComponent::GetCurAmmo()
-{
+{	
 	if (_weapons[_weaponIndex])
 		return _weapons[_weaponIndex]->GetAmmo();
 	return 0;
@@ -126,6 +133,9 @@ void UCombatComponent::CreateDefaultWeapons()
 {
 	if (_defaultSubWeapon)
 	{
+		if (_weapons[1])
+			return;
+		
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[1])
 		{
@@ -136,6 +146,9 @@ void UCombatComponent::CreateDefaultWeapons()
 	}
 	if (_defaultMeleeWeapon)
 	{
+		if (_weapons[2])
+			return;
+		
 		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[0])
 		{

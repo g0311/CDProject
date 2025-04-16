@@ -26,12 +26,22 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	//virtual float InternalTakePointDamage(float Damage, struct FPointDamageEvent const& PointDamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
 	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
+
+private:
+	//Properties
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Dead();
+	void Multicast_Hit();
+	void HandleDamage(float FinalDamage);
+public:
+	bool _isDead = false;
+	//State로 리팩터링
+	
 private:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -62,7 +72,6 @@ public:
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
 	FORCEINLINE class UInputMappingContext* GetInputMapping() { return _inputMappingContext; }
-	
 	
 private:
 	//Input
@@ -129,9 +138,11 @@ private:
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")
 	TSubclassOf<class UGameplayEffect> _defaultAttributeEffect;
+
 public:
-	
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	class UCDCharacterAttributeSet* GetAttributeSet();
 	void InitializeAttributes();
+
 };
+

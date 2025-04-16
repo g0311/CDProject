@@ -23,6 +23,7 @@ void UCDCharacterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHea
 					CDPC->SetHUDHealth(GetHealth());
 				}
 			}
+			//Play Dead Anim
 		}
 	}
 }

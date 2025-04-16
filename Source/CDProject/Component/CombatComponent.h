@@ -18,7 +18,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void Reset();
+	void Reset(bool isDead);
 	
 	FORCEINLINE	bool IsAiming() { return _isAiming; }//오타 수정
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
