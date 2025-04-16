@@ -31,9 +31,13 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	if (_playerCharacter)
 	{
 		if (_isFullBody)
+		{
 			UpdateFullBodyProperty(DeltaSeconds);
+		}
 		else
+		{
 			UpdateUpperBodyProperty(DeltaSeconds);
+		}
 	}
 }
 
@@ -41,22 +45,33 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
 	if (_isFullBody)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Called1"));
 		if (_isAiming)
 		{
 			if (_aimFireMontage)
+			{
 				Montage_Play(_aimFireMontage, 1.f / fireRate);
+				UE_LOG(LogTemp, Warning, TEXT("Called2"));
+
+			}
 		}
 		else
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Called3"));
 			if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
 			{
 				if (_pistolFireMontage)
-					Montage_Play(_pistolFireMontage, 1.f / fireRate);	
+				{
+					Montage_Play(_pistolFireMontage, 1.f / fireRate);
+					UE_LOG(LogTemp, Warning, TEXT("Called4"));
+				}
 			}
 			else
 			{
 				if (_baseFireMontage)
-					Montage_Play(_baseFireMontage, 1.f / fireRate);	
+				{
+					Montage_Play(_baseFireMontage, 1.f / fireRate);
+				}
 			}
 		}
 	}
@@ -65,11 +80,14 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 		if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
 		{
 			if (_pistolFireMontage)
-				Montage_Play(_pistolFireMontage, 1.f / fireRate);	
+			{
+				Montage_Play(_pistolFireMontage, 1.f / fireRate);
+			}
 		}
 		else if (_aimFireMontage)
-				Montage_Play(_aimFireMontage, 1.f / fireRate);
-		
+		{
+			Montage_Play(_aimFireMontage, 1.f / fireRate);
+		}
 	}
 }
 
@@ -198,9 +216,6 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAiming();
-		
-		if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
-			_isAiming = true;
 
 		if (combatComponent->IsChanging())
 		{

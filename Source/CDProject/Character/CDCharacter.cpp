@@ -473,9 +473,13 @@ void ACDCharacter::Multicast_Hit()
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
 	if (bodyAnim)
+	{
 		bodyAnim->PlayHitMontage();
+	}
 	if (armAnim)
+	{
 		armAnim->PlayHitMontage();
+	}
 }
 
 void ACDCharacter::HandleDamage(float FinalDamage)
@@ -497,7 +501,11 @@ void ACDCharacter::HandleDamage(float FinalDamage)
 	}
 	
 	if (CurHealth == 0.f)
+	{
 		Multicast_Dead();
+	}
 	else
+	{
 		Multicast_Hit();
+	}
 }
