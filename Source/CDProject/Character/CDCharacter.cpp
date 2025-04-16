@@ -458,6 +458,7 @@ void ACDCharacter::Multicast_Dead_Implementation()
 	if (HasAuthority())
 	{
 		//Drop All Weapon
+		_combat->DropAllWeapons();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 		
@@ -468,7 +469,7 @@ void ACDCharacter::Multicast_Dead_Implementation()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 }
 
-void ACDCharacter::Multicast_Hit()
+void ACDCharacter::Multicast_Hit_Implementation()
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());

@@ -382,6 +382,31 @@ void UCombatComponent::Aim(bool tf)
 	}
 }
 
+void UCombatComponent::DropAllWeapons()
+{
+	if (!_playerCharacter)
+		return;
+
+	Aim(false);
+	for (int i = 0; i < _weapons.Num(); ++i)
+	{
+		if (i == 2) continue;
+
+		if (_weapons[i])
+		{
+			FRotator controlRot = _playerCharacter->GetControlRotation();
+			FVector lookDirection = controlRot.Vector();
+			//Add Impulse
+			
+			NetMulticastDropWeapon(_weapons[i]);
+			_weapons[i]->Dropped(lookDirection);
+			_weapons[i] = nullptr;
+		}
+	}
+
+	_weaponIndex = -1;
+}
+
 void UCombatComponent::Fire(FVector fireDir)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])

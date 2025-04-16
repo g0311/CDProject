@@ -97,6 +97,7 @@ public:
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 		//Both Call
 		void Aim(bool tf);
+	void DropAllWeapons();
 private:
 	//Implementation
 	void Fire(FVector fireDir);

@@ -271,7 +271,7 @@ void AWeapon::Dropped(FVector& impactDir)
 	//Add Impulse
 	if (WeaponMesh->IsSimulatingPhysics())
 	{
-		FVector Impulse = impactDir.GetSafeNormal() * 500.0f;
+		FVector Impulse = impactDir.GetSafeNormal() * 150.0f;
 		WeaponMesh->AddImpulse(Impulse, NAME_None, true);
 	}
 }

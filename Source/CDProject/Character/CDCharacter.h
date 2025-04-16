@@ -36,6 +36,7 @@ private:
 	//Properties
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Dead();
+	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Hit();
 	void HandleDamage(float FinalDamage);
 public:
