@@ -80,10 +80,14 @@ public:
 	TObjectPtr<UAnimMontage> _equipPistolMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _deadMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TArray<UAnimMontage*> _hitMontage;
+	
 	void PlayFireMontage(float fireRate);
 	void PlayReloadMontage();
 	void PlayEquipMontage(class AWeapon* nextWeapon);
 	void PlayDeadMontage();
+	void PlayHitMontage();
 	
 	void UpdateFullBodyProperty(float DeltaSeconds);
 	void UpdateUpperBodyProperty(float DeltaSeconds);

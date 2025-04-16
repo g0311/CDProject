@@ -18,10 +18,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
-	void Reset();
+	void Reset(bool isDead);
 	
 	FORCEINLINE	bool IsAiming() { return _isAiming; }//오타 수정
-	FORCEINLINE	bool IsAimAvail() { return _isCanAim; }
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
 	FORCEINLINE bool IsChanging() { return _isChanging; }
@@ -98,6 +97,7 @@ public:
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
 		//Both Call
 		void Aim(bool tf);
+	void DropAllWeapons();
 private:
 	//Implementation
 	void Fire(FVector fireDir);
