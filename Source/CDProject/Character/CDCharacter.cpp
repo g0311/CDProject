@@ -227,6 +227,7 @@ void ACDCharacter::RespawnPlayer()
 		{
 			_combat->Reset(false);
 			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+			GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 			//Move To Spawn Point	
 			
 		}
@@ -239,6 +240,7 @@ void ACDCharacter::RespawnPlayer()
 		{
 			_combat->Reset(true);
 			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+			
 			//Move to Spawn Point
 			
 		}
@@ -456,6 +458,7 @@ void ACDCharacter::Multicast_Dead_Implementation()
 	if (HasAuthority())
 	{
 		//Drop All Weapon
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 		
 	if (bodyAnim)
