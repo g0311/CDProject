@@ -8,16 +8,19 @@
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
 #include "CDCharacterMovementComponent.h"
+#include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
 
+class UCDAnimInstance;
 // Sets default values
 ACDCharacter::ACDCharacter()
 {
@@ -148,8 +151,10 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	float finalDamage = DamageAmount;
+	if (_attributeSet && _attributeSet->GetHealth() == 0)
+		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
+	float finalDamage = DamageAmount;
 	
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
@@ -181,31 +186,15 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 			ParentBone = MeshComp->GetParentBone(ParentBone);
 		}
 	}
+	//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
+	HandleDamage(finalDamage);
 	
-	float curShield = _attributeSet->GetShield();
-	float curHealth = _attributeSet->GetHealth();
-	if (curShield > 0.f)
-	{
-		curShield = FMath::Clamp(curShield - finalDamage, 0.f, 100.f);
-		_attributeSet->SetShield(curShield);
-	}
-	else
-	{
-		curHealth = FMath::Clamp(curHealth - finalDamage, 0.f, 100.f);
-		_attributeSet->SetHealth(curHealth);
-	}
-
 	//for listen server
 	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
 	if (ACPC)
 	{
 		ACPC->SetHUDHealth(_attributeSet->GetHealth());
 		ACPC->SetHUDShield(_attributeSet->GetShield());
-	}
-	
-	if (curHealth <= 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("player Dead"));
 	}
 	
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -219,7 +208,7 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	DOREPLIFETIME(ACDCharacter, _cameraRotation);
 }
 
-inline void ACDCharacter::PossessedBy(AController* NewController)
+void ACDCharacter::PossessedBy(AController* NewController)
 { //Server Part
 	Super::PossessedBy(NewController);
 	if (_abilitySystemComponent)
@@ -229,13 +218,51 @@ inline void ACDCharacter::PossessedBy(AController* NewController)
 	}
 }
 
-void ACDCharacter::OnRep_Controller()
-{
-	Super::OnRep_Controller();
-}
-
+//Should Be MultiCast
 void ACDCharacter::RespawnPlayer()
 {
+	if (_attributeSet->GetHealth() > 0)
+	{
+		if (HasAuthority())
+		{
+			_combat->Reset(false);
+			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+			GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			//Move To Spawn Point	
+			
+		}
+	}
+	else
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
+		if (HasAuthority())
+		{
+			_combat->Reset(true);
+			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+			
+			//Move to Spawn Point
+			
+		}
+		else if (IsLocallyControlled())
+		{
+			_armMesh->SetVisibility(true);
+			//Enable Input
+			APlayerController* PC = Cast<APlayerController>(GetController());
+			if (PC)
+			{
+				ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+				if (LocalPlayer)
+				{
+					UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+					if (Subsystem)
+					{
+						Subsystem->AddMappingContext(_inputMappingContext, 0);
+					}
+				}
+			}
+		}
+	}
 }
 
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
@@ -279,8 +306,15 @@ void ACDCharacter::Look(const FInputActionValue& value)
 	
 	if (Controller)
 	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(-LookAxisVector.Y);
+		// FOV에 비례한 감도 조절
+		float CurrentFOV = _camera->FieldOfView;
+		float DefaultFOV = 90.f; // 기본 FOV 값 (줌 아웃 상태)
+		
+		float FOVScale = CurrentFOV / DefaultFOV;
+		float FinalSensitivity = FOVScale * _mouseSensitivity;
+
+		AddControllerYawInput(LookAxisVector.X * FinalSensitivity);
+		AddControllerPitchInput(-LookAxisVector.Y * FinalSensitivity);
 	}
 }
 
@@ -394,5 +428,85 @@ void ACDCharacter::InitializeAttributes()
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
 			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
+	}
+}
+
+void ACDCharacter::Multicast_Dead_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
+
+	if (IsLocallyControlled())
+	{
+		//Disable Input
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (PC)
+		{
+			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+			if (LocalPlayer)
+			{
+				UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+				if (Subsystem)
+				{
+					Subsystem->RemoveMappingContext(_inputMappingContext);
+				}
+			}
+		}
+		//UnVisible Arm Mesh
+		GetArmMesh()->SetVisibility(false);
+	}
+	if (HasAuthority())
+	{
+		//Drop All Weapon
+		_combat->DropAllWeapons();
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+		
+	if (bodyAnim)
+		bodyAnim->PlayDeadMontage();
+	if (armAnim)
+		armAnim->PlayDeadMontage();
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+}
+
+void ACDCharacter::Multicast_Hit_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+	{
+		bodyAnim->PlayHitMontage();
+	}
+	if (armAnim)
+	{
+		armAnim->PlayHitMontage();
+	}
+}
+
+void ACDCharacter::HandleDamage(float FinalDamage)
+{
+	if (_attributeSet == nullptr) return;
+
+	float CurShield = _attributeSet->GetShield();
+	float CurHealth = _attributeSet->GetHealth();
+
+	if (CurShield > 0.f)
+	{
+		CurShield = FMath::Clamp(CurShield - FinalDamage, 0.f, 100.f);
+		_attributeSet->SetShield(CurShield);
+	}
+	else
+	{
+		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
+		_attributeSet->SetHealth(CurHealth);
+	}
+	
+	if (CurHealth == 0.f)
+	{
+		Multicast_Dead();
+	}
+	else
+	{
+		Multicast_Hit();
 	}
 }

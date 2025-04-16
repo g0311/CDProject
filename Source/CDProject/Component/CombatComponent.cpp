@@ -60,24 +60,31 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isChanging);
 }
 
-void UCombatComponent::Reset()
+void UCombatComponent::Reset(bool isDead)
 {
-	//update weapon stock
+	if (!_playerCharacter->HasAuthority())
+		return;
 
-
-	//Switch Weapon
-	for (int i = 0; i < _weapons.Num(); i++)
+	if (isDead)
 	{
-		if (_weapons[i])
+		//update weapon stock
+		CreateDefaultWeapons();
+		ChangeWeapon(1);
+	}
+	else
+	{
+		for (AWeapon* weapon : _weapons)
 		{
-			ChangeWeapon(i);
-			break;
+			if (weapon)
+			{
+				//weapon->ResetAmmo();
+			}
 		}
 	}
 }
 
 int UCombatComponent::GetCurAmmo()
-{
+{	
 	if (_weapons[_weaponIndex])
 		return _weapons[_weaponIndex]->GetAmmo();
 	return 0;
@@ -126,6 +133,9 @@ void UCombatComponent::CreateDefaultWeapons()
 {
 	if (_defaultSubWeapon)
 	{
+		if (_weapons[1])
+			return;
+		
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[1])
 		{
@@ -136,6 +146,9 @@ void UCombatComponent::CreateDefaultWeapons()
 	}
 	if (_defaultMeleeWeapon)
 	{
+		if (_weapons[2])
+			return;
+		
 		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[0])
 		{
@@ -312,6 +325,9 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 
 void UCombatComponent::Aim(bool tf)
 {
+	if (!_isCanAim)
+		return;
+	
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 	{
 		if (_isAiming)
@@ -324,6 +340,7 @@ void UCombatComponent::Aim(bool tf)
 				{
 					pc->ShowSniperScope();
 				}
+				SetWeaponVisible(true);
 			}
 		}
 		return;
@@ -343,6 +360,7 @@ void UCombatComponent::Aim(bool tf)
 				{
 					pc->ShowSniperScope();
 				}
+				SetWeaponVisible(!tf);
 			}
 		}
 	}
@@ -358,9 +376,35 @@ void UCombatComponent::Aim(bool tf)
 				{
 					pc->ShowSniperScope();
 				}
+				SetWeaponVisible(true);
 			}
 		}
 	}
+}
+
+void UCombatComponent::DropAllWeapons()
+{
+	if (!_playerCharacter)
+		return;
+
+	Aim(false);
+	for (int i = 0; i < _weapons.Num(); ++i)
+	{
+		if (i == 2) continue;
+
+		if (_weapons[i])
+		{
+			FRotator controlRot = _playerCharacter->GetControlRotation();
+			FVector lookDirection = controlRot.Vector();
+			//Add Impulse
+			
+			NetMulticastDropWeapon(_weapons[i]);
+			_weapons[i]->Dropped(lookDirection);
+			_weapons[i] = nullptr;
+		}
+	}
+
+	_weaponIndex = -1;
 }
 
 void UCombatComponent::Fire(FVector fireDir)
@@ -376,6 +420,10 @@ void UCombatComponent::Fire(FVector fireDir)
 	queryParams.AddIgnoredActor(GetOwner());
 	queryParams.AddIgnoredActor(_weapons[_weaponIndex]);
 	FHitResult hit;
+	
+	if (hit.GetActor())
+		UE_LOG(LogTemp, Warning, TEXT("Server Trace Collided %s"), *hit.GetActor()->GetName());
+	
 	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
 	{
 		NetMulticastFire(hit.Location);
