@@ -66,19 +66,9 @@ ACDCharacter::ACDCharacter()
 	
 	SceneCapture2D=CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture2D"));
 	SceneCapture2D->SetupAttachment(MiniMapSpringArm);
-	SceneCapture2D->CaptureScene(); 
 	SceneCapture2D->ProjectionType = ECameraProjectionMode::Orthographic;
 	SceneCapture2D->OrthoWidth = 2048.f; 
-	SceneCapture2D->bCaptureEveryFrame = true;
-	SceneCapture2D->bCaptureOnMovement = false;
 	SceneCapture2D->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-	SceneCapture2D->TextureTarget = MiniMapRenderTarget;
-	SceneCapture2D->SetVisibility(true);
-	SceneCapture2D->Activate();
-	SceneCapture2D->CaptureScene();
-
-
-
 }
 
 // Called when the game starts or when spawned
@@ -92,11 +82,9 @@ void ACDCharacter::BeginPlay()
 		if (MiniMapRenderTarget)
 		{
 			MiniMapRenderTarget->RenderTargetFormat = RTF_RGBA8;
-			MiniMapRenderTarget->InitAutoFormat(1024, 1024);
+			MiniMapRenderTarget->InitAutoFormat(256, 256);
 			MiniMapRenderTarget->ClearColor = FLinearColor::Transparent;
-			MiniMapRenderTarget->UpdateResourceImmediate(true);
-
-			SceneCapture2D->TextureTarget = MiniMapRenderTarget;
+			SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 
 	}
