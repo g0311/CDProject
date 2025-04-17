@@ -61,7 +61,8 @@ ACDCharacter::ACDCharacter()
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	SetTeamColor(ETeam::ET_RedTeam);
 }
 
 // Called every frame
@@ -303,7 +304,23 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 
 void ACDCharacter::SetTeamColor(ETeam team)
 {
-	
+	if (!GetMesh())
+		return;
+	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
+	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_BLUE"));
+	switch (team)
+	{
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0, RedMaterial);
+		GetArmMesh()->SetMaterial(0, RedMaterial);
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0, BlueMaterial);
+		GetArmMesh()->SetMaterial(0, BlueMaterial);
+		break;
+	default:
+		break;
+	}
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)
