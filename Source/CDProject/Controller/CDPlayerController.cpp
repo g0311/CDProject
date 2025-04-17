@@ -17,9 +17,11 @@
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/KDOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
+#include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -91,6 +93,7 @@ void ACDPlayerController::BeginPlay()
 			SetHUDShield(_character->GetAttributeSet()->GetShield());
 		}
 	}
+
 	ServerCheckMatchState();
 }
 
@@ -185,6 +188,7 @@ void ACDPlayerController::SetHUDShield(float Shield)
 	
 }
 
+
 // void ACDPlayerController::SetHUDKill(float killcount)
 // {
 // 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->KillCount)
@@ -193,10 +197,10 @@ void ACDPlayerController::SetHUDShield(float Shield)
 // 		CDHUD->CharacterOverlay->KillCount->SetText(FText::FromString(KillCount));
 // 	}
 // }
-
+//
 // void ACDPlayerController::SetHUDDeath(float deathcount)
 // {
-// 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->DeathCount)
+// 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->KDOverlay->DeathCount)
 // 	{
 // 		FString DeathCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(deathcount));
 // 		CDHUD->CharacterOverlay->DeathCount->SetText(FText::FromString(DeathCount));
@@ -320,6 +324,30 @@ void ACDPlayerController::SetTeamScore()
 	
 }
 
+void ACDPlayerController::SetMinimap()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	APawn* CDPawn = GetPawn();
+	if (!CDPawn)return;
+	ACDCharacter* CDCharacter = Cast<ACDCharacter>(CDPawn);
+	if (!CDCharacter) return;
+	
+	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->MinimapBox)
+	{
+		if (CDHUD->CharacterOverlay->MiniMapImage)
+		{
+			UTextureRenderTarget2D* MiniMapRenderTarget=CDCharacter->GetMiniMapTarget();
+			FSlateBrush MiniMapBrush;
+			MiniMapBrush.SetResourceObject(MiniMapRenderTarget);
+			MiniMapBrush.ImageSize = FVector2D(128, 128);
+			
+			CDHUD->CharacterOverlay->MiniMapImage->SetBrush(MiniMapBrush);
+			
+			
+		}
+	}
+}
+
 
 //120 -> 119 -> 118
 void ACDPlayerController::InitializeHUD()
@@ -333,7 +361,42 @@ void ACDPlayerController::InitializeHUD()
 		//if (bInitializeShield)SetHUDShield(HUDShield);
 		// if (bInitializeKill)SetHUDKill(HUDKillCount);
 		// if (bInitializeDeath)SetHUDDeath(HUDDeathCount);
-		
+	}
+}
+
+
+
+void ACDPlayerController::HideRoundScore(bool IsHide)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->StateBox&&IsHide)
+	{
+		CDHUD->CharacterOverlay->StateBox->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else
+	{
+		CDHUD->CharacterOverlay->StateBox->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
+void ACDPlayerController::SetHUDRedTeam(int32 RedScore)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore)
+	{
+		FString ScoreText=FString::Printf(TEXT("%d"), RedScore);
+		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	}
+	
+}
+
+void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore)
+	{
+		FString ScoreText=FString::Printf(TEXT("%d"), BlueScore);
+		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
 	}
 }
 
@@ -365,13 +428,9 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	// ACDCharacter* CDCharacter=Cast<ACDCharacter>(InPawn);
-	// if (CDCharacter&&CDCharacter->GetAbilitySystemComponent())
-	// {
-	// 	const UCDCharacterAttributeSet* AttributeSet = CDCharacter->GetAbilitySystemComponent()->GetSet<UCDCharacterAttributeSet>();
-	// 	SetHUDHealth(AttributeSet->GetHealth(), AttributeSet->GetMaxHealth());
-	// 	CDCharacter->GetCombatComponent()->GetCurWeapon()->SetHUDAmmo();
-	// }
+
+
+
 }
 
 
@@ -407,6 +466,7 @@ void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 	if (CDHUD)
 	{
 		CDHUD->AddCharacterOverlay();
+		SetMinimap();
 		if (CDHUD->Announcement)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);

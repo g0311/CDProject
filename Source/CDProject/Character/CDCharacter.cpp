@@ -13,7 +13,9 @@
 #include "CDProject/Controller/CDPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "Engine/DamageEvents.h"
+#include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -51,13 +53,50 @@ ACDCharacter::ACDCharacter()
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 	
 	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
+
+	//Minimap
+	MiniMapSpringArm=CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
+	MiniMapSpringArm->SetupAttachment(RootComponent);
+	MiniMapSpringArm->TargetArmLength = 1000.f; 
+	MiniMapSpringArm->SetRelativeLocation(FVector(0.f, 0.f, 1000.f));
+	MiniMapSpringArm->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+	
+	SceneCapture2D=CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture2D"));
+	SceneCapture2D->SetupAttachment(MiniMapSpringArm);
+	SceneCapture2D->CaptureScene(); 
+	SceneCapture2D->ProjectionType = ECameraProjectionMode::Orthographic;
+	SceneCapture2D->OrthoWidth = 2048.f; 
+	SceneCapture2D->bCaptureEveryFrame = true;
+	SceneCapture2D->bCaptureOnMovement = false;
+	SceneCapture2D->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	SceneCapture2D->TextureTarget = MiniMapRenderTarget;
+	SceneCapture2D->SetVisibility(true);
+	SceneCapture2D->Activate();
+	SceneCapture2D->CaptureScene();
+
+
+
 }
 
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (!MiniMapRenderTarget)
+	{
+		MiniMapRenderTarget = NewObject<UTextureRenderTarget2D>(this, UTextureRenderTarget2D::StaticClass(), TEXT("MiniMapRenderTarget"));
+		if (MiniMapRenderTarget)
+		{
+			MiniMapRenderTarget->RenderTargetFormat = RTF_RGBA8;
+			MiniMapRenderTarget->InitAutoFormat(1024, 1024);
+			MiniMapRenderTarget->ClearColor = FLinearColor::Transparent;
+			MiniMapRenderTarget->UpdateResourceImmediate(true);
+
+			SceneCapture2D->TextureTarget = MiniMapRenderTarget;
+		}
+
+	}
 }
 
 // Called every frame

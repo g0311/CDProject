@@ -17,7 +17,7 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	//HUD
-	bool EnsureHUD();
+
 	void SetHUDTime();
 	void SetHUDHealth(float Health);
 	void SetHUDShield(float Shield);
@@ -29,6 +29,7 @@ public:
 	void SetHUDMatchCount(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
+	void SetMinimap();
 	
 	//Weapon
 	void ShowSniperScope();
@@ -37,6 +38,7 @@ public:
 	void InitializeHUD();
 
 	//TeamMatch Controller
+	void HideRoundScore(bool IsHide);
 	void SetHUDRedTeam(int32 RedScore);
 	void SetHUDBlueTeam(int32 BlueScore);
 	

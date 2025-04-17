@@ -45,6 +45,16 @@ private:
 	TObjectPtr<class UCombatComponent> _combat;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UFootIKComponent> _footIK;
+
+	//MinimapComponent
+	UPROPERTY(VisibleAnywhere, Category = "Minimap")
+	USpringArmComponent* MiniMapSpringArm;
+	UPROPERTY(VisibleAnywhere, Category = "Minimap")
+	class USceneCaptureComponent2D* SceneCapture2D;
+
+	UPROPERTY(VisibleAnywhere, Category = "Minimap")
+	class UTextureRenderTarget2D* MiniMapRenderTarget;
+	
 	
 	UPROPERTY(EditAnywhere, Category = "Components")
 	float _eyeHeight = 50.f;
@@ -63,6 +73,7 @@ public:
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
 	FORCEINLINE class UInputMappingContext* GetInputMapping() { return _inputMappingContext; }
+	FORCEINLINE UTextureRenderTarget2D* GetMiniMapTarget() { return MiniMapRenderTarget; }
 	
 	
 private:

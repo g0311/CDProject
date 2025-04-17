@@ -18,7 +18,8 @@ public class CDProject : ModuleRules
 			"OnlineSubsystemSteam",
 			"OnlineSubsystem",
 			"MultiplayerSessions",
-			"Niagara"
+			"Niagara",
+			"SlateCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

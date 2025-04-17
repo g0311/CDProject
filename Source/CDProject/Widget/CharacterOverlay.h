@@ -28,7 +28,20 @@ public:
 	
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* BlueTeamScore;
+	//Game State Box
+	UPROPERTY(meta=(BindWidget))
+	class UHorizontalBox *StateBox;
+
+
+	//Minimap
+	UPROPERTY(meta=(BindWidget))
+	class UOverlay *MinimapBox;
 	
+	UPROPERTY(meta=(BindWidget))
+	class UImage* MiniMapImage;
+
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* MiniMapDebugText;
 	
 	//Weapon
 	UPROPERTY(meta=(BindWidget))
