@@ -18,8 +18,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Sound/SoundCue.h"
 
 class UCDAnimInstance;
 // Sets default values
@@ -321,6 +323,17 @@ void ACDCharacter::SetTeamColor(ETeam team)
 	default:
 		break;
 	}
+}
+
+void ACDCharacter::PlayFootStepSound()
+{
+	if (_footstepSound)
+		UGameplayStatics::PlaySoundAtLocation(this, _footstepSound, GetActorLocation());
+}
+
+void ACDCharacter::ServerPlayFootStepSound_Implementation()
+{
+	PlayFootStepSound();	
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)

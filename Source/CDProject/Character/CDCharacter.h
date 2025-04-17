@@ -33,9 +33,15 @@ public:
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
 	void SetTeamColor(ETeam team);
+	void PlayFootStepSound();
+	UFUNCTION(Server, Reliable)
+	void ServerPlayFootStepSound();
 
 private:
 	//Properties
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
+	class USoundCue* _footstepSound;
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Dead();
 	UFUNCTION(NetMulticast, Reliable)
@@ -148,4 +154,3 @@ public:
 	void InitializeAttributes();
 
 };
-
