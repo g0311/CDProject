@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "AbilitySystemInterface.h"
+#include "CDProject/Types/Team.h"
 #include "CDCharacter.generated.h"
 
 #define  MAXSPEED 470.f
@@ -31,6 +32,7 @@ public:
 	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
+	void SetTeamColor(ETeam team);
 
 private:
 	//Properties

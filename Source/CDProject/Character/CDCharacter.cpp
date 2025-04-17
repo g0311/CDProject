@@ -12,6 +12,7 @@
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "Components/CapsuleComponent.h"
@@ -151,8 +152,25 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	if (_attributeSet && _attributeSet->GetHealth() == 0)
+	//Team Check
+	ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
+	ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
+	if (!playerState || !causerPlayerState)
+	{
 		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	}
+	ETeam playerTeam = playerState->GetTeam();
+	ETeam causerTeam = causerPlayerState->GetTeam();
+	if (playerTeam == causerTeam && playerTeam != ETeam::ET_NoTeam)
+	{
+		return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+	}
+
+	//cur Health Check
+	if (_attributeSet && _attributeSet->GetHealth() == 0)
+	{
+		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	}
 
 	float finalDamage = DamageAmount;
 	
@@ -281,6 +299,11 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 		
 		GetMesh()->SetVisibility(true);
 	}
+}
+
+void ACDCharacter::SetTeamColor(ETeam team)
+{
+	
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)
