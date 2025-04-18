@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "AbilitySystemInterface.h"
+#include "CDProject/Types/Team.h"
 #include "CDCharacter.generated.h"
 
 #define  MAXSPEED 470.f
@@ -31,9 +32,16 @@ public:
 	
 	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
+	void SetTeamColor(ETeam team);
+	void PlayFootStepSound();
+	UFUNCTION(Server, Reliable)
+	void ServerPlayFootStepSound();
 
 private:
 	//Properties
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
+	class USoundCue* _footstepSound;
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Dead();
 	UFUNCTION(NetMulticast, Reliable)
@@ -157,4 +165,3 @@ public:
 	void InitializeAttributes();
 
 };
-

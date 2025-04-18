@@ -45,25 +45,21 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
 	if (_isFullBody)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Called1"));
 		if (_isAiming)
 		{
 			if (_aimFireMontage)
 			{
 				Montage_Play(_aimFireMontage, 1.f / fireRate);
-				UE_LOG(LogTemp, Warning, TEXT("Called2"));
 
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Called3"));
 			if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
 			{
 				if (_pistolFireMontage)
 				{
 					Montage_Play(_pistolFireMontage, 1.f / fireRate);
-					UE_LOG(LogTemp, Warning, TEXT("Called4"));
 				}
 			}
 			else
