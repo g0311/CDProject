@@ -12,6 +12,7 @@
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "Components/SceneCaptureComponent2D.h"
@@ -19,10 +20,11 @@
 #include "Engine/DamageEvents.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "Sound/SoundCue.h"
 
-class UCDAnimInstance;
 // Sets default values
 ACDCharacter::ACDCharacter()
 {
@@ -86,7 +88,6 @@ void ACDCharacter::BeginPlay()
 			MiniMapRenderTarget->ClearColor = FLinearColor::Transparent;
 			SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
-
 	}
 }
 
@@ -178,8 +179,25 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	if (_attributeSet && _attributeSet->GetHealth() == 0)
+	//Team Check
+	ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
+	ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
+	if (!playerState || !causerPlayerState)
+	{
 		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	}
+	ETeam playerTeam = playerState->GetTeam();
+	ETeam causerTeam = causerPlayerState->GetTeam();
+	if (playerTeam == causerTeam && playerTeam != ETeam::ET_NoTeam)
+	{
+		return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+	}
+
+	//cur Health Check
+	if (_attributeSet && _attributeSet->GetHealth() == 0)
+	{
+		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	}
 
 	float finalDamage = DamageAmount;
 	
@@ -308,6 +326,38 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 		
 		GetMesh()->SetVisibility(true);
 	}
+}
+
+void ACDCharacter::SetTeamColor(ETeam team)
+{
+	if (!GetMesh())
+		return;
+	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
+	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_BLUE"));
+	switch (team)
+	{
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0, RedMaterial);
+		GetArmMesh()->SetMaterial(0, RedMaterial);
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0, BlueMaterial);
+		GetArmMesh()->SetMaterial(0, BlueMaterial);
+		break;
+	default:
+		break;
+	}
+}
+
+void ACDCharacter::PlayFootStepSound()
+{
+	if (_footstepSound)
+		UGameplayStatics::PlaySoundAtLocation(this, _footstepSound, GetActorLocation());
+}
+
+void ACDCharacter::ServerPlayFootStepSound_Implementation()
+{
+	PlayFootStepSound();	
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)
