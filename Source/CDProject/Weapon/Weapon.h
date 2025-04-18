@@ -32,6 +32,7 @@ enum class EWeaponType:uint8
 	EWT_Pistol UMETA(DisplayName="Pistol"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_Speical UMETA(DisplayName = "Special"),
+	EWT_Knife UMETA(DisplayName="Knife")
 };
 
 UCLASS()

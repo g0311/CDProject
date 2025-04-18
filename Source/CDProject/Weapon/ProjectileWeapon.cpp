@@ -44,7 +44,6 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 		FRotator TargetRotation = ToTarget.Rotation();
 		if (ProjectileClass&&InstigatorPawn)
 		{
-			
 			//UE_LOG(LogTemp,Display,TEXT("Projectile spawn"));
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = GetOwner();
