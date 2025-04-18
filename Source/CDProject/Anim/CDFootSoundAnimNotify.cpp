@@ -16,7 +16,7 @@ void UCDFootSoundAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSeque
 		character->PlayFootStepSound();
 
 		//For Server Create Sound Object (for AI Perception)
-		if (!character->HasAuthority())
+		if (character->IsLocallyControlled() && !character->HasAuthority())
 			character->ServerPlayFootStepSound();
 	}
 }
