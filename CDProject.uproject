@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.4",
+	"EngineAssociation": "{E8EF5335-44F1-8538-61A8-DAA4566238D2}",
 	"Category": "",
 	"Description": "",
 	"Modules": [
@@ -17,7 +17,7 @@
 	],
 	"Plugins": [
 		{
-			"Name": "ModelingToolsEditorMode", 
+			"Name": "ModelingToolsEditorMode",
 			"Enabled": true,
 			"TargetAllowList": [
 				"Editor"
@@ -30,6 +30,10 @@
 		{
 			"Name": "OnlineSubsystemSteam",
 			"Enabled": true
- 		 }
+		},
+    		{
+		        "Name": "GameLiftPlugin",
+        		"Enabled": true
+    		}
 	]
 }

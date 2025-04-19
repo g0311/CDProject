@@ -19,7 +19,8 @@ public class CDProject : ModuleRules
 			"OnlineSubsystem",
 			"MultiplayerSessions",
 			"Niagara",
-			"SlateCore"
+			"SlateCore",
+			"GameLiftServerSDK"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

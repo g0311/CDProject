@@ -84,7 +84,6 @@ void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class A
 	{
 		//ElimmedCharacter->Elim(); Need
 	}
-	
 }
 
 void ACDGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
