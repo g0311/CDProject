@@ -54,6 +54,7 @@ public:
 	
 	void SetWeaponState(EWeaponState state);
 	void AddAmmo(int32 AmmoToAdd);
+	void ResetAmmo();
 	void Reload();
 	
 	void Dropped(FVector& impactDir);
@@ -186,8 +187,10 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	int32 AmmoCapacity;
-
-
+	//Init Ammo
+	int32 InitAmmoCount;
+	int32 InitCarriedAmmoCount;
+	
 
 };
 

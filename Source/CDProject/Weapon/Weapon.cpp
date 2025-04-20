@@ -95,6 +95,8 @@ void AWeapon::BeginPlay()
 		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 	}
 	EnableCustomDepth(false);
+	InitAmmoCount=Ammo;
+	InitCarriedAmmoCount=CarriedAmmo;
 }
 
 void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -151,6 +153,13 @@ void AWeapon::SpendAmmo()
 	Ammo=FMath::Clamp(Ammo-1,0,AmmoCapacity);
 	SetHUDAmmo();
 }
+
+void AWeapon::ResetAmmo()
+{
+	Ammo=InitAmmoCount;
+	CarriedAmmo=InitCarriedAmmoCount;
+}
+
 
 
 void AWeapon::Fire(const FVector& HitTarget)
