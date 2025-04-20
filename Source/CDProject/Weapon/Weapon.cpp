@@ -160,8 +160,6 @@ void AWeapon::ResetAmmo()
 	CarriedAmmo=InitCarriedAmmoCount;
 }
 
-
-
 void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (FireAnimation)
