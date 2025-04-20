@@ -87,6 +87,28 @@ void ACDGameModeBase::SetServerParameters(FServerParameters& serverParameters)
     UE_LOG(GameServerLog, Log, TEXT("PID: %s"), *serverParameters.m_processId);
 }
 
+void ACDGameModeBase::ParseCommandLienPort(int32& outPort)
+{
+    // TArray<FString> commandLineTokens;
+    // TArray<FString> commandLineSwitches;
+    // FCommandLine::Parse(FCommandLine::Get(), commandLineTokens, commandLineSwitches);
+    // for (const FString& switchString : commandLineSwitches)
+    // {
+    //     FString key;
+    //     FString value;
+    //     if (switchString.Split("=", &key, &value))
+    //     {
+    //         if (key.Equals(TEXT("port"), ESearchCase::IgnoreCase))
+    //         {
+    //             outPort = FCString::Atoi(*value);
+    //             return;
+    //         }
+    //     }
+    // }
+    FParse::Value(FCommandLine::Get(), TEXT("-port="), outPort);
+    //그냥 이거랑 똑같음
+}
+
 void ACDGameModeBase::InitGameLift()
 {
 	
@@ -145,13 +167,15 @@ void ACDGameModeBase::InitGameLift()
 
     //The game server gets ready to report that it is ready to host game sessions
     //and that it will listen on port 7777 for incoming player connections.
-    m_params.port = 7777;
+    int32 port = FURL::UrlConfig.DefaultPort;
+    ParseCommandLienPort(port);
+    m_params.port = port;
 
     //Here, the game server tells Amazon GameLift Servers where to find game session log files.
     //At the end of a game session, Amazon GameLift Servers uploads everything in the specified 
     //location and stores it in the cloud for access later.
     TArray<FString> logfiles;
-    logfiles.Add(TEXT("GameLift426Test/Saved/Logs/GameLift426Test.log"));
+    logfiles.Add(TEXT("CDProject/Saved/Logs/CDProject.log"));
     m_params.logParameters = logfiles;
 
     //The game server calls ProcessReady() to tell Amazon GameLift Servers it's ready to host game sessions.

@@ -22,6 +22,7 @@ class CDPROJECT_API ACDGameModeBase : public AGameMode
     protected:
         virtual void BeginPlay() override;
 	void SetServerParameters(FServerParameters& serverParameters);
+	void ParseCommandLienPort(int32& outPort);
 
 private:
         // Process Parameters needs to remain in scope for the lifetime of the app
