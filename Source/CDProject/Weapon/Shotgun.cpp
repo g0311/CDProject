@@ -4,9 +4,7 @@
 #include "Shotgun.h"
 
 #include "BaseGizmos/HitTargets.h"
-#include "CDProject/Character/CDCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -28,52 +26,7 @@ void AShotgun::Fire(const FVector& HitTraget)
 		TMap<ACDCharacter*, uint32> HitMap;
 		for (uint32 i=0;i<NumberOfPellets;i++)
 		{
-			FHitResult FireHit;
-			WeaponTraceHit(Start,HitTraget,FireHit);
-			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHit.GetActor());
-			if (CDCharacter&&HasAuthority()&&InstigatorController)
-			{
-				if (HitMap.Contains(CDCharacter))
-				{
-					HitMap[CDCharacter]++;
-				}
-				else
-				{
-					HitMap.Emplace(CDCharacter,1);
-				}
-				if (ImpactParticles)
-				{
-					UGameplayStatics::SpawnEmitterAtLocation(
-					 GetWorld(),
-					 ImpactParticles,
-					 FireHit.ImpactPoint,
-					 FireHit.ImpactNormal.Rotation()
-				 );
-				}
-				if (HitSound)
-				{
-					UGameplayStatics::PlaySoundAtLocation(
-					 this,
-					 HitSound,
-					 FireHit.ImpactPoint,
-					 .5f,
-					 FMath::FRandRange(-.5f, .5f)
-				 );
-				}
-			}
-			for (auto HitPair:HitMap)
-			{
-				if (HitPair.Key&&HasAuthority()&&InstigatorController)
-				{
-					UGameplayStatics::ApplyDamage(
-						HitPair.Key,
-						Damage*HitPair.Value,
-						InstigatorController,
-						this,
-						UDamageType::StaticClass()
-						);
-				}
-			}
+			FVector End=TraceEndWithScatter(Start,HitTraget);
 		}
 	}
 }
