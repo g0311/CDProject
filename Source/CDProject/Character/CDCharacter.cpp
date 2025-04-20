@@ -86,7 +86,7 @@ void ACDCharacter::BeginPlay()
 			MiniMapRenderTarget->RenderTargetFormat = RTF_RGBA8;
 			MiniMapRenderTarget->InitAutoFormat(256, 256);
 			MiniMapRenderTarget->ClearColor = FLinearColor::Transparent;
-			SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
+			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
 }

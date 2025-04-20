@@ -21,17 +21,25 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	void ShowSniperScope();
-
+	FVector TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget);
 	
-private:
-	UPROPERTY(EditAnywhere)
-	float Damage=20.f;
-
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* ImpactParticles;
 
+	UPROPERTY(EditAnyWhere)
+	USoundCue* HitBodySound;
+
+	UPROPERTY(EditAnyWhere)
+	USoundCue* HitSurfaceSound;
+
+	UPROPERTY(EditAnywhere)
+	float Damage=20.f;
+
+	
+private:
+	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget,FHitResult& OutHit);
+	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticleSystem;
 
@@ -40,12 +48,14 @@ private:
 	
 	UPROPERTY(EditAnyWhere)
 	USoundCue* FireSound;
-
-	UPROPERTY(EditAnyWhere)
-	USoundCue* HitBodySound;
-
-	UPROPERTY(EditAnyWhere)
-	USoundCue* HitSurfaceSound;
 	
+	UPROPERTY(EditAnyWhere)
+	float DistanceToSphere=800.f;
+	
+	UPROPERTY(EditAnyWhere)
+	float SphereRadius=75.f;
+	
+	UPROPERTY(EditAnyWhere)
+	bool bUseScatter=false;
 	
 };
