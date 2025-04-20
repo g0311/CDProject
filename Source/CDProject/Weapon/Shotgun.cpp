@@ -4,6 +4,7 @@
 #include "Shotgun.h"
 
 #include "BaseGizmos/HitTargets.h"
+#include "CDProject/Character/CDCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
 
 
@@ -14,9 +15,9 @@ AShotgun::AShotgun()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void AShotgun::Fire(const FVector& HitTraget)
+void AShotgun::Fire(const FVector& HitTarget)
 {
-	AWeapon::Fire(HitTraget);
+	AWeapon::Fire(HitTarget);
 
 	const USkeletalMeshSocket* MuzzleFashSocket=GetWeaponMesh()->GetSocketByName("MuzzleFlash");
 	if (MuzzleFashSocket)
@@ -26,7 +27,9 @@ void AShotgun::Fire(const FVector& HitTraget)
 		TMap<ACDCharacter*, uint32> HitMap;
 		for (uint32 i=0;i<NumberOfPellets;i++)
 		{
-			FVector End=TraceEndWithScatter(Start,HitTraget);
+			FVector End=TraceEndWithScatter(Start,HitTarget);
+			// FHitResult FireHit;
+			// WeaponTraceHit(Start, HitTarget, FireHit);
 		}
 	}
 }

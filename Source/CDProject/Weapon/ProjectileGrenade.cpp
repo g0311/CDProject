@@ -15,10 +15,13 @@ AProjectileGrenade::AProjectileGrenade()
 	ProjectileMesh->SetupAttachment(RootComponent);
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	
 	ProjectileMovementComponent=CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement Component"));
+	ProjectileMovementComponent->InitialSpeed = 1000.f;
 	ProjectileMovementComponent->bRotationFollowsVelocity=true;
 	ProjectileMovementComponent->SetIsReplicated(true);
 	ProjectileMovementComponent->bShouldBounce=true;
+	ProjectileMovementComponent->ProjectileGravityScale = 1.0f;
 }
 
 void AProjectileGrenade::Destroyed()

@@ -37,9 +37,9 @@ protected:
 	float Damage=20.f;
 
 	
-private:
+
 	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget,FHitResult& OutHit);
-	
+private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticleSystem;
 

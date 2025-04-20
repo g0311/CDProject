@@ -71,6 +71,8 @@ ACDCharacter::ACDCharacter()
 	SceneCapture2D->ProjectionType = ECameraProjectionMode::Orthographic;
 	SceneCapture2D->OrthoWidth = 2048.f; 
 	SceneCapture2D->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	SceneCapture2D->bCaptureEveryFrame = false;
+	SceneCapture2D->bCaptureOnMovement = true;
 }
 
 // Called when the game starts or when spawned
