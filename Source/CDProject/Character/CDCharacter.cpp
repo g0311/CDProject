@@ -164,7 +164,9 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Completed, this, &ACDCharacter::UnWalk);
 
 		//Need Server Request
-		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::RequestFire);
+		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Started, this, &ACDCharacter::RequestFireStart);
+		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestFireEnd);
+		//enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::RequestFire);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestAim);
 		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestReload);
 		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 0);
@@ -415,6 +417,23 @@ void ACDCharacter::UnWalk()
 	UCDCharacterMovementComponent* CDCMC = Cast<UCDCharacterMovementComponent>(GetCharacterMovement());
 	if (CDCMC)
 		CDCMC->bWantsToWalk = false;
+}
+
+void ACDCharacter::RequestFireStart()
+{
+	if (!_combat) return;
+	
+	if (_combat->IsFireAvail())
+	{
+		_combat->RequestFireStart();
+	}
+}
+
+void ACDCharacter::RequestFireEnd()
+{
+	if (!_combat) return;
+	
+	_combat->RequestFireEnd();
 }
 
 void ACDCharacter::RequestFire()
