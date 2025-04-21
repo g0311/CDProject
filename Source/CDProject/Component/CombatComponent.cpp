@@ -121,12 +121,12 @@ bool UCombatComponent::IsTotalAmmoEmpty()
 			&& _weapons[_weaponIndex]->GetAmmo() == 0);
 }
 
-uint8 UCombatComponent::GetCurWeaponType()
+EWeaponType UCombatComponent::GetCurWeaponType()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return -1;
+		return EWeaponType::EWT_None;
 
-	return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
+	return GetCurWeapon()->GetWeaponType();
 }
 
 void UCombatComponent::CreateDefaultWeapons()
@@ -213,12 +213,58 @@ FVector UCombatComponent::CreateTraceDir()
 
 void UCombatComponent::RequestFire()
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex] || !_isCanFire)
 		return;
+	
+	if (IsAmmoEmpty())
+	{
+		Aim(false);
+		ServerReload();
+		return;
+	}
 	
 	_isCanFire = false;
 	FVector traceDir = CreateTraceDir();
 	ServerFire(traceDir);
+}
+
+void UCombatComponent::RequestFireStart()
+{
+	if (!GetCurWeapon())
+		return;
+
+	if (GetCurWeaponType() == EWeaponType::EWT_Speical)
+	{
+		//Grenade
+		ServerReadyGrenade();
+		return;
+	}
+	
+	if (GetCurWeapon()->bAutomatic)
+	{
+		//Called in Client
+		RequestFire();
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::RequestFire, 0.01f, true);
+	}
+	else
+	{
+		RequestFire();
+	}
+}
+
+void UCombatComponent::RequestFireEnd()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_Speical)
+	{
+		//Grenade
+		ServerThrowGrenade();
+		return;
+	}
+	
+	if (_clientFireTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(_clientFireTimerHandle);
+	}
 }
 
 void UCombatComponent::RequestChange(int idx)
@@ -323,6 +369,31 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 	}
 }
 
+void UCombatComponent::ServerReadyGrenade_Implementation()
+{
+	NetMulticastGrenadeReady();
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	//던지고, 무기 바꾸기 해야함
+	ChangeToNextWeapon();
+	NetMulticastGrenadeThrow();	
+}
+
+void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+		bodyAnim->PlayFireMontage(_fireDelay);
+	if (armAnim)
+		armAnim->PlayFireMontage(_fireDelay);
+}
+
 void UCombatComponent::Aim(bool tf)
 {
 	if (!_isCanAim)
@@ -403,8 +474,7 @@ void UCombatComponent::DropAllWeapons()
 			_weapons[i] = nullptr;
 		}
 	}
-
-	_weaponIndex = -1;
+	_weaponIndex = 2;
 }
 
 void UCombatComponent::Fire(FVector fireDir)
@@ -478,7 +548,7 @@ void UCombatComponent::ChangeWeapon(int idx)
 	Aim(false);
 	_befIndex = _weaponIndex;
 	_weaponIndex = idx;
-		
+	
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	if (!armAnim)
 		return;
@@ -610,6 +680,16 @@ void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 {
 	weapon->GetWeaponMesh()->SetVisibility(true);
 	weapon->GetWeaponMesh3p()->SetVisibility(false);
+}
+
+void UCombatComponent::NetMulticastGrenadeReady_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+		bodyAnim->PlayGrenadeReadyMontage();
+	if (armAnim)
+		armAnim->PlayGrenadeReadyMontage();
 }
 
 void UCombatComponent::OnRep_WeaponID()

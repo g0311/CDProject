@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "CDAnimInstance.generated.h"
 
 /**
@@ -29,7 +30,7 @@ public:
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	bool _isAiming;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
-	uint8 _weaponType;
+	EWeaponType _weaponType;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
 	float _movementSpeed;
 	UPROPERTY(EditAnyWhere, BlueprintReadOnly, Category = "Animation")
@@ -72,18 +73,26 @@ public:
 	TObjectPtr<UAnimMontage> _aimFireMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _pistolFireMontage;
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _grenadeReadyMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _grenadeThrowMontage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipRifleMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipPistolMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _equipGrenadeMontage;
+
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _deadMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TArray<UAnimMontage*> _hitMontage;
 	
 	void PlayFireMontage(float fireRate);
+	void PlayGrenadeReadyMontage();
 	void PlayReloadMontage();
 	void PlayEquipMontage(class AWeapon* nextWeapon);
 	void PlayDeadMontage();

@@ -33,7 +33,7 @@ public:
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
-	uint8 GetCurWeaponType();
+	EWeaponType GetCurWeaponType();
 	void SetWeaponVisible(bool tf);
 	void SetBefWeaponVisible(bool tf);
 	
@@ -62,8 +62,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isAiming;
 	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isChanging = false;
-	
+	bool _isChanging = false; // for animation (hand IK)
+
+	FTimerHandle _clientFireTimerHandle;
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
@@ -74,14 +75,20 @@ private:
 	bool _isCanAim = true;
 	//보안용 레플리케이트
 	
+	UPROPERTY(VisibleAnywhere)
+	bool _isWantToFire = false;
+	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
 	FVector CreateTraceDir();
+	void ChangeToNextWeapon();
 public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 
 	void RequestFire();
+	void RequestFireStart();
+	void RequestFireEnd();
 	void RequestChange(int idx);
 	//ServerCall
 	UFUNCTION(Server, Reliable)
@@ -95,6 +102,10 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerAim(bool tf);
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
+	UFUNCTION(Server, Reliable)
+	void ServerReadyGrenade();
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
 		//Both Call
 		void Aim(bool tf);
 	void DropAllWeapons();
@@ -113,6 +124,10 @@ private:
 	void NetMulticastReload();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastGrenadeReady();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastGrenadeThrow();
 	UFUNCTION()
 	void OnRep_WeaponID();
 
