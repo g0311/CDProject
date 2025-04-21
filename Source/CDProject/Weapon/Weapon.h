@@ -26,6 +26,7 @@ enum class EWeaponState:uint8
 UENUM(BlueprintType)
 enum class EWeaponType:uint8
 {
+	EWT_None UMETA(DisplayName = "None"),
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
 	EWT_Sniper UMETA(DisplayName = "Sniper"),
 	EWT_RocketLauncher UMETA(DisplayName = "RocketLauncher"),

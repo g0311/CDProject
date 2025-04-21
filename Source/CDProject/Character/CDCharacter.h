@@ -124,7 +124,9 @@ private:
 	void Crouch(bool bClientSimulation = false) override;
 	void Walk();
 	void UnWalk();
-	
+
+	void RequestFireStart();
+	void RequestFireEnd();
 	void RequestFire();
 	void RequestAim();
 	void RequestReload();
