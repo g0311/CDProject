@@ -45,35 +45,35 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
 	if (_isFullBody)
 	{
-		if (_isAiming)
+		if (_weaponType == EWeaponType::EWT_Pistol)
 		{
-			if (_aimFireMontage)
+			if (_pistolFireMontage)
 			{
-				Montage_Play(_aimFireMontage, 1.f / fireRate);
+				Montage_Play(_pistolFireMontage, 1.f / fireRate);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_Hand)
+		{//Grenade
+			if (_grenadeThrowMontage)
+			{
+				Montage_Play(_grenadeThrowMontage);
 			}
 		}
 		else
 		{
-			if (_weaponType == EWeaponType::EWT_Pistol)
+			if (_isAiming)
 			{
-				if (_pistolFireMontage)
+				if (_aimFireMontage)
 				{
-					Montage_Play(_pistolFireMontage, 1.f / fireRate);
-				}
-			}
-			else if (_weaponType == EWeaponType::EWT_Speical)
-			{//Grenade
-				if (_grenadeThrowMontage)
-				{
-					Montage_Play(_grenadeThrowMontage);
+					Montage_Play(_aimFireMontage, 1.f / fireRate);
 				}
 			}
 			else
 			{
-				if (_baseFireMontage)
-				{
+				if(_baseFireMontage)
+			   {
 					Montage_Play(_baseFireMontage, 1.f / fireRate);
-				}
+			   }
 			}
 		}
 	}
@@ -86,10 +86,18 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 				Montage_Play(_pistolFireMontage, 1.f / fireRate);
 			}
 		}
+		else if (_weaponType == EWeaponType::EWT_Hand)
+		{//Grenade
+			if (_grenadeThrowMontage)
+			{
+				Montage_Play(_grenadeThrowMontage);
+			}
+		}
 		else if (_aimFireMontage)
 		{
 			Montage_Play(_aimFireMontage, 1.f / fireRate);
 		}
+		
 	}
 }
 
@@ -162,6 +170,12 @@ void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 			Montage_Play(_equipPistolMontage);
 		}
 		break;
+	case EWeaponType::EWT_Hand:
+		if (_equipPistolMontage)
+		{
+			Montage_Play(_equipGrenadeMontage);
+		}
+		break;
 	default:
 		break;
 	}
@@ -226,8 +240,12 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAiming();
-
-		if (combatComponent->IsChanging())
+		if (_weaponType == EWeaponType::EWT_Pistol)
+		{
+			_isAiming = true;
+		}
+		
+		if (combatComponent->IsChanging() || _weaponType == EWeaponType::EWT_Hand)
 		{
 			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 30.f);
 		}
@@ -279,7 +297,7 @@ float UCDAnimInstance::GetReloadTime()
 float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 {
 	if (!nextWeapon)
-		return 0.f;
+		return 0.01f;
 	
 	switch (nextWeapon->GetWeaponType())
 	{
@@ -298,5 +316,5 @@ float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 		}
 		break;
 	}
-	return 0.f;
+	return 0.01f;
 }

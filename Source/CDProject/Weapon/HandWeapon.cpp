@@ -64,6 +64,7 @@ void AHandWeapon::Fire(const FVector& HitTarget)
 	{
 		LaunchVelocity = (HitTarget - StartLocation).GetSafeNormal() * ThrowPower;
 	}
+	Destroy();
 }
 
 // Called every frame
