@@ -211,6 +211,11 @@ FVector UCombatComponent::CreateTraceDir()
 	return spreadDirection;
 }
 
+void UCombatComponent::ChangeToNextWeapon()
+{
+	
+}
+
 void UCombatComponent::RequestFire()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex] || !_isCanFire)
