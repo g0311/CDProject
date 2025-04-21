@@ -84,7 +84,6 @@ public:
 	TObjectPtr<UAnimMontage> _equipPistolMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _equipGrenadeMontage;
-
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _deadMontage;
@@ -102,5 +101,6 @@ public:
 	void UpdateUpperBodyProperty(float DeltaSeconds);
 
 	float GetReloadTime();
+	float GetGrenadeThrowTime();
 	float GetEquipTime(AWeapon* nextWeapon);
 };

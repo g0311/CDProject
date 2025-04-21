@@ -121,8 +121,10 @@ void UCDAnimInstance::PlayReloadMontage()
 				Montage_Play(_rifleReloadMontage);
 			break;
 		case EWeaponType::EWT_Shotgun:
-			if (_rifleReloadMontage)
+			if (_shotgunReloadMontage)
+			{
 				Montage_Play(_shotgunReloadMontage);
+			}
 			break;
 		case EWeaponType::EWT_Pistol:
 			if (_pistolReloadMontage)
@@ -213,7 +215,7 @@ void UCDAnimInstance::UpdateFullBodyProperty(float DeltaSeconds)
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FRotator actorRot = _playerCharacter->GetActorRotation();
 	FRotator deltaRot = controlRot - actorRot;
-		
+	
 	_aimPitch = FMath::UnwindDegrees(deltaRot.Pitch);
 	_aimPitch = FMath::Clamp(_aimPitch, -75.f, 75.f);
 	_aimYaw = FMath::UnwindDegrees(deltaRot.Yaw);
@@ -245,13 +247,13 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 			_isAiming = true;
 		}
 		
-		if (combatComponent->IsChanging() || _weaponType == EWeaponType::EWT_Hand)
+		if (combatComponent->IsChanging() || combatComponent->IsReloading() || _weaponType == EWeaponType::EWT_Hand )
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 30.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 20.f);
 		}
 		else
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 30.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 20.f);
 		}
 
 		if (combatComponent->GetCurWeapon())
@@ -284,7 +286,7 @@ float UCDAnimInstance::GetReloadTime()
 		break;
 	case EWeaponType::EWT_Shotgun:
 		if (_shotgunReloadMontage)
-			return _shotgunReloadMontage->GetPlayLength();
+			return 1.7f;
 		break;
 	case EWeaponType::EWT_Pistol:
 		if (_pistolReloadMontage)
@@ -292,6 +294,11 @@ float UCDAnimInstance::GetReloadTime()
 		break;	
 	}
 	return 0.f;
+}
+
+float UCDAnimInstance::GetGrenadeThrowTime()
+{
+	return _grenadeThrowMontage->GetPlayLength();
 }
 
 float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
@@ -313,6 +320,12 @@ float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 		if (_equipPistolMontage)
 		{
 			return _equipPistolMontage->GetPlayLength();
+		}
+		break;
+	case EWeaponType::EWT_Hand:
+		if (_equipGrenadeMontage)
+		{
+			return _equipGrenadeMontage->GetPlayLength();
 		}
 		break;
 	}
