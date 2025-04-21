@@ -58,6 +58,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
 	DOREPLIFETIME(UCombatComponent, _isChanging);
+	DOREPLIFETIME(UCombatComponent, _isReloading);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -77,7 +78,7 @@ void UCombatComponent::Reset(bool isDead)
 		{
 			if (weapon)
 			{
-				//weapon->ResetAmmo();
+				weapon->ResetAmmo();
 			}
 		}
 	}
@@ -225,7 +226,12 @@ void UCombatComponent::ChangeToNextWeapon()
 
 void UCombatComponent::RequestFire()
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex] || !_isCanFire)
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun && _isReloading && !IsAmmoEmpty())
+		ServerCancelReload();
+	else if (!_isCanFire)
 		return;
 	
 	if (IsAmmoEmpty())
@@ -234,8 +240,7 @@ void UCombatComponent::RequestFire()
 		ServerReload();
 		return;
 	}
-	
-	_isCanFire = false;
+
 	FVector traceDir = CreateTraceDir();
 	ServerFire(traceDir);
 }
@@ -293,7 +298,6 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 
-	UE_LOG(LogTemp, Log, TEXT("Visible Called"));
 	_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(tf);
 	_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(tf);
 }
@@ -317,12 +321,14 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 
 void UCombatComponent::ServerFire_Implementation(FVector fireDir)
 {
-	Fire(fireDir);
+	if (_isCanFire)
+		Fire(fireDir);
 }
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	Reload();
+	if (!_isReloading)
+		Reload();
 }
 
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
@@ -393,6 +399,22 @@ void UCombatComponent::ServerReadyGrenade_Implementation()
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
 	NetMulticastGrenadeThrow();	
+}
+
+void UCombatComponent::ServerShotgunReload_Implementation()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		GetCurWeapon()->Reload();
+	}
+}
+
+void UCombatComponent::ServerCancelReload_Implementation()
+{
+	_isReloading = false;
+	_isCanFire = true;
+	_isCanAim = true;
+	NetMulticastCancelReload();
 }
 
 void UCombatComponent::Aim(bool tf)
@@ -530,14 +552,18 @@ void UCombatComponent::Reload()
 	NetMulticastReload();
 	_isCanFire = false;
 	_isCanAim = false;
+	_isReloading = true;
 	Aim(false);
-
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	if (GetCurWeaponType() != EWeaponType::EWT_Shotgun)
 	{
-		_isCanFire = true;
-		_isCanAim = true;
-		_weapons[_weaponIndex]->Reload();
-	}), armAnim->GetReloadTime(),false);
+		GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	   {
+		   _isCanFire = true;
+		   _isCanAim = true;
+		   _isReloading = false;
+		   _weapons[_weaponIndex]->Reload();
+	   }), armAnim->GetReloadTime(),false);
+	}
 }
 
 void UCombatComponent::ChangeWeapon(int idx)
@@ -554,9 +580,15 @@ void UCombatComponent::ChangeWeapon(int idx)
 	if (!armAnim)
 		return;
 	
+	if (_fireAimAbleTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(_fireAimAbleTimerHandle);
+	}
+	
 	_isCanFire = false;
 	_isCanAim = false;
 	_isChanging = true;
+	_isReloading = false;
 	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
 		_isCanFire = true;
@@ -717,6 +749,18 @@ void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
 	{
 		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::ChangeToNextWeapon, armAnim->GetGrenadeThrowTime() / 2, false);
 	}
+}
+
+void UCombatComponent::NetMulticastCancelReload_Implementation()
+{
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+
+	if (armAnim && armAnim->Montage_IsPlaying(armAnim->_shotgunReloadMontage))
+		armAnim->Montage_Stop(0.1f);
+
+	if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
+		bodyAnim->Montage_Stop(0.1f);
 }
 
 void UCombatComponent::OnRep_WeaponID()

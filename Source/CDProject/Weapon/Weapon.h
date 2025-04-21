@@ -55,7 +55,7 @@ public:
 	void SetWeaponState(EWeaponState state);
 	void AddAmmo(int32 AmmoToAdd);
 	void ResetAmmo();
-	void Reload();
+	virtual void Reload();
 	void Dropped(FVector& impactDir);
 	void AttachToPlayer();
 
@@ -161,7 +161,7 @@ protected:
 	void SpendAmmo();
 
 
-private:
+protected:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* WeaponMesh;
 

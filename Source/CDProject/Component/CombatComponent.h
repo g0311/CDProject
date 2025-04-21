@@ -24,6 +24,7 @@ public:
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
 	FORCEINLINE bool IsChanging() { return _isChanging; }
+	FORCEINLINE bool IsReloading() { return _isReloading; }
 	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE int GetCurAmmo();
@@ -74,7 +75,8 @@ private:
 	bool _isCanFire = true;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanAim = true;
-	//보안용 레플리케이트
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool _isReloading = false;
 	
 	UPROPERTY(VisibleAnywhere)
 	bool _isWantToFire = false;
@@ -107,6 +109,10 @@ public:
 	void ServerReadyGrenade();
 	UFUNCTION(Server, Reliable)
 	void ServerThrowGrenade();
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunReload();
+	UFUNCTION(Server, Reliable)
+	void ServerCancelReload();
 		//Both Call
 		void Aim(bool tf);
 	void DropAllWeapons();
@@ -129,6 +135,8 @@ private:
 	void NetMulticastGrenadeReady();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeThrow();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastCancelReload();
 	UFUNCTION()
 	void OnRep_WeaponID();
 
