@@ -50,16 +50,22 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 			if (_aimFireMontage)
 			{
 				Montage_Play(_aimFireMontage, 1.f / fireRate);
-
 			}
 		}
 		else
 		{
-			if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
+			if (_weaponType == EWeaponType::EWT_Pistol)
 			{
 				if (_pistolFireMontage)
 				{
 					Montage_Play(_pistolFireMontage, 1.f / fireRate);
+				}
+			}
+			else if (_weaponType == EWeaponType::EWT_Speical)
+			{//Grenade
+				if (_grenadeThrowMontage)
+				{
+					Montage_Play(_grenadeThrowMontage);
 				}
 			}
 			else
@@ -73,7 +79,7 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 	}
 	else
 	{
-		if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
+		if (_weaponType == EWeaponType::EWT_Pistol)
 		{
 			if (_pistolFireMontage)
 			{
@@ -87,22 +93,30 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 	}
 }
 
+void UCDAnimInstance::PlayGrenadeReadyMontage()
+{
+	if (_grenadeReadyMontage)
+	{
+		Montage_Play(_grenadeReadyMontage);
+	}
+}
+
 void UCDAnimInstance::PlayReloadMontage()
 {
 	if (_isFullBody)
 	{
 		switch (_weaponType)
 		{
-		case static_cast<uint8>(EWeaponType::EWT_Rifle):
-		case static_cast<uint8>(EWeaponType::EWT_Sniper):
+		case EWeaponType::EWT_Rifle:
+		case EWeaponType::EWT_Sniper:
 			if (_rifleReloadMontage)
 				Montage_Play(_rifleReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+		case EWeaponType::EWT_Shotgun:
 			if (_rifleReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Pistol):
+		case EWeaponType::EWT_Pistol:
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -112,16 +126,16 @@ void UCDAnimInstance::PlayReloadMontage()
 	{
 		switch (_weaponType)
 		{
-		case static_cast<uint8>(EWeaponType::EWT_Rifle):
-		case static_cast<uint8>(EWeaponType::EWT_Sniper):
+		case EWeaponType::EWT_Rifle:
+		case EWeaponType::EWT_Sniper:
 			if (_rifleReloadMontage)
 				Montage_Play(_rifleReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+		case EWeaponType::EWT_Shotgun:
 			if (_shotgunReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Pistol):
+		case EWeaponType::EWT_Pistol:
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -133,15 +147,16 @@ void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 {
 	switch (nextWeapon->GetWeaponType())
 	{
-	case (EWeaponType::EWT_Rifle):
-	case (EWeaponType::EWT_Sniper):
-	case (EWeaponType::EWT_Shotgun):
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Shotgun:
 		if (_equipRifleMontage)
 		{
 			Montage_Play(_equipRifleMontage);
 		}
 		break;
-	case (EWeaponType::EWT_Pistol):
+	case EWeaponType::EWT_Pistol:
+	case EWeaponType::EWT_Speical:
 		if (_equipPistolMontage)
 		{
 			Montage_Play(_equipPistolMontage);
@@ -157,7 +172,6 @@ void UCDAnimInstance::PlayDeadMontage()
 	_leftHandIKAlpha = 0.f;
 	if (_deadMontage)
 		Montage_Play(_deadMontage);
-	
 }
 
 void UCDAnimInstance::PlayHitMontage()
@@ -215,11 +229,11 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 
 		if (combatComponent->IsChanging())
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 10.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 30.f);
 		}
 		else
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 10.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 30.f);
 		}
 
 		if (combatComponent->GetCurWeapon())
@@ -245,16 +259,16 @@ float UCDAnimInstance::GetReloadTime()
 {
 	switch (_weaponType)
 	{
-	case static_cast<uint8>(EWeaponType::EWT_Rifle):
-	case static_cast<uint8>(EWeaponType::EWT_Sniper):
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
 		if (_rifleReloadMontage)
 			return _rifleReloadMontage->GetPlayLength();
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+	case EWeaponType::EWT_Shotgun:
 		if (_shotgunReloadMontage)
 			return _shotgunReloadMontage->GetPlayLength();
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Pistol):
+	case EWeaponType::EWT_Pistol:
 		if (_pistolReloadMontage)
 			return _pistolReloadMontage->GetPlayLength();
 		break;	
@@ -269,15 +283,15 @@ float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 	
 	switch (nextWeapon->GetWeaponType())
 	{
-	case (EWeaponType::EWT_Rifle):
-	case (EWeaponType::EWT_Sniper):
-	case (EWeaponType::EWT_Shotgun):
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Shotgun:
 		if (_equipRifleMontage)
 		{
 			return _equipRifleMontage->GetPlayLength();
 		}
 		break;
-	case (EWeaponType::EWT_Pistol):
+	case EWeaponType::EWT_Pistol:
 		if (_equipPistolMontage)
 		{
 			return _equipPistolMontage->GetPlayLength();
