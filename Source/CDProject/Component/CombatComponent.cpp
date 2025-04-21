@@ -269,7 +269,7 @@ void UCombatComponent::RequestFireEnd()
 	if (!GetCurWeapon())
 		return;
 
-	if (GetCurWeaponType() == EWeaponType::EWT_Hand)
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand && _isGrenadeReady)
 	{
 		//Grenade
 		RequestFire();
@@ -285,7 +285,6 @@ void UCombatComponent::RequestFireEnd()
 
 void UCombatComponent::RequestChange(int idx)
 {
-	_isChanging = true;
 	ServerChangeWeapon(idx);
 }
 
@@ -293,7 +292,8 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-	
+
+	UE_LOG(LogTemp, Log, TEXT("Visible Called"));
 	_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(tf);
 	_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(tf);
 }
@@ -392,7 +392,6 @@ void UCombatComponent::ServerReadyGrenade_Implementation()
 
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
-	ChangeToNextWeapon();
 	NetMulticastGrenadeThrow();	
 }
 
@@ -693,6 +692,10 @@ void UCombatComponent::NetMulticastGrenadeReady_Implementation()
 		bodyAnim->PlayGrenadeReadyMontage();
 	if (armAnim)
 		armAnim->PlayGrenadeReadyMontage();
+	if (_playerCharacter->IsLocallyControlled())
+	{
+		_isGrenadeReady = true;
+	}
 }
 
 void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
@@ -706,6 +709,14 @@ void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
 		bodyAnim->PlayFireMontage(_fireDelay);
 	if (armAnim)
 		armAnim->PlayFireMontage(_fireDelay);
+	if (_playerCharacter->IsLocallyControlled())
+	{
+		_isGrenadeReady = false;
+	}
+	if (_playerCharacter->HasAuthority())
+	{
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::ChangeToNextWeapon, armAnim->GetGrenadeThrowTime() / 2, false);
+	}
 }
 
 void UCombatComponent::OnRep_WeaponID()
@@ -723,6 +734,8 @@ void UCombatComponent::OnRep_WeaponID()
 	} //Wait Until Weapon Replicated
 	if (!_playerCharacter)
 		return;
+	if (_isGrenadeReady)
+		_isGrenadeReady = false;
 	
 	_weapons[_weaponIndex]->SetHUDAmmo();
 	

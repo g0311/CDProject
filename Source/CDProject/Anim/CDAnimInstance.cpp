@@ -247,11 +247,11 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 		
 		if (combatComponent->IsChanging() || _weaponType == EWeaponType::EWT_Hand)
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 30.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 50.f);
 		}
 		else
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 30.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 50.f);
 		}
 
 		if (combatComponent->GetCurWeapon())
@@ -294,6 +294,11 @@ float UCDAnimInstance::GetReloadTime()
 	return 0.f;
 }
 
+float UCDAnimInstance::GetGrenadeThrowTime()
+{
+	return _grenadeThrowMontage->GetPlayLength();
+}
+
 float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 {
 	if (!nextWeapon)
@@ -313,6 +318,12 @@ float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 		if (_equipPistolMontage)
 		{
 			return _equipPistolMontage->GetPlayLength();
+		}
+		break;
+	case EWeaponType::EWT_Hand:
+		if (_equipGrenadeMontage)
+		{
+			return _equipGrenadeMontage->GetPlayLength();
 		}
 		break;
 	}

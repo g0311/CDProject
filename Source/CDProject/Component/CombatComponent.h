@@ -63,6 +63,7 @@ private:
 	bool _isAiming;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isChanging = false; // for animation (hand IK)
+	bool _isGrenadeReady = false;
 
 	FTimerHandle _clientFireTimerHandle;
 	FTimerHandle _fireTimerHandle;
