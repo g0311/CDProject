@@ -32,7 +32,7 @@ protected:
 
 private:
 
-	UPROPERTY(meta=(BindWidget))z
+	UPROPERTY(meta=(BindWidget))
 	class UImage* Points;
 
 	UPROPERTY()
