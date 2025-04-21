@@ -429,6 +429,10 @@ void ACDCharacter::RequestFireStart()
 	{
 		_combat->RequestFireStart();
 	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Request Failed"));
+	}
 }
 
 void ACDCharacter::RequestFireEnd()

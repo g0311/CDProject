@@ -213,7 +213,14 @@ FVector UCombatComponent::CreateTraceDir()
 
 void UCombatComponent::ChangeToNextWeapon()
 {
-	
+	for (int i = 1; i < _weapons.Num(); i++)
+	{
+		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+		{
+			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+			return;
+		}
+	}
 }
 
 void UCombatComponent::RequestFire()
@@ -237,8 +244,8 @@ void UCombatComponent::RequestFireStart()
 {
 	if (!GetCurWeapon())
 		return;
-
-	if (GetCurWeaponType() == EWeaponType::EWT_Speical)
+	
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand)
 	{
 		//Grenade
 		ServerReadyGrenade();
@@ -259,9 +266,13 @@ void UCombatComponent::RequestFireStart()
 
 void UCombatComponent::RequestFireEnd()
 {
-	if (GetCurWeaponType() == EWeaponType::EWT_Speical)
+	if (!GetCurWeapon())
+		return;
+
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand)
 	{
 		//Grenade
+		RequestFire();
 		ServerThrowGrenade();
 		return;
 	}
@@ -381,22 +392,8 @@ void UCombatComponent::ServerReadyGrenade_Implementation()
 
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
-	//던지고, 무기 바꾸기 해야함
 	ChangeToNextWeapon();
 	NetMulticastGrenadeThrow();	
-}
-
-void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
-{
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
-	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	if (bodyAnim)
-		bodyAnim->PlayFireMontage(_fireDelay);
-	if (armAnim)
-		armAnim->PlayFireMontage(_fireDelay);
 }
 
 void UCombatComponent::Aim(bool tf)
@@ -569,7 +566,8 @@ void UCombatComponent::ChangeWeapon(int idx)
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
-	OnRep_WeaponID();
+	if (_playerCharacter->HasAuthority())
+		OnRep_WeaponID();
 	//리슨 서버용
 }
 
@@ -695,6 +693,19 @@ void UCombatComponent::NetMulticastGrenadeReady_Implementation()
 		bodyAnim->PlayGrenadeReadyMontage();
 	if (armAnim)
 		armAnim->PlayGrenadeReadyMontage();
+}
+
+void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+		bodyAnim->PlayFireMontage(_fireDelay);
+	if (armAnim)
+		armAnim->PlayFireMontage(_fireDelay);
 }
 
 void UCombatComponent::OnRep_WeaponID()
