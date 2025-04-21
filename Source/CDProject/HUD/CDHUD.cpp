@@ -8,6 +8,7 @@
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
+#include "CDProject/WidgetPlus/Compass.h"
 
 void ACDHUD::DrawHUD()
 {
@@ -100,6 +101,21 @@ void ACDHUD::AddAnnouncement()
 	{
 		Announcement=CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);
 		Announcement->AddToViewport();
+	}
+}
+
+void ACDHUD::AddCompass()
+{
+	if (APlayerController* PlayerController=GetOwningPlayerController())
+	{
+		if (CompassWidgetClass)
+		{
+			Compass=CreateWidget<UCompass>(PlayerController,CompassWidgetClass);
+			if (Compass)
+			{
+				Compass->AddToViewport();
+			}
+		}
 	}
 }
 

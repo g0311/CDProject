@@ -46,18 +46,25 @@ public:
 	
 	UPROPERTY()
 	class UAnnouncement* Announcement;
-
+	
 	UPROPERTY(EditAnywhere, Category="SniperScope")
 	TSubclassOf<UUserWidget> SniperScopeClass;
 	
 	UPROPERTY()
 	class USniperScope* SniperScope;
 
+	UPROPERTY(EditAnywhere, Category="Compass")
+	TSubclassOf<UUserWidget> CompassWidgetClass;
+	
+	UPROPERTY()
+	class UCompass* Compass;
+
 
 	void AddSniperScope();
 	void AddCharacterOverlay();
 	void AddGameStateOverlay();//KDOverlay or GameStateOverlay
 	void AddAnnouncement();
+	void AddCompass();
 protected:
 	virtual void BeginPlay() override;
 private:

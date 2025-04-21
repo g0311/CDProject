@@ -210,6 +210,7 @@ void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo)
 	{
 		FString WeaponAmmoText = FString::Printf(TEXT("%d"), WeaponAmmo);
 		CDHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(WeaponAmmoText));
+		CDHUD->AddCompass();//here!/ if you want to deactivate Compass UI, annotation this!
 	}
 	else
 	{
@@ -316,10 +317,7 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	
 }
 
-void ACDPlayerController::SetTeamScore()
-{
-	
-}
+
 
 void ACDPlayerController::SetMinimap()
 {
@@ -344,6 +342,7 @@ void ACDPlayerController::SetMinimap()
 		}
 	}
 }
+
 
 
 //120 -> 119 -> 118

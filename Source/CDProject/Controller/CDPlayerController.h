@@ -30,7 +30,6 @@ public:
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
 	void SetMinimap();
-	
 	//Weapon
 	void ShowSniperScope();
 
