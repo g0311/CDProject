@@ -425,14 +425,7 @@ void ACDCharacter::RequestFireStart()
 {
 	if (!_combat) return;
 	
-	if (_combat->IsFireAvail())
-	{
-		_combat->RequestFireStart();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("Request Failed"));
-	}
+	_combat->RequestFireStart();
 }
 
 void ACDCharacter::RequestFireEnd()

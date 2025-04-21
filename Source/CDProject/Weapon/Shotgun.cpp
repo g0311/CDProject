@@ -69,3 +69,15 @@ void AShotgun::Fire(const FVector& HitTarget)
 	}
 }
 
+void AShotgun::Reload()
+{
+	CarriedAmmo=GetCarriedAmmo();
+	int32 ReloadAmount=1;
+	if (Ammo < AmmoCapacity)
+	{
+		Ammo+=ReloadAmount;
+		SpendCarriedAmmo(ReloadAmount);
+		SetHUDAmmo();
+	}
+}
+
