@@ -24,6 +24,7 @@ public:
 	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
 	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
 	FORCEINLINE bool IsChanging() { return _isChanging; }
+	FORCEINLINE void SetIsChanging(bool tf) { _isChanging = tf; }
 	FORCEINLINE bool IsReloading() { return _isReloading; }
 	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
