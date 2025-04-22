@@ -253,7 +253,7 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 		}
 		else
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 20.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 1.0f, DeltaSeconds, 20.f);
 		}
 
 		if (combatComponent->GetCurWeapon())

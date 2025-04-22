@@ -231,8 +231,6 @@ void UCombatComponent::RequestFire()
 	
 	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun && _isReloading && !IsAmmoEmpty())
 		ServerCancelReload();
-	else if (!_isCanFire)
-		return;
 	
 	if (IsAmmoEmpty())
 	{
