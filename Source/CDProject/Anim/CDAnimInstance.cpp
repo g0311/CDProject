@@ -11,6 +11,8 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 void UCDAnimInstance::NativeInitializeAnimation()
 {
@@ -64,6 +66,8 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 			if (_knifeFireMontage)
 			{
 				Montage_Play(_knifeFireMontage);
+				if (_knifeFireSound)
+					UGameplayStatics::PlaySoundAtLocation(this, _knifeFireSound, _playerCharacter->GetActorLocation());
 			}
 		}
 		else

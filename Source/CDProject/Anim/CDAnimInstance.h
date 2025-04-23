@@ -92,6 +92,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TArray<UAnimMontage*> _hitMontage;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
+	TObjectPtr<USoundCue> _knifeFireSound;
+	
 	void PlayFireMontage(float fireRate);
 	void PlayGrenadeReadyMontage();
 	void PlayReloadMontage();

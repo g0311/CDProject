@@ -143,7 +143,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	float _mouseSensitivity = 1.f;
 public:
-	void GetWeapon(class AWeapon* weapon);
+	void GetWeapon(class AWeapon* weapon, bool isForce = false);
 	
 private:
 	//Network Property

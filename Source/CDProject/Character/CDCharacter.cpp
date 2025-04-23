@@ -592,12 +592,12 @@ void ACDCharacter::RequestDropWeapon()
 }
 
 //Always Called By Server
-void ACDCharacter::GetWeapon(AWeapon* weapon)
+void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 {
 	if (!_combat)
 		return;
 	_combat->Aim(false);
-	_combat->GetWeapon(weapon);
+	_combat->GetWeapon(weapon, isForce);
 }
 
 void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator control, FRotator camera)
