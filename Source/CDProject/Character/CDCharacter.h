@@ -47,6 +47,7 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Hit();
 	void HandleDamage(float FinalDamage);
+	void UpdateArmMeshLocation(float DeltaTime);
 public:
 	bool _isDead = false;
 	//State로 리팩터링
@@ -78,9 +79,13 @@ private:
 	float _eyeHeight = 50.f;
 	
 	UPROPERTY(EditAnywhere, Category = "Components")
-	FTransform _defaultArmTransform;
+	FTransform _weaponDefaultArmTransform;
 	UPROPERTY(EditAnywhere, Category = "Components")
-	FTransform  _aimArmTransform;
+	FTransform  _weaponAimArmTransform;
+	UPROPERTY(EditAnywhere, Category = "Components")
+	FTransform  _handWeaponArmTransform;
+	UPROPERTY(EditAnywhere, Category = "Components")
+	FTransform  _specialWeaponArmTransform;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float _defaultFOV = 90.0f;
