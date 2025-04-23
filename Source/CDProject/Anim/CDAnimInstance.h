@@ -74,6 +74,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _pistolFireMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _knifeFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _grenadeReadyMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _grenadeThrowMontage;

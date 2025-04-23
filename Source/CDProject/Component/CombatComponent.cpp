@@ -536,11 +536,13 @@ void UCombatComponent::Fire(FVector fireDir)
 
 void UCombatComponent::Reload()
 {
+	if (!_playerCharacter || !GetCurWeapon())
+		return;
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand || GetCurWeaponType() == EWeaponType::EWT_Knife)
+		return;
 	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
 		return;
 	if (_weapons[_weaponIndex]->GetCarriedAmmo() == 0)
-		return;
-	if (!_playerCharacter)	
 		return;
 	
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());

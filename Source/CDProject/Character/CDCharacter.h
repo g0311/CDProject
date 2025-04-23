@@ -85,6 +85,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform  _handWeaponArmTransform;
 	UPROPERTY(EditAnywhere, Category = "Components")
+	FTransform  _knifeArmTransform;
+	UPROPERTY(EditAnywhere, Category = "Components")
 	FTransform  _specialWeaponArmTransform;
 
 	UPROPERTY(EditAnywhere, Category = "Camera")

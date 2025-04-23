@@ -163,6 +163,9 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	//Team Check
+	if (!EventInstigator)
+		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
 	ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
 	ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
 	if (!playerState || !causerPlayerState)
@@ -441,8 +444,10 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 			nextTransform = _weaponDefaultArmTransform;
 		break;
 	case EWeaponType::EWT_Hand:
-	case EWeaponType::EWT_Knife:
 		nextTransform = _handWeaponArmTransform;
+		break;
+	case EWeaponType::EWT_Knife:
+		nextTransform = _knifeArmTransform;
 		break;
 	case EWeaponType::EWT_Speical:
 		nextTransform = _specialWeaponArmTransform;

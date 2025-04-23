@@ -59,8 +59,15 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 				Montage_Play(_grenadeThrowMontage);
 			}
 		}
+		else if (_weaponType == EWeaponType::EWT_Knife)
+		{//Knife
+			if (_knifeFireMontage)
+			{
+				Montage_Play(_knifeFireMontage);
+			}
+		}
 		else
-		{
+		{//Default
 			if (_isAiming)
 			{
 				if (_aimFireMontage)
@@ -91,6 +98,13 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 			if (_grenadeThrowMontage)
 			{
 				Montage_Play(_grenadeThrowMontage);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_Knife)
+		{//Knife
+			if (_knifeFireMontage)
+			{
+				Montage_Play(_knifeFireMontage);
 			}
 		}
 		else if (_aimFireMontage)
@@ -173,6 +187,7 @@ void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 		}
 		break;
 	case EWeaponType::EWT_Hand:
+	case EWeaponType::EWT_Knife:
 		if (_equipPistolMontage)
 		{
 			Montage_Play(_equipGrenadeMontage);
@@ -242,12 +257,12 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAiming();
-		if (_weaponType == EWeaponType::EWT_Pistol)
+		if (_weaponType == EWeaponType::EWT_Pistol || _weaponType == EWeaponType::EWT_Knife)
 		{
 			_isAiming = true;
 		}
 		
-		if (combatComponent->IsChanging() || combatComponent->IsReloading() || _weaponType == EWeaponType::EWT_Hand )
+		if (combatComponent->IsChanging() || combatComponent->IsReloading() || _weaponType == EWeaponType::EWT_Hand || _weaponType == EWeaponType::EWT_Knife)
 		{
 			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 20.f);
 		}
