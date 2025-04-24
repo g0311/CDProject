@@ -238,8 +238,11 @@ void UCombatComponent::RequestFire()
 		ServerReload();
 		return;
 	}
-
-	FVector traceDir = CreateTraceDir();
+	FVector traceDir = FVector::ZeroVector;
+	if (GetCurWeaponType() != EWeaponType::EWT_Hand ||
+		GetCurWeaponType() != EWeaponType::EWT_C4 ||
+		GetCurWeaponType() != EWeaponType::EWT_Knife)
+		traceDir = CreateTraceDir();
 	ServerFire(traceDir);
 }
 
@@ -252,6 +255,11 @@ void UCombatComponent::RequestFireStart()
 	{
 		//Grenade
 		ServerReadyGrenade();
+		return;
+	}
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+	{
+		RequestFire();
 		return;
 	}
 	
@@ -279,6 +287,11 @@ void UCombatComponent::RequestFireEnd()
 		ServerThrowGrenade();
 		return;
 	}
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+    {
+    	//cancel plant
+    	return;
+    }
 	
 	if (_clientFireTimerHandle.IsValid())
 	{

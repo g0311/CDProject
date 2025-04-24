@@ -132,6 +132,7 @@ private:
 	void Walk();
 	void UnWalk();
 
+public:
 	void RequestFireStart();
 	void RequestFireEnd();
 	void RequestFire();
