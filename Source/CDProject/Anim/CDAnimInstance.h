@@ -74,6 +74,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _pistolFireMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
+	TObjectPtr<UAnimMontage> _knifeFireMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _grenadeReadyMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TObjectPtr<UAnimMontage> _grenadeThrowMontage;
@@ -89,6 +91,9 @@ public:
 	TObjectPtr<UAnimMontage> _deadMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Montage")
 	TArray<UAnimMontage*> _hitMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Sound")
+	TObjectPtr<USoundCue> _knifeFireSound;
 	
 	void PlayFireMontage(float fireRate);
 	void PlayGrenadeReadyMontage();
