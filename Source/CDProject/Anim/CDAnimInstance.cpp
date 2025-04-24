@@ -11,6 +11,8 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 void UCDAnimInstance::NativeInitializeAnimation()
 {
@@ -59,8 +61,17 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 				Montage_Play(_grenadeThrowMontage);
 			}
 		}
+		else if (_weaponType == EWeaponType::EWT_Knife)
+		{//Knife
+			if (_knifeFireMontage)
+			{
+				Montage_Play(_knifeFireMontage);
+				if (_knifeFireSound)
+					UGameplayStatics::PlaySoundAtLocation(this, _knifeFireSound, _playerCharacter->GetActorLocation());
+			}
+		}
 		else
-		{
+		{//Default
 			if (_isAiming)
 			{
 				if (_aimFireMontage)
@@ -91,6 +102,13 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 			if (_grenadeThrowMontage)
 			{
 				Montage_Play(_grenadeThrowMontage);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_Knife)
+		{//Knife
+			if (_knifeFireMontage)
+			{
+				Montage_Play(_knifeFireMontage);
 			}
 		}
 		else if (_aimFireMontage)
@@ -173,6 +191,7 @@ void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 		}
 		break;
 	case EWeaponType::EWT_Hand:
+	case EWeaponType::EWT_Knife:
 		if (_equipPistolMontage)
 		{
 			Montage_Play(_equipGrenadeMontage);
@@ -242,18 +261,18 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAiming();
-		if (_weaponType == EWeaponType::EWT_Pistol)
+		if (_weaponType == EWeaponType::EWT_Pistol || _weaponType == EWeaponType::EWT_Knife)
 		{
 			_isAiming = true;
 		}
 		
-		if (combatComponent->IsChanging() || combatComponent->IsReloading() || _weaponType == EWeaponType::EWT_Hand )
+		if (combatComponent->IsChanging() || combatComponent->IsReloading() || _weaponType == EWeaponType::EWT_Hand || _weaponType == EWeaponType::EWT_Knife)
 		{
 			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 20.f);
 		}
 		else
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 20.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 1.0f, DeltaSeconds, 20.f);
 		}
 
 		if (combatComponent->GetCurWeapon())

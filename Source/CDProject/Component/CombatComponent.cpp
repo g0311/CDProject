@@ -231,8 +231,6 @@ void UCombatComponent::RequestFire()
 	
 	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun && _isReloading && !IsAmmoEmpty())
 		ServerCancelReload();
-	else if (!_isCanFire)
-		return;
 	
 	if (IsAmmoEmpty())
 	{
@@ -240,8 +238,11 @@ void UCombatComponent::RequestFire()
 		ServerReload();
 		return;
 	}
-
-	FVector traceDir = CreateTraceDir();
+	FVector traceDir = FVector::ZeroVector;
+	if (GetCurWeaponType() != EWeaponType::EWT_Hand ||
+		GetCurWeaponType() != EWeaponType::EWT_C4 ||
+		GetCurWeaponType() != EWeaponType::EWT_Knife)
+		traceDir = CreateTraceDir();
 	ServerFire(traceDir);
 }
 
@@ -254,6 +255,11 @@ void UCombatComponent::RequestFireStart()
 	{
 		//Grenade
 		ServerReadyGrenade();
+		return;
+	}
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+	{
+		RequestFire();
 		return;
 	}
 	
@@ -281,6 +287,11 @@ void UCombatComponent::RequestFireEnd()
 		ServerThrowGrenade();
 		return;
 	}
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+    {
+    	//cancel plant
+    	return;
+    }
 	
 	if (_clientFireTimerHandle.IsValid())
 	{
@@ -538,11 +549,13 @@ void UCombatComponent::Fire(FVector fireDir)
 
 void UCombatComponent::Reload()
 {
+	if (!_playerCharacter || !GetCurWeapon())
+		return;
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand || GetCurWeaponType() == EWeaponType::EWT_Knife)
+		return;
 	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
 		return;
 	if (_weapons[_weaponIndex]->GetCarriedAmmo() == 0)
-		return;
-	if (!_playerCharacter)	
 		return;
 	
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
