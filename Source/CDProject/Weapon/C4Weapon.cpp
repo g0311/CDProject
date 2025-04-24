@@ -20,9 +20,11 @@ AC4Weapon::AC4Weapon()
 void AC4Weapon::Fire(const FVector& HitTarget)
 {
 	ACDCharacter* character = Cast<ACDCharacter>(GetOwner());
-	if (!character)
+	if (!character || !character->HasAuthority())
 		return;
 
+	UE_LOG(LogTemp, Log, TEXT("Called"));
+	
 	//Spawn C4 Projectile
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = character;

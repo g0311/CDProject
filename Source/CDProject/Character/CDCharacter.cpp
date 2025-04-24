@@ -433,7 +433,7 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 	if (!_combat || !_combat->GetCurWeapon())
 		return;
 	
-	FTransform nextTransform;
+	FTransform nextTransform = FTransform::Identity;
 	switch (_combat->GetCurWeaponType())
 	{
 	case EWeaponType::EWT_Rifle:
@@ -446,6 +446,7 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 			nextTransform = _weaponDefaultArmTransform;
 		break;
 	case EWeaponType::EWT_Hand:
+	case EWeaponType::EWT_C4:
 		nextTransform = _handWeaponArmTransform;
 		break;
 	case EWeaponType::EWT_Knife:

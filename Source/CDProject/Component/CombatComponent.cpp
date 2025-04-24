@@ -10,6 +10,7 @@
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -287,7 +288,6 @@ void UCombatComponent::RequestInteractStart()
 		//Show HUD
 		if (true /* Is Avail Location To Plant Bomb */)
 			ServerC4Plant(true);
-		return;
 	}
 }
 
@@ -296,7 +296,6 @@ void UCombatComponent::RequestInteractEnd()
 	if (GetCurWeaponType() == EWeaponType::EWT_C4)
 	{
 		ServerC4Plant(false);
-		return;
 	}
 }
 
@@ -400,6 +399,15 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 			ChangeWeapon(1);
 		}
 		break;
+	case EWeaponType::EWT_C4:
+		if (!_weapons[5])
+		{
+			weapon->SetOwner(_playerCharacter);
+			weapon->AttachToPlayer();
+			_weapons[5] = weapon;
+			ChangeWeapon(5);
+		}
+		break;
 	}
 }
 
@@ -409,16 +417,25 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 	{
 		if (isPlanting)
 		{
+			if (_playerCharacter)
+			{
+				_playerCharacter->GetCharacterMovement()->DisableMovement();
+			}
 			GetWorld()->GetTimerManager().SetTimer(_c4PlantHandle, FTimerDelegate::CreateLambda([this]
-		  {
-			  RequestFire();
-			  ChangeToNextWeapon();
-		  }),
-		  _fireDelay, false);
+				{
+					RequestFire();
+					_weapons[_weaponIndex] = nullptr;
+					ChangeToNextWeapon();
+				}),
+				_fireDelay, false);
 			NetMulticastC4Plant(true);
 		}
 		else
 		{
+			if (_playerCharacter)
+			{
+				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			}
 			GetWorld()->GetTimerManager().ClearTimer(_c4PlantHandle);
 			NetMulticastC4Plant(false);
 		}
@@ -634,6 +651,10 @@ void UCombatComponent::ChangeWeapon(int idx)
 	}
 	if (_c4PlantHandle.IsValid())
 	{
+		if (_playerCharacter)
+		{
+			_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		}
 		GetWorld()->GetTimerManager().ClearTimer(_c4PlantHandle);
 	}
 	
