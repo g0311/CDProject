@@ -25,10 +25,12 @@ protected:
 	float ThrowPower=1000.f;
 
 	void DrawTrajectory(const FVector& StartLocation, const FVector& LaunchVelocity);
-
-
+	void SpawnThrow();
+	UPROPERTY(EditAnywhere, Category="Grenade")
 	TSubclassOf<class AProjectileGrenade> Grenadeclass;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 };
+
+

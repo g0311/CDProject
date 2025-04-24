@@ -10,6 +10,30 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACDPlayerState, Team);
+	DOREPLIFETIME(ACDPlayerState, Gold);
+}
+
+ACDPlayerState::ACDPlayerState()
+{
+	Gold=0;
+	bReplicates=true;
+}
+
+void ACDPlayerState::AddGold(int32 Amount)
+{
+	Gold+=Amount;
+	OnRep_Gold();
+}
+
+bool ACDPlayerState::SpendGold(int32 Amount)
+{
+	if (Gold>=Amount)
+	{
+		Gold-=Amount;
+		OnRep_Gold();
+		return true;
+	}
+	return false;
 }
 
 void ACDPlayerState::OnRep_Team()
@@ -21,6 +45,11 @@ void ACDPlayerState::OnRep_Team()
 	}
 }
 
+void ACDPlayerState::OnRep_Gold()
+{
+	return;
+}
+
 void ACDPlayerState::SetTeam(ETeam TeamToSet)
 {
 	Team=TeamToSet;
@@ -30,4 +59,6 @@ void ACDPlayerState::SetTeam(ETeam TeamToSet)
 		//BCharacter->SetTeamColor(Team);
 	}
 }
+
+
 

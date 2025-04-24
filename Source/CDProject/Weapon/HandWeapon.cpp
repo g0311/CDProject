@@ -34,7 +34,7 @@ void AHandWeapon::Fire(const FVector& HitTarget)
 	SpawnParams.Owner = GetOwner();
 	SpawnParams.Instigator=InstigatorPawn;
 	UWorld* World = GetWorld();
-	if (!Grenadeclass) return;
+	if (!Grenadeclass||!World) return;
 	FVector LaunchVelocity;
 	 bool bHaveAimSolution = UGameplayStatics::SuggestProjectileVelocity_CustomArc(
 	 this,
@@ -57,14 +57,26 @@ void AHandWeapon::Fire(const FVector& HitTarget)
 		{
 			Grenade->ProjectileMovementComponent->Velocity = LaunchVelocity;
 			//Grenade->ProjectileMovementComponent->Velocity = GetActorForwardVector() * ThrowPower;
-			Grenade->ProjectileMovementComponent->Activate();
 		}
 	}
 	else if (!bHaveAimSolution)
 	{
 		LaunchVelocity = (HitTarget - StartLocation).GetSafeNormal() * ThrowPower;
+
+		AProjectileGrenade* Grenade = World->SpawnActor<AProjectileGrenade>(
+	   Grenadeclass,
+	   StartLocation,
+	   FRotator::ZeroRotator,
+	   SpawnParams
+   );
+
+		if (Grenade && Grenade->ProjectileMovementComponent)
+		{
+			Grenade->ProjectileMovementComponent->Velocity = LaunchVelocity;
+		}
 	}
 }
+
 
 // Called every frame
 void AHandWeapon::Tick(float DeltaTime)
