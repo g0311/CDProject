@@ -58,6 +58,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
 	DOREPLIFETIME(UCombatComponent, _isChanging);
+	DOREPLIFETIME(UCombatComponent, _isReloading);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -77,7 +78,7 @@ void UCombatComponent::Reset(bool isDead)
 		{
 			if (weapon)
 			{
-				//weapon->ResetAmmo();
+				weapon->ResetAmmo();
 			}
 		}
 	}
@@ -213,12 +214,24 @@ FVector UCombatComponent::CreateTraceDir()
 
 void UCombatComponent::ChangeToNextWeapon()
 {
-	
+	for (int i = 1; i < _weapons.Num(); i++)
+	{
+		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+		{
+			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+			return;
+		}
+	}
 }
 
 void UCombatComponent::RequestFire()
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex] || !_isCanFire)
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun && _isReloading && !IsAmmoEmpty())
+		ServerCancelReload();
+	else if (!_isCanFire)
 		return;
 	
 	if (IsAmmoEmpty())
@@ -227,8 +240,7 @@ void UCombatComponent::RequestFire()
 		ServerReload();
 		return;
 	}
-	
-	_isCanFire = false;
+
 	FVector traceDir = CreateTraceDir();
 	ServerFire(traceDir);
 }
@@ -237,8 +249,8 @@ void UCombatComponent::RequestFireStart()
 {
 	if (!GetCurWeapon())
 		return;
-
-	if (GetCurWeaponType() == EWeaponType::EWT_Speical)
+	
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand)
 	{
 		//Grenade
 		ServerReadyGrenade();
@@ -259,9 +271,13 @@ void UCombatComponent::RequestFireStart()
 
 void UCombatComponent::RequestFireEnd()
 {
-	if (GetCurWeaponType() == EWeaponType::EWT_Speical)
+	if (!GetCurWeapon())
+		return;
+
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand && _isGrenadeReady)
 	{
 		//Grenade
+		RequestFire();
 		ServerThrowGrenade();
 		return;
 	}
@@ -274,7 +290,6 @@ void UCombatComponent::RequestFireEnd()
 
 void UCombatComponent::RequestChange(int idx)
 {
-	_isChanging = true;
 	ServerChangeWeapon(idx);
 }
 
@@ -282,7 +297,7 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-	
+
 	_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(tf);
 	_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(tf);
 }
@@ -306,12 +321,14 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 
 void UCombatComponent::ServerFire_Implementation(FVector fireDir)
 {
-	Fire(fireDir);
+	if (_isCanFire)
+		Fire(fireDir);
 }
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	Reload();
+	if (!_isReloading)
+		Reload();
 }
 
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
@@ -381,22 +398,23 @@ void UCombatComponent::ServerReadyGrenade_Implementation()
 
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
-	//던지고, 무기 바꾸기 해야함
-	ChangeToNextWeapon();
 	NetMulticastGrenadeThrow();	
 }
 
-void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
+void UCombatComponent::ServerShotgunReload_Implementation()
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
-	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	if (bodyAnim)
-		bodyAnim->PlayFireMontage(_fireDelay);
-	if (armAnim)
-		armAnim->PlayFireMontage(_fireDelay);
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		GetCurWeapon()->Reload();
+	}
+}
+
+void UCombatComponent::ServerCancelReload_Implementation()
+{
+	_isReloading = false;
+	_isCanFire = true;
+	_isCanAim = true;
+	NetMulticastCancelReload();
 }
 
 void UCombatComponent::Aim(bool tf)
@@ -534,14 +552,18 @@ void UCombatComponent::Reload()
 	NetMulticastReload();
 	_isCanFire = false;
 	_isCanAim = false;
+	_isReloading = true;
 	Aim(false);
-
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	if (GetCurWeaponType() != EWeaponType::EWT_Shotgun)
 	{
-		_isCanFire = true;
-		_isCanAim = true;
-		_weapons[_weaponIndex]->Reload();
-	}), armAnim->GetReloadTime(),false);
+		GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	   {
+		   _isCanFire = true;
+		   _isCanAim = true;
+		   _isReloading = false;
+		   _weapons[_weaponIndex]->Reload();
+	   }), armAnim->GetReloadTime(),false);
+	}
 }
 
 void UCombatComponent::ChangeWeapon(int idx)
@@ -558,9 +580,15 @@ void UCombatComponent::ChangeWeapon(int idx)
 	if (!armAnim)
 		return;
 	
+	if (_fireAimAbleTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(_fireAimAbleTimerHandle);
+	}
+	
 	_isCanFire = false;
 	_isCanAim = false;
 	_isChanging = true;
+	_isReloading = false;
 	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
 		_isCanFire = true;
@@ -569,7 +597,8 @@ void UCombatComponent::ChangeWeapon(int idx)
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
-	OnRep_WeaponID();
+	if (_playerCharacter->HasAuthority())
+		OnRep_WeaponID();
 	//리슨 서버용
 }
 
@@ -695,6 +724,43 @@ void UCombatComponent::NetMulticastGrenadeReady_Implementation()
 		bodyAnim->PlayGrenadeReadyMontage();
 	if (armAnim)
 		armAnim->PlayGrenadeReadyMontage();
+	if (_playerCharacter->IsLocallyControlled())
+	{
+		_isGrenadeReady = true;
+	}
+}
+
+void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+		bodyAnim->PlayFireMontage(_fireDelay);
+	if (armAnim)
+		armAnim->PlayFireMontage(_fireDelay);
+	if (_playerCharacter->IsLocallyControlled())
+	{
+		_isGrenadeReady = false;
+	}
+	if (_playerCharacter->HasAuthority())
+	{
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::ChangeToNextWeapon, armAnim->GetGrenadeThrowTime() / 2, false);
+	}
+}
+
+void UCombatComponent::NetMulticastCancelReload_Implementation()
+{
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+
+	if (armAnim && armAnim->Montage_IsPlaying(armAnim->_shotgunReloadMontage))
+		armAnim->Montage_Stop(0.1f);
+
+	if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
+		bodyAnim->Montage_Stop(0.1f);
 }
 
 void UCombatComponent::OnRep_WeaponID()
@@ -712,6 +778,8 @@ void UCombatComponent::OnRep_WeaponID()
 	} //Wait Until Weapon Replicated
 	if (!_playerCharacter)
 		return;
+	if (_isGrenadeReady)
+		_isGrenadeReady = false;
 	
 	_weapons[_weaponIndex]->SetHUDAmmo();
 	

@@ -425,10 +425,7 @@ void ACDCharacter::RequestFireStart()
 {
 	if (!_combat) return;
 	
-	if (_combat->IsFireAvail())
-	{
-		_combat->RequestFireStart();
-	}
+	_combat->RequestFireStart();
 }
 
 void ACDCharacter::RequestFireEnd()

@@ -15,7 +15,7 @@ public:
 	// Sets default values for this actor's properties
 	AShotgun();
 	virtual void Fire(const FVector& HitTraget) override;
-	
+	virtual void Reload() override;
 
 public:
 	UPROPERTY(EditAnywhere)

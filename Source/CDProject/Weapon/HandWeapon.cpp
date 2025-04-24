@@ -75,6 +75,7 @@ void AHandWeapon::Fire(const FVector& HitTarget)
 			Grenade->ProjectileMovementComponent->Velocity = LaunchVelocity;
 		}
 	}
+	Destroy();
 }
 
 
