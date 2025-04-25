@@ -35,9 +35,11 @@ public:
 	//when 1 Round End -> Waiting TIme(this) -> 2Round
 	UPROPERTY(EditDefaultsOnly)
 	float WarmUpTime=10.f;
-	float Countdown=0.f;
+	float Countdown=10.f;
 	float LevelStartingTime=0.f;
-
+	//Round
+	int32 MaxRound=9;
+	
 	bool bTeamsMatch=false;
 	
 	

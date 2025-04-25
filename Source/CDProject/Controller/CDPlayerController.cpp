@@ -12,6 +12,7 @@
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/CDGameMode.h"
 #include "CDProject/HUD/CDHUD.h"
+#include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
@@ -182,6 +183,10 @@ void ACDPlayerController::SetHUDShield(float Shield)
 		// FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		// CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
+	else
+	{
+		bInitializeShield=true;
+	}
 	
 }
 
@@ -235,6 +240,10 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 		{
 			CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(WeaponImage);
 		}
+	}
+	else
+	{
+		bInitializeWeaponInfo=true;
 	}
 }
 
@@ -337,9 +346,25 @@ void ACDPlayerController::SetMinimap()
 			MiniMapBrush.ImageSize = FVector2D(128, 128);
 			
 			CDHUD->CharacterOverlay->MiniMapImage->SetBrush(MiniMapBrush);
-			
-			
+
 		}
+	}
+}
+
+void ACDPlayerController::SetGold()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	PS=PS==nullptr?Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>()):PS;
+
+	if (CDHUD && CDHUD->CharacterOverlay && PS)
+	{
+		HUDGoldCount = PS->Gold;
+		FText GoldText = FText::AsNumber(HUDGoldCount); 
+		CDHUD->CharacterOverlay->Gold->SetText(GoldText);
+	}
+	else
+	{
+		bInitializeGold=true;
 	}
 }
 

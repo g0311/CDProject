@@ -30,6 +30,7 @@ public:
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
 	void SetMinimap();
+	void SetGold();
 	//Weapon
 	void ShowSniperScope();
 
@@ -84,6 +85,9 @@ private:
 	UPROPERTY()
 	class ACDHUD* CDHUD;
 
+	UPROPERTY()
+	class ACDPlayerState* PS;
+	
 	UPROPERTY(EditAnywhere, Category="HUD")
 	TSubclassOf<class UKDOverlay> KDOverlay;
 	
@@ -127,6 +131,8 @@ private:
 	bool bInitializeDeath=false;
 	bool bInitializeCarriedAmmo=false;
 	bool bInitializeWeaponAmmo=false;
+	bool bInitializeWeaponInfo=false;
+	bool bInitializeGold=false;
 	
 
 };

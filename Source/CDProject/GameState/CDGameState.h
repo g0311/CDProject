@@ -14,7 +14,7 @@ UCLASS()
 class CDPROJECT_API ACDGameState : public AGameState
 {
 	GENERATED_BODY()
-
+public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
@@ -31,8 +31,14 @@ class CDPROJECT_API ACDGameState : public AGameState
 
 	UPROPERTY(ReplicatedUsing=OnRep_BlueTeamScore)
 	float BlueTeamScore=0.f;
+
+	
+
 public:
 	TArray<ACDPlayerState*> RedTeam;//TArray -> AddUnique, Contains, Remove
 	TArray<ACDPlayerState*> BlueTeam;
+
+	TArray<ACDPlayerState*> AliveRedTeam;
+	TArray<ACDPlayerState*> AliveBlueTeam;
 	
 };

@@ -3,7 +3,10 @@
 
 #include "TeamGameMode.h"
 
+#include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameState/CDGameState.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
 ATeamGameMode::ATeamGameMode()
@@ -49,6 +52,7 @@ void ATeamGameMode::Logout(AController* Exiting)
 		{
 			BGameState->BlueTeam.Remove(BPState);
 		}
+		InitializeTeamCount();
 	}
 }
 
@@ -76,5 +80,74 @@ void ATeamGameMode::HandleMatchHasStarted()
 				}
 			}
 		}
+		InitializeTeamCount();
 	}
+}
+
+void ATeamGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController,
+	ACDPlayerController* AttackerController)
+{
+	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
+	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
+	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
+	
+	if (BGameState&&AttackerController)
+	{
+		if (AttackerPlayerState->GetTeam()==ETeam::ET_RedTeam)
+		{
+			BGameState->AliveBlueTeam.Remove(VictimPlayerState);
+			if (BGameState->AliveBlueTeam.Num()==0)
+			{
+				BGameState->RedTeamScoreAdd();
+				SetMatchState(MatchState::Cooldown);
+			}
+			
+		}
+		else if (AttackerPlayerState->GetTeam()==ETeam::ET_BlueTeam)
+		{
+			BGameState->AliveRedTeam.Remove(VictimPlayerState);
+			if (BGameState->AliveRedTeam.Num()==0)
+			{
+				BGameState->BlueTeamScoreAdd();
+				SetMatchState(MatchState::Cooldown);
+			}
+		}
+	}
+}
+
+void ATeamGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
+{
+	if (ElimmedCharacter)
+	{
+		ElimmedCharacter->Reset();
+		ElimmedCharacter->Destroy(); 
+	}
+	
+	ACDPlayerState* PS = ElimmedController->GetPlayerState<ACDPlayerState>();
+	FName TeamTag= PS->GetTeam() == ETeam::ET_RedTeam ? FName("Red") : FName("Blue");
+
+	TArray<AActor*> PlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+	for (AActor* Start : PlayerStarts)
+	{
+		APlayerStart* StartPoint = Cast<APlayerStart>(Start);
+		if (StartPoint && StartPoint->PlayerStartTag == TeamTag)
+		{
+			RestartPlayerAtPlayerStart(ElimmedController, StartPoint);
+			return;
+		}
+	}
+	
+}
+
+void ATeamGameMode::InitializeTeamCount()
+{
+	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if (BGameState)
+	{
+		BGameState->AliveRedTeam=BGameState->RedTeam;
+		BGameState->AliveBlueTeam=BGameState->BlueTeam;
+	}
+	
 }

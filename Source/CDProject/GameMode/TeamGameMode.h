@@ -19,4 +19,10 @@ public:
 	virtual void Logout(AController* Exiting) override;
 protected:
 	virtual void HandleMatchHasStarted() override;
+	virtual void PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController, ACDPlayerController* AttackerController) override;
+	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController) override;
+	
+	void InitializeTeamCount();
+
+	TSet<APlayerStart*> UsedStartPoints;
 };

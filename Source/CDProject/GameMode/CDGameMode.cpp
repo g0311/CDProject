@@ -45,6 +45,7 @@ void ACDGameMode::Tick(float DeltaSeconds)
 	else if (MatchState==MatchState::Cooldown)
 	{
 		Countdown= CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		//Store hud 
 		if (Countdown<=0.f)
 		{
 			RestartGame();
@@ -93,7 +94,10 @@ void ACDGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Elim
 	if (ElimmedCharacter)
 	{
 		ElimmedCharacter->Reset();
-		ElimmedController->Destroyed();
+		ElimmedCharacter->Destroy();
+	}
+	if (ElimmedController)
+	{
 		TArray<AActor*> PlayerStarts;
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 		int32 SelectionPlayerStartingPoint=FMath::RandRange(0,PlayerStarts.Num()-1);
