@@ -124,28 +124,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	}
 	
 	//Update Arm Mesh Location
-	if (_combat->IsAiming())
-	{
-		float InterpSpeed = 10.0f;
-		
-		FTransform _currentArmTransform =
-			UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), _aimArmTransform, DeltaTime, InterpSpeed);
-		_armMesh->SetRelativeTransform(_currentArmTransform);
-		
-		float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _combat->GetCurWeapon()->GetZoomedFOV(), DeltaTime, InterpSpeed);
-		_camera->SetFieldOfView(NewFOV);
-	}
-	else
-	{
-		float InterpSpeed = 10.0f;
-		
-		FTransform _currentArmTransform =
-			UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), _defaultArmTransform, DeltaTime, InterpSpeed);
-		_armMesh->SetRelativeTransform(_currentArmTransform);
-		
-		float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
-		_camera->SetFieldOfView(NewFOV);
-	}
+	UpdateArmMeshLocation(DeltaTime);
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -184,6 +163,9 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	//Team Check
+	if (!EventInstigator)
+		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
 	ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
 	ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
 	if (!playerState || !causerPlayerState)
@@ -364,6 +346,127 @@ void ACDCharacter::ServerPlayFootStepSound_Implementation()
 	PlayFootStepSound();	
 }
 
+void ACDCharacter::Multicast_Dead_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
+
+	if (IsLocallyControlled())
+	{
+		//Disable Input
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (PC)
+		{
+			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+			if (LocalPlayer)
+			{
+				UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+				if (Subsystem)
+				{
+					Subsystem->RemoveMappingContext(_inputMappingContext);
+				}
+			}
+		}
+		//UnVisible Arm Mesh
+		GetArmMesh()->SetVisibility(false);
+	}
+	if (HasAuthority())
+	{
+		//Drop All Weapon
+		_combat->DropAllWeapons();
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+		
+	if (bodyAnim)
+		bodyAnim->PlayDeadMontage();
+	if (armAnim)
+		armAnim->PlayDeadMontage();
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+}
+
+void ACDCharacter::Multicast_Hit_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+	{
+		bodyAnim->PlayHitMontage();
+	}
+	if (armAnim)
+	{
+		armAnim->PlayHitMontage();
+	}
+}
+
+void ACDCharacter::HandleDamage(float FinalDamage)
+{
+	if (_attributeSet == nullptr) return;
+
+	float CurShield = _attributeSet->GetShield();
+	float CurHealth = _attributeSet->GetHealth();
+
+	if (CurShield > 0.f)
+	{
+		CurShield = FMath::Clamp(CurShield - FinalDamage, 0.f, 100.f);
+		_attributeSet->SetShield(CurShield);
+	}
+	else
+	{
+		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
+		_attributeSet->SetHealth(CurHealth);
+	}
+	
+	if (CurHealth == 0.f)
+	{
+		Multicast_Dead();
+	}
+	else
+	{
+		Multicast_Hit();
+	}
+}
+
+void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
+{
+	if (!_combat || !_combat->GetCurWeapon())
+		return;
+	
+	FTransform nextTransform;
+	switch (_combat->GetCurWeaponType())
+	{
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Shotgun:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Pistol:
+		if (_combat->IsAiming())
+			nextTransform = _weaponAimArmTransform;
+		else
+			nextTransform = _weaponDefaultArmTransform;
+		break;
+	case EWeaponType::EWT_Hand:
+		nextTransform = _handWeaponArmTransform;
+		break;
+	case EWeaponType::EWT_Knife:
+		nextTransform = _knifeArmTransform;
+		break;
+	case EWeaponType::EWT_Speical:
+		nextTransform = _specialWeaponArmTransform;
+		break;
+	}
+	float InterpSpeed = 10.0f;
+		
+	FTransform _currentArmTransform =
+		UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), nextTransform, DeltaTime, InterpSpeed);
+	_armMesh->SetRelativeTransform(_currentArmTransform);
+
+	float NewFOV;
+	if (_combat->IsAiming())
+		NewFOV = FMath::FInterpTo(_camera->FieldOfView, _combat->GetCurWeapon()->GetZoomedFOV(), DeltaTime, InterpSpeed);
+	else
+		NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
+	_camera->SetFieldOfView(NewFOV);
+}
+
 void ACDCharacter::Move(const FInputActionValue& value)
 {
 	if (!Controller)
@@ -489,12 +592,12 @@ void ACDCharacter::RequestDropWeapon()
 }
 
 //Always Called By Server
-void ACDCharacter::GetWeapon(AWeapon* weapon)
+void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 {
 	if (!_combat)
 		return;
 	_combat->Aim(false);
-	_combat->GetWeapon(weapon);
+	_combat->GetWeapon(weapon, isForce);
 }
 
 void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator control, FRotator camera)
@@ -523,85 +626,5 @@ void ACDCharacter::InitializeAttributes()
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
 			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
-	}
-}
-
-void ACDCharacter::Multicast_Dead_Implementation()
-{
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-
-	if (IsLocallyControlled())
-	{
-		//Disable Input
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		if (PC)
-		{
-			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-			if (LocalPlayer)
-			{
-				UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-				if (Subsystem)
-				{
-					Subsystem->RemoveMappingContext(_inputMappingContext);
-				}
-			}
-		}
-		//UnVisible Arm Mesh
-		GetArmMesh()->SetVisibility(false);
-	}
-	if (HasAuthority())
-	{
-		//Drop All Weapon
-		_combat->DropAllWeapons();
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-		
-	if (bodyAnim)
-		bodyAnim->PlayDeadMontage();
-	if (armAnim)
-		armAnim->PlayDeadMontage();
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-}
-
-void ACDCharacter::Multicast_Hit_Implementation()
-{
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-	if (bodyAnim)
-	{
-		bodyAnim->PlayHitMontage();
-	}
-	if (armAnim)
-	{
-		armAnim->PlayHitMontage();
-	}
-}
-
-void ACDCharacter::HandleDamage(float FinalDamage)
-{
-	if (_attributeSet == nullptr) return;
-
-	float CurShield = _attributeSet->GetShield();
-	float CurHealth = _attributeSet->GetHealth();
-
-	if (CurShield > 0.f)
-	{
-		CurShield = FMath::Clamp(CurShield - FinalDamage, 0.f, 100.f);
-		_attributeSet->SetShield(CurShield);
-	}
-	else
-	{
-		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
-		_attributeSet->SetHealth(CurHealth);
-	}
-	
-	if (CurHealth == 0.f)
-	{
-		Multicast_Dead();
-	}
-	else
-	{
-		Multicast_Hit();
 	}
 }
