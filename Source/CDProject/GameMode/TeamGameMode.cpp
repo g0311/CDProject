@@ -94,6 +94,7 @@ void ATeamGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class
 	
 	if (BGameState&&AttackerController)
 	{
+		AttackerPlayerState->AddGold(200);
 		if (AttackerPlayerState->GetTeam()==ETeam::ET_RedTeam)
 		{
 			BGameState->AliveBlueTeam.Remove(VictimPlayerState);

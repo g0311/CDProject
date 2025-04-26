@@ -81,6 +81,11 @@ void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class A
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
 
+	if (AttackerPlayerState)
+	{
+		AttackerPlayerState->AddGold(200);
+	}
+	
 	if (ElimmedCharacter)
 	{
 		//ElimmedCharacter->Elim(); Need
