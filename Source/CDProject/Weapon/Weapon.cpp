@@ -281,7 +281,7 @@ void AWeapon::AttachToPlayer()
 	OwnerController = Cast<ACDPlayerController>(OwnerCharacter->Controller);
 	
 	SetWeaponState(EWeaponState::EWS_Equipped);
-
+	
 	AttachToComponent(
 		OwnerCharacter->GetArmMesh(),
 		FAttachmentTransformRules::SnapToTargetIncludingScale,
