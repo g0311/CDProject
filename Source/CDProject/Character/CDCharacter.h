@@ -125,6 +125,8 @@ private:
 	TArray<TObjectPtr<class UInputAction>> _changeWeaponActions;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _dropWeaponAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _interactAction;
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
@@ -132,14 +134,14 @@ private:
 	void Walk();
 	void UnWalk();
 
-public:
 	void RequestFireStart();
 	void RequestFireEnd();
-	void RequestFire();
 	void RequestAim();
 	void RequestReload();
 	void RequestChangeWeapon(int weaponIndex);
 	void RequestDropWeapon();
+	void RequestInteractStart();
+	void RequestInteractEnd();
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	float _mouseSensitivity = 1.f;

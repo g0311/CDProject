@@ -24,6 +24,9 @@ void AHandWeapon::BeginPlay()
 
 void AHandWeapon::Fire(const FVector& HitTarget)
 {
+	if (!HasAuthority())
+		return;
+	
 	FVector StartLocation=GetActorLocation();
 	FVector ToTarget=HitTarget-StartLocation;
 
@@ -64,11 +67,11 @@ void AHandWeapon::Fire(const FVector& HitTarget)
 		LaunchVelocity = (HitTarget - StartLocation).GetSafeNormal() * ThrowPower;
 
 		AProjectileGrenade* Grenade = World->SpawnActor<AProjectileGrenade>(
-	   Grenadeclass,
-	   StartLocation,
-	   FRotator::ZeroRotator,
-	   SpawnParams
-   );
+		   Grenadeclass,
+		   StartLocation,
+		   FRotator::ZeroRotator,
+		   SpawnParams
+		);
 
 		if (Grenade && Grenade->ProjectileMovementComponent)
 		{

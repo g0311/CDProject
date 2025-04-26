@@ -156,6 +156,8 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 3);
 		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 4);
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
+		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractStart);
+		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
 	}
 }
 
@@ -431,7 +433,7 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 	if (!_combat || !_combat->GetCurWeapon())
 		return;
 	
-	FTransform nextTransform;
+	FTransform nextTransform = FTransform::Identity;
 	switch (_combat->GetCurWeaponType())
 	{
 	case EWeaponType::EWT_Rifle:
@@ -444,6 +446,7 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 			nextTransform = _weaponDefaultArmTransform;
 		break;
 	case EWeaponType::EWT_Hand:
+	case EWeaponType::EWT_C4:
 		nextTransform = _handWeaponArmTransform;
 		break;
 	case EWeaponType::EWT_Knife:
@@ -538,23 +541,6 @@ void ACDCharacter::RequestFireEnd()
 	_combat->RequestFireEnd();
 }
 
-void ACDCharacter::RequestFire()
-{
-	if (!_combat) return;
-	
-	if (_combat->IsFireAvail())
-	{
-		if (_combat->IsAmmoEmpty())
-		{
-			RequestReload();
-		}
-		else
-		{
-			_combat->RequestFire();
-		}
-	}
-}
-
 void ACDCharacter::RequestAim()
 {
 	if (!_combat)
@@ -589,6 +575,20 @@ void ACDCharacter::RequestDropWeapon()
 		return;
 	_combat->Aim(false);
 	_combat->ServerDropWeapon();
+}
+
+void ACDCharacter::RequestInteractStart()
+{
+	if (!_combat)
+		return;
+	_combat->RequestInteractStart();
+}
+
+void ACDCharacter::RequestInteractEnd()
+{
+	if (!_combat)
+		return;
+	_combat->RequestInteractEnd();
 }
 
 //Always Called By Server

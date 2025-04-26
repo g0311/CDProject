@@ -10,7 +10,7 @@
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "CDProject/Interface/IsEnemyInterface.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 
@@ -44,7 +44,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		float newSpread = CalculateSpread();
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 	}
-	SetHUDCrosshairs(_curSpread);
+	SetHUDCrosshairs(_curSpread, false);
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -184,7 +184,7 @@ float UCombatComponent::CalculateSpread()
 	return FMath::Clamp(spread, 0.1f, 5.f);
 }
 
-FVector UCombatComponent::CreateTraceDir()
+FVector UCombatComponent::CreateTraceDir(float spread)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return FVector::ZeroVector;
@@ -197,7 +197,7 @@ FVector UCombatComponent::CreateTraceDir()
 	FRotator camRotation = playerController->PlayerCameraManager->GetCameraRotation();
 	FVector baseDirection = camRotation.Vector();
 	
-	float spreadAngleRad = FMath::DegreesToRadians(_curSpread);
+	float spreadAngleRad = FMath::DegreesToRadians(spread);
 	FVector right = FVector::CrossProduct(baseDirection, FVector::UpVector).GetSafeNormal();
 	FVector up = FVector::CrossProduct(right, baseDirection).GetSafeNormal();
 
@@ -210,18 +210,6 @@ FVector UCombatComponent::CreateTraceDir()
 		.GetSafeNormal();
 	
 	return spreadDirection;
-}
-
-void UCombatComponent::ChangeToNextWeapon()
-{
-	for (int i = 1; i < _weapons.Num(); i++)
-	{
-		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
-		{
-			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
-			return;
-		}
-	}
 }
 
 void UCombatComponent::RequestFire()
@@ -242,7 +230,7 @@ void UCombatComponent::RequestFire()
 	if (GetCurWeaponType() != EWeaponType::EWT_Hand ||
 		GetCurWeaponType() != EWeaponType::EWT_C4 ||
 		GetCurWeaponType() != EWeaponType::EWT_Knife)
-		traceDir = CreateTraceDir();
+		traceDir = CreateTraceDir(_curSpread);
 	ServerFire(traceDir);
 }
 
@@ -250,16 +238,13 @@ void UCombatComponent::RequestFireStart()
 {
 	if (!GetCurWeapon())
 		return;
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+		return;
 	
 	if (GetCurWeaponType() == EWeaponType::EWT_Hand)
 	{
 		//Grenade
 		ServerReadyGrenade();
-		return;
-	}
-	if (GetCurWeaponType() == EWeaponType::EWT_C4)
-	{
-		RequestFire();
 		return;
 	}
 	
@@ -279,7 +264,9 @@ void UCombatComponent::RequestFireEnd()
 {
 	if (!GetCurWeapon())
 		return;
-
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+		return;
+	
 	if (GetCurWeaponType() == EWeaponType::EWT_Hand && _isGrenadeReady)
 	{
 		//Grenade
@@ -287,15 +274,28 @@ void UCombatComponent::RequestFireEnd()
 		ServerThrowGrenade();
 		return;
 	}
-	if (GetCurWeaponType() == EWeaponType::EWT_C4)
-    {
-    	//cancel plant
-    	return;
-    }
 	
 	if (_clientFireTimerHandle.IsValid())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(_clientFireTimerHandle);
+	}
+}
+
+void UCombatComponent::RequestInteractStart()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+	{
+		//Show HUD
+		if (true /* Is Avail Location To Plant Bomb */)
+			ServerC4Plant(true);
+	}
+}
+
+void UCombatComponent::RequestInteractEnd()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+	{
+		ServerC4Plant(false);
 	}
 }
 
@@ -399,6 +399,46 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 			ChangeWeapon(1);
 		}
 		break;
+	case EWeaponType::EWT_C4:
+		if (!_weapons[5])
+		{
+			weapon->SetOwner(_playerCharacter);
+			weapon->AttachToPlayer();
+			_weapons[5] = weapon;
+			ChangeWeapon(5);
+		}
+		break;
+	}
+}
+
+void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
+{
+	if (GetWorld())
+	{
+		if (isPlanting)
+		{
+			if (_playerCharacter)
+			{
+				_playerCharacter->GetCharacterMovement()->DisableMovement();
+			}
+			GetWorld()->GetTimerManager().SetTimer(_c4PlantHandle, FTimerDelegate::CreateLambda([this]
+				{
+					RequestFire();
+					_weapons[_weaponIndex] = nullptr;
+					ChangeToNextWeapon();
+				}),
+				_fireDelay, false);
+			NetMulticastC4Plant(true);
+		}
+		else
+		{
+			if (_playerCharacter)
+			{
+				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			}
+			GetWorld()->GetTimerManager().ClearTimer(_c4PlantHandle);
+			NetMulticastC4Plant(false);
+		}
 	}
 }
 
@@ -511,6 +551,18 @@ void UCombatComponent::DropAllWeapons()
 	_weaponIndex = 2;
 }
 
+void UCombatComponent::ChangeToNextWeapon()
+{
+	for (int i = 1; i < _weapons.Num(); i++)
+	{
+		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+		{
+			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+			return;
+		}
+	}
+}
+
 void UCombatComponent::Fire(FVector fireDir)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
@@ -597,6 +649,14 @@ void UCombatComponent::ChangeWeapon(int idx)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(_fireAimAbleTimerHandle);
 	}
+	if (_c4PlantHandle.IsValid())
+	{
+		if (_playerCharacter)
+		{
+			_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		}
+		GetWorld()->GetTimerManager().ClearTimer(_c4PlantHandle);
+	}
 	
 	_isCanFire = false;
 	_isCanAim = false;
@@ -629,18 +689,10 @@ void UCombatComponent::DropWeapon()
 	NetMulticastDropWeapon(_weapons[_weaponIndex]);
 	_weapons[_weaponIndex]->Dropped(lookDirection);
 	_weapons[_weaponIndex] = nullptr;
-
-	for (int i = 0; i < _weapons.Num(); i++)
-	{
-		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
-		{
-			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
-			return;
-		}
-	}
+	ChangeToNextWeapon();
 }
 
-void UCombatComponent::SetHUDCrosshairs(float spread)
+void UCombatComponent::SetHUDCrosshairs(float spread, bool isEnemy)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
@@ -670,7 +722,10 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 				HUDPackage.CrosshairBottom = nullptr;
 				HUDPackage.CrosshairTop = nullptr;
 			}
-			HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+			if (isEnemy)
+				HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
+			else
+				HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
 			HUDPackage.CrosshairSpread=spread;
 			HUD->SetHUDPackage(HUDPackage);
 		}
@@ -760,7 +815,12 @@ void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
 	}
 	if (_playerCharacter->HasAuthority())
 	{
-		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::ChangeToNextWeapon, armAnim->GetGrenadeThrowTime() / 2, false);
+		//GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::ChangeToNextWeapon, armAnim->GetGrenadeThrowTime() / 2, false);
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([this]
+			{
+				_weapons[_weaponIndex] = nullptr;
+				ChangeToNextWeapon();
+			}), armAnim->GetGrenadeThrowTime() / 2, false);
 	}
 }
 
@@ -774,6 +834,28 @@ void UCombatComponent::NetMulticastCancelReload_Implementation()
 
 	if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
 		bodyAnim->Montage_Stop(0.1f);
+}
+
+void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf)
+{
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	if (tf)
+	{
+		if (armAnim)
+			armAnim->PlayFireMontage(_fireDelay);
+
+		if (bodyAnim)
+			bodyAnim->PlayFireMontage(_fireDelay);		
+	}
+	else
+	{
+		if (armAnim && armAnim->Montage_IsPlaying(armAnim->_shotgunReloadMontage))
+			armAnim->Montage_Stop(0.1f);
+
+		if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
+			bodyAnim->Montage_Stop(0.1f);		
+	}
 }
 
 void UCombatComponent::OnRep_WeaponID()
