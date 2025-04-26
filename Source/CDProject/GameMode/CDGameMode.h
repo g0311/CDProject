@@ -37,6 +37,7 @@ public:
 	float WarmUpTime=10.f;
 	float Countdown=10.f;
 	float LevelStartingTime=0.f;
+	bool bNotifiedCooldown=false;
 	//Round
 	int32 MaxRound=9;
 	
@@ -46,4 +47,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
+
+	void NotifyPlayersCooldown(bool IsActivate);
+
+private:
+
 };

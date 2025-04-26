@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
+#include "CDProject/Widget/ShopOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
 #include "CDProject/WidgetPlus/Compass.h"
 
@@ -114,6 +115,56 @@ void ACDHUD::AddCompass()
 			if (Compass)
 			{
 				Compass->AddToViewport();
+			}
+		}
+	}
+}
+
+void ACDHUD::AddStore(bool IsActivate)
+{
+	if (APlayerController* PlayerController = GetOwningPlayerController())
+	{
+		if (IsActivate)
+		{
+			if (!ShopOverlay)
+			{
+				ShopOverlay = CreateWidget<UShopOverlay>(PlayerController, StoreWidgetClass);
+			}
+			if (ShopOverlay && !ShopOverlay->IsInViewport())
+			{
+				ShopOverlay->AddToViewport();
+			}
+		}
+		else
+		{
+			if (ShopOverlay && ShopOverlay->IsInViewport())
+			{
+				ShopOverlay->RemoveFromParent();
+			}
+		}
+	}
+}
+
+void ACDHUD::AddKDOverlay(bool IsActivate)
+{
+	if (APlayerController* PlayerController = GetOwningPlayerController())
+	{
+		if (IsActivate)
+		{
+			if (!KDOverlay)
+			{
+				KDOverlay = CreateWidget<UKDOverlay>(PlayerController, KDOverlayClass);
+			}
+			if (KDOverlay && !KDOverlay->IsInViewport())
+			{
+				KDOverlay->AddToViewport();
+			}
+		}
+		else
+		{
+			if (KDOverlay && KDOverlay->IsInViewport())
+			{
+				KDOverlay->RemoveFromParent();
 			}
 		}
 	}

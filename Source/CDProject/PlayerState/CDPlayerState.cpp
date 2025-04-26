@@ -11,11 +11,13 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACDPlayerState, Team);
 	DOREPLIFETIME(ACDPlayerState, Gold);
+	DOREPLIFETIME(ACDPlayerState, Kills);
+	DOREPLIFETIME(ACDPlayerState, Deaths);
+	DOREPLIFETIME(ACDPlayerState, Name);
 }
 
 ACDPlayerState::ACDPlayerState()
 {
-	Gold=0;
 	bReplicates=true;
 }
 

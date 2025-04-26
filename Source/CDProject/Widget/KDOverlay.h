@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "CDProject/WidgetPlus/PlayerRow.h"
 #include "KDOverlay.generated.h"
 
 /**
@@ -14,15 +15,17 @@ class CDPROJECT_API UKDOverlay : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* Name;
+	UPROPERTY(meta=(BindWidget))
+	class UVerticalBox* RedTeamBox;
+
+	UPROPERTY(meta=(BindWidget))
+	UVerticalBox* BlueTeamBox;
+
+	UPROPERTY(EditAnywhere, Category="Scoreboard")
+	TSubclassOf<class UPlayerRow> PlayerRowClass;
 	
-	UPROPERTY(meta=(BindWidget))
-	UTextBlock* Kill;
+	TArray<UPlayerRow*> PlayerRows;
 
-	UPROPERTY(meta=(BindWidget))
-	UTextBlock* Death;
-
-	UPROPERTY(meta=(BindWidget))
-	UTextBlock* Gold;
+	void UpdateScoreboard();
+	void SetupScoreboard();
 };

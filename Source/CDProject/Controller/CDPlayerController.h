@@ -31,6 +31,12 @@ public:
 	void SetTeamScore();
 	void SetMinimap();
 	void SetGold();
+	void SetKDOverlayUI();
+	void UpdateKDOverlayData();
+
+	//bShowOverlay
+	
+	void ShowStoreWidget(bool bShow);
 	//Weapon
 	void ShowSniperScope();
 
@@ -99,6 +105,12 @@ private:
 
 	UFUNCTION()
 	void OnRep_MatchState();
+	UFUNCTION()
+	void OnRep_HUDGoldCount();
+	UFUNCTION()
+	void OnRep_HUDKillCount();
+	UFUNCTION()
+	void OnRep_HUDDeathCount();
 	
 	//MatchVariable
 	float LevelStartingTime=0.f;//Purchase Item Time
@@ -119,9 +131,13 @@ private:
 
 	
 	//Match KDState
+	UPROPERTY(ReplicatedUsing=OnRep_HUDGoldCount)
 	float HUDGoldCount;
+	UPROPERTY(ReplicatedUsing=OnRep_HUDKillCount)
 	float HUDKillCount;
+	UPROPERTY(ReplicatedUsing=OnRep_HUDDeathCount)
 	float HUDDeathCount;
+	UPROPERTY(Replicated)
 	FName HUDCharID;
 
 	//bool Initialize

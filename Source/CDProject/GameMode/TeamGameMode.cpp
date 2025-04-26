@@ -18,6 +18,7 @@ void ATeamGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+
 	if (BGameState)
 	{
 		ACDPlayerState* BPState=NewPlayer->GetPlayerState<ACDPlayerState>();
@@ -33,6 +34,14 @@ void ATeamGameMode::PostLogin(APlayerController* NewPlayer)
 				BGameState->BlueTeam.AddUnique(BPState);
 				BPState->SetTeam(ETeam::ET_BlueTeam);
 			}
+		}
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+		if (CDPC)
+		{
+			CDPC->SetKDOverlayUI(); 
 		}
 	}
 }
@@ -53,6 +62,14 @@ void ATeamGameMode::Logout(AController* Exiting)
 			BGameState->BlueTeam.Remove(BPState);
 		}
 		InitializeTeamCount();
+	}
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+		if (CDPC)
+		{
+			CDPC->SetKDOverlayUI(); 
+		}
 	}
 }
 

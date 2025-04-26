@@ -3,8 +3,10 @@
 
 #include "CDGameMode.h"
 
+#include "TeamGameMode.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/HUD/CDHUD.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerStart.h"
@@ -27,6 +29,7 @@ void ACDGameMode::Tick(float DeltaSeconds)
 	
 	if (MatchState==MatchState::WaitingToStart)
 	{
+		bNotifiedCooldown=false;
 		Countdown=FMath::CeilToInt(WarmUpTime+LevelStartingTime-GetWorld()->GetTimeSeconds());
 		UE_LOG(LogTemp,Display,TEXT("%f"), Countdown);
 		if (Countdown==-1)
@@ -45,9 +48,14 @@ void ACDGameMode::Tick(float DeltaSeconds)
 	else if (MatchState==MatchState::Cooldown)
 	{
 		Countdown= CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
-		//Store hud 
+		if (!bNotifiedCooldown)
+		{
+			NotifyPlayersCooldown(true);
+			bNotifiedCooldown=true;
+		}
 		if (Countdown<=0.f)
 		{
+			NotifyPlayersCooldown(false);
 			RestartGame();
 		}
 	}
@@ -57,6 +65,7 @@ void ACDGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	//LevelStartingTime=GetWorld()->GetTimeSeconds();
+	
 }
 
 void ACDGameMode::OnMatchStateSet()
@@ -73,6 +82,18 @@ void ACDGameMode::OnMatchStateSet()
 	}
 }
 
+void ACDGameMode::NotifyPlayersCooldown(bool IsActivate)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* CDController = Cast<ACDPlayerController>(*It);
+		if (CDController)
+		{
+			CDController->ShowStoreWidget(IsActivate); 
+		}
+	}
+}
+
 void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController,
                                    ACDPlayerController* AttackerController)
 {
@@ -80,17 +101,30 @@ void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class A
 	if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
-
+	
 	if (AttackerPlayerState)
 	{
+		AttackerPlayerState->AddKill();
 		AttackerPlayerState->AddGold(200);
+		//AttackerController->SetGold();
+	}
+	if (VictimPlayerState)
+	{
+		VictimPlayerState->AddDeath();
 	}
 	
 	if (ElimmedCharacter)
 	{
 		//ElimmedCharacter->Elim(); Need
 	}
-	
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+		if (CDPC)
+		{
+			CDPC->UpdateKDOverlayData();
+		}
+	}
 }
 
 void ACDGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)

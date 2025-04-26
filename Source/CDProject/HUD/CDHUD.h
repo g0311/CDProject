@@ -59,12 +59,26 @@ public:
 	UPROPERTY()
 	class UCompass* Compass;
 
+	UPROPERTY(EditAnywhere, Category="Store")
+	TSubclassOf<UUserWidget> StoreWidgetClass;
+
+	UPROPERTY()
+	class UShopOverlay* ShopOverlay;
+
+	UPROPERTY(EditAnywhere, Category="KDOVerlay")
+	TSubclassOf<UUserWidget> KDOverlayClass;
+
+	UPROPERTY()
+	class UKDOverlay* KDOverlay;
+
 
 	void AddSniperScope();
 	void AddCharacterOverlay();
 	void AddGameStateOverlay();//KDOverlay or GameStateOverlay
 	void AddAnnouncement();
 	void AddCompass();
+	void AddStore(bool IsActivate);
+	void AddKDOverlay(bool IsActivate);
 protected:
 	virtual void BeginPlay() override;
 private:

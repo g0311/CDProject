@@ -13,6 +13,7 @@ class CDPROJECT_API UShopOverlay : public UUserWidget
 
 public:
 	virtual void NativeConstruct() override;
+	UFUNCTION()
 	void OnShopButtonClicked(const FWeaponStruct& WeaponData);
 
 	

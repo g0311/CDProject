@@ -19,20 +19,20 @@ class CDPROJECT_API ACDPlayerState : public APlayerState
 public:
 	ACDPlayerState();
 
-	UPROPERTY(Replicated, BlueprintReadOnly, Category="Player Stats")
-	int32 Kills;
-	UPROPERTY(Replicated, BlueprintReadOnly, Category="Player Stats")
-	int32 Deaths;
-	UPROPERTY(Replicated, BlueprintReadOnly, Category="Player Stats")
-	FName Name;
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Gold,  Category="Player Stats")
-	int32 Gold;
 
 	
 	void AddKill(){Kills++;}
 	void AddDeath(){Deaths++;}
 	void AddGold(int32 Amount);
 	bool SpendGold(int32 Amount);
+	//Getter
+	int32 GetKills() const { return Kills; }
+	int32 GetDeaths() const { return Deaths; }
+	FText GetPlayerName() const { return Name; }
+	int32 GetGold() const { return Gold; }
+	//Setter
+
+	FORCEINLINE ETeam GetTeam() const {return Team;}
 	
 //OnRep_Function
 	UFUNCTION()
@@ -40,14 +40,24 @@ public:
 
 	UFUNCTION()
 	void OnRep_Gold();
+	
+	void SetTeam(ETeam TeamToSet);
 
 protected:
 	UPROPERTY(ReplicatedUsing=OnRep_Team)
 	ETeam Team=ETeam::ET_NoTeam;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-public:
-	FORCEINLINE ETeam GetTeam() const {return Team;}
-	
-	void SetTeam(ETeam TeamToSet);
+
+
+private:
+	UPROPERTY(Replicated, VisibleAnywhere, Category="Player Stats")
+	int32 Kills;
+	UPROPERTY(Replicated, VisibleAnywhere, Category="Player Stats")
+	int32 Deaths;
+	UPROPERTY(Replicated, VisibleAnywhere, Category="Player Stats")
+	FText Name;
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Gold,  Category="Player Stats")
+	int32 Gold=0;
+
 };

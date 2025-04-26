@@ -29,7 +29,7 @@ void UShopOverlay::OnShopButtonClicked(const FWeaponStruct& WeaponData)
 bool UShopOverlay::CanPurchase(const FWeaponStruct& WeaponData)
 {
 	PS = PS ? PS : Cast<ACDPlayerState>(GetOwningPlayerState());
-	return PS && PS->Gold >= WeaponData.Cost;
+	return PS && PS->GetGold() >= WeaponData.Cost;
 }
 
 void UShopOverlay::GiveWeaponToPlayer(const FWeaponStruct& WeaponData)

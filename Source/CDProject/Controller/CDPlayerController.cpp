@@ -46,6 +46,9 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACDPlayerController, MatchState);
+	DOREPLIFETIME(ACDPlayerController, HUDGoldCount);
+	DOREPLIFETIME(ACDPlayerController, HUDDeathCount);
+	DOREPLIFETIME(ACDPlayerController, HUDKillCount);
 }
 
 void ACDPlayerController::ServerCheckMatchState_Implementation()
@@ -191,31 +194,13 @@ void ACDPlayerController::SetHUDShield(float Shield)
 }
 
 
-// void ACDPlayerController::SetHUDKill(float killcount)
-// {
-// 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->KillCount)
-// 	{
-// 		FString KillCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(killcount));
-// 		CDHUD->CharacterOverlay->KillCount->SetText(FText::FromString(KillCount));
-// 	}
-// }
-//
-// void ACDPlayerController::SetHUDDeath(float deathcount)
-// {
-// 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->KDOverlay->DeathCount)
-// 	{
-// 		FString DeathCount=FString::Printf(TEXT("%d"), FMath::CeilToInt(deathcount));
-// 		CDHUD->CharacterOverlay->DeathCount->SetText(FText::FromString(DeathCount));
-// 	}
-// }
-
 void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->WeaponAmmoAmount)
 	{
 		FString WeaponAmmoText = FString::Printf(TEXT("%d"), WeaponAmmo);
 		CDHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(WeaponAmmoText));
-		CDHUD->AddCompass();//here!/ if you want to deactivate Compass UI, annotation this!
+		//CDHUD->AddCompass();//here!/ if you want to deactivate Compass UI, annotation this!
 	}
 	else
 	{
@@ -358,7 +343,7 @@ void ACDPlayerController::SetGold()
 
 	if (CDHUD && CDHUD->CharacterOverlay && PS)
 	{
-		HUDGoldCount = PS->Gold;
+		HUDGoldCount = PS->GetGold();
 		FText GoldText = FText::AsNumber(HUDGoldCount); 
 		CDHUD->CharacterOverlay->Gold->SetText(GoldText);
 	}
@@ -368,6 +353,34 @@ void ACDPlayerController::SetGold()
 	}
 }
 
+void ACDPlayerController::SetKDOverlayUI()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		CDHUD->KDOverlay->SetupScoreboard();
+	}
+}
+
+void ACDPlayerController::UpdateKDOverlayData()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		CDHUD->KDOverlay->UpdateScoreboard();
+	}
+}
+
+
+
+void ACDPlayerController::ShowStoreWidget(bool bActivate)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		CDHUD->AddStore(bActivate);
+	}
+}
 
 
 //120 -> 119 -> 118
@@ -477,6 +490,19 @@ void ACDPlayerController::OnRep_MatchState()
 	{
 		HandleCooldown();
 	}
+}
+
+void ACDPlayerController::OnRep_HUDGoldCount()
+{
+	SetGold();
+}
+
+void ACDPlayerController::OnRep_HUDKillCount()
+{
+}
+
+void ACDPlayerController::OnRep_HUDDeathCount()
+{
 }
 
 
