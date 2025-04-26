@@ -71,6 +71,7 @@ private:
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
+	FTimerHandle _c4PlantHandle;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanFire = true;
@@ -84,8 +85,7 @@ private:
 	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
-	FVector CreateTraceDir();
-	void ChangeToNextWeapon();
+	FVector CreateTraceDir(float spread);
 public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
@@ -93,6 +93,8 @@ public:
 	void RequestFire();
 	void RequestFireStart();
 	void RequestFireEnd();
+	void RequestInteractStart();
+	void RequestInteractEnd();
 	void RequestChange(int idx);
 	//ServerCall
 	UFUNCTION(Server, Reliable)
@@ -111,19 +113,23 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerThrowGrenade();
 	UFUNCTION(Server, Reliable)
+	void ServerC4Plant(bool isPlanting);
+	UFUNCTION(Server, Reliable)
 	void ServerShotgunReload();
 	UFUNCTION(Server, Reliable)
 	void ServerCancelReload();
 		//Both Call
 		void Aim(bool tf);
 	void DropAllWeapons();
+	void ChangeToNextWeapon();
+
 private:
 	//Implementation
 	void Fire(FVector fireDir);
 	void Reload();
 	void ChangeWeapon(int idx);
 	void DropWeapon();
-	void SetHUDCrosshairs(float spread);
+	void SetHUDCrosshairs(float spread, bool isEnemy);
 
 	
 	UFUNCTION(NetMulticast, Reliable)
@@ -136,6 +142,8 @@ private:
 	void NetMulticastGrenadeReady();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeThrow();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastC4Plant(bool tf);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
 	UFUNCTION()
@@ -151,3 +159,4 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAimAvail();
 };
+

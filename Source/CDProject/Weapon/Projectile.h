@@ -68,7 +68,7 @@ protected:
 	
 
 	//
-private:
+protected:
 	FTimerHandle DestroyTimer;
 
 	UPROPERTY(EditAnywhere)
