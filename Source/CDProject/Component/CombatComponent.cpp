@@ -53,6 +53,8 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			if (GetWorld()->LineTraceSingleByChannel(Hit, traceStart, traceEnd, ECC_Visibility, Params))
 			{
 				_aimedActor = Hit.GetActor();
+				if(IsValid(_aimedActor))
+					UE_LOG(LogTemp, Log, TEXT("aimed Actor Name: %s"), *_aimedActor->GetName());
 			}
 			else
 			{
@@ -77,6 +79,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _weapons);
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
+	DOREPLIFETIME(UCombatComponent, _combatStateTags);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -773,13 +776,16 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 			}
 			if (_aimedActor)
 			{
-				ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor);
-				if (aimedCharacter)
+				if (ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor))
 				{
 					if (character->GetTeam() == ETeam::ET_NoTeam || aimedCharacter->GetTeam() != character->GetTeam())
 					{
 						HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
 					}
+				}
+				else
+				{
+					HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
 				}
 			}
 			else
