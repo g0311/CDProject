@@ -37,6 +37,22 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	//Need Line Trace For Distinguish Enemy and C4
+	FHitResult Hit;
+	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
+	FVector traceEnd = traceStart + _playerCharacter->GetCamera()->GetForwardVector() * 10000.f;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(_playerCharacter);
+	if (GetWorld()->LineTraceSingleByChannel(Hit, traceStart, traceEnd, ECC_Visibility, Params))
+	{
+		_aimingActor = Hit.GetActor();
+	}
+	else
+	{
+		_aimingActor = nullptr;
+	}
+
 	
 	//Update Spread
 	if (_playerCharacter->HasAuthority())
@@ -44,7 +60,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		float newSpread = CalculateSpread();
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 	}
-	SetHUDCrosshairs(_curSpread, false);
+	SetHUDCrosshairs(_curSpread);
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -289,6 +305,10 @@ void UCombatComponent::RequestInteractStart()
 		if (true /* Is Avail Location To Plant Bomb */)
 			ServerC4Plant(true);
 	}
+	else if (true /*Is Looking C4*/)
+	{
+		//Show HUD
+	}
 }
 
 void UCombatComponent::RequestInteractEnd()
@@ -440,6 +460,11 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 			NetMulticastC4Plant(false);
 		}
 	}
+}
+
+void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
+{
+	
 }
 
 void UCombatComponent::ServerReadyGrenade_Implementation()
@@ -692,12 +717,12 @@ void UCombatComponent::DropWeapon()
 	ChangeToNextWeapon();
 }
 
-void UCombatComponent::SetHUDCrosshairs(float spread, bool isEnemy)
+void UCombatComponent::SetHUDCrosshairs(float spread)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
-	ACharacter* character = Cast<ACharacter>(GetOwner());
+	ACDCharacter* character = Cast<ACDCharacter>(GetOwner());
 	if (!character || !character->Controller || _weaponIndex == -1) return;
 
 	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
@@ -722,10 +747,21 @@ void UCombatComponent::SetHUDCrosshairs(float spread, bool isEnemy)
 				HUDPackage.CrosshairBottom = nullptr;
 				HUDPackage.CrosshairTop = nullptr;
 			}
-			if (isEnemy)
-				HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
+			if (_aimingActor)
+			{
+				ACDCharacter* aimingCharacter = Cast<ACDCharacter>(_aimingActor);
+				if (aimingCharacter)
+				{
+					if (character->GetTeam() == ETeam::ET_NoTeam || aimingCharacter->GetTeam() != character->GetTeam())
+					{
+						HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
+					}
+				}
+			}
 			else
+			{
 				HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+			}
 			HUDPackage.CrosshairSpread=spread;
 			HUD->SetHUDPackage(HUDPackage);
 		}

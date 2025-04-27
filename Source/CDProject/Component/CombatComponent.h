@@ -82,6 +82,9 @@ private:
 	
 	UPROPERTY(VisibleAnywhere)
 	bool _isWantToFire = false;
+
+	UPROPERTY(VisibleAnywhere)
+	AActor* _aimingActor;
 	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
@@ -115,6 +118,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerC4Plant(bool isPlanting);
 	UFUNCTION(Server, Reliable)
+	void ServerC4Defuse(bool isDefusing);
+	UFUNCTION(Server, Reliable)
 	void ServerShotgunReload();
 	UFUNCTION(Server, Reliable)
 	void ServerCancelReload();
@@ -129,7 +134,7 @@ private:
 	void Reload();
 	void ChangeWeapon(int idx);
 	void DropWeapon();
-	void SetHUDCrosshairs(float spread, bool isEnemy);
+	void SetHUDCrosshairs(float spread);
 
 	
 	UFUNCTION(NetMulticast, Reliable)
@@ -159,4 +164,3 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAimAvail();
 };
-
