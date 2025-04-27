@@ -299,14 +299,15 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->Announcement&&CDHUD->Announcement->AnnouncementCountdown)
 	{
+		int32 Sec = CountdownTime;
+		FString CountdownText = FString::Printf(TEXT("%d"), Sec);
+		UE_LOG(LogTemp,Display,TEXT("%s"),*CountdownText);
+		CDHUD->Announcement->AnnouncementCountdown->SetText(FText::FromString(CountdownText));
 		if (CountdownTime<0.f)
 		{
 			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 			return;
 		}
-		int32 Sec = FMath::Fmod(CountdownTime, 60.f);
-		FString CountdownText = FString::Printf(TEXT("%d"), Sec);
-		CDHUD->Announcement->AnnouncementCountdown->SetText(FText::FromString(CountdownText));
 	}
 	
 }
