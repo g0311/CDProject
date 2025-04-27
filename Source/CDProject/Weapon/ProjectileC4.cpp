@@ -21,6 +21,10 @@ void AProjectileC4::Destroyed()
 	if (HasAuthority())
 	{
 		ExplodeDamage();
+		if (DestroyTimer.IsValid() && GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
+		}
 	}
 	Super::Destroyed();
 }

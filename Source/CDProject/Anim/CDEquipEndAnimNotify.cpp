@@ -26,7 +26,7 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	if (!combat)
 		return;
 
-	combat->SetIsChanging(false);
+	combat->RemoveCombatState(CombatTags::State_Combat_ChangingWeapon);
 	
 	Super::Notify(MeshComp, Animation);
 }
