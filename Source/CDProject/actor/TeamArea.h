@@ -13,7 +13,7 @@ class CDPROJECT_API ATeamArea : public AActor
 
 public:
 	ATeamArea();
-
+	virtual void Destroyed() override;
 protected:
 	virtual void BeginPlay() override;
 
@@ -22,6 +22,9 @@ protected:
 						UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 						bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+	void ShowStore(AActor* actor);
+	
 	UFUNCTION()
 	void UnlockArea();
 

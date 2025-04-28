@@ -148,6 +148,8 @@ private:
 	void RequestDropWeapon();
 	void RequestInteractStart();
 	void RequestInteractEnd();
+	void TabStart();
+	void TabEnd();
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	float _mouseSensitivity = 1.f;

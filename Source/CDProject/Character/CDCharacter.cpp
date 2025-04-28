@@ -91,6 +91,8 @@ void ACDCharacter::BeginPlay()
 			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
+	if (HasAuthority() && !IsLocallyControlled())
+		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
 
 // Called every frame
@@ -158,8 +160,8 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractStart);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
-		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractEnd);
-		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::TabStart);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::TabEnd);
 	}
 }
 
@@ -592,6 +594,22 @@ void ACDCharacter::RequestInteractEnd()
 	if (!_combat)
 		return;
 	_combat->RequestInteractEnd();
+}
+
+void ACDCharacter::TabStart()
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(GetController());	
+	if(!IsValid(pc))
+		return;
+	pc->ShowKDOverlay(true);
+}
+
+void ACDCharacter::TabEnd()
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(GetController());	
+	if(!IsValid(pc))
+		return;
+	pc->ShowKDOverlay(false);
 }
 
 //Always Called By Server

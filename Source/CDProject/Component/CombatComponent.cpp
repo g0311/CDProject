@@ -53,8 +53,8 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			if (GetWorld()->LineTraceSingleByChannel(Hit, traceStart, traceEnd, ECC_Visibility, Params))
 			{
 				_aimedActor = Hit.GetActor();
-				if(IsValid(_aimedActor))
-					UE_LOG(LogTemp, Log, TEXT("aimed Actor Name: %s"), *_aimedActor->GetName());
+				// if(IsValid(_aimedActor))
+				// 	UE_LOG(LogTemp, Log, TEXT("aimed Actor Name: %s"), *_aimedActor->GetName());
 			}
 			else
 			{
