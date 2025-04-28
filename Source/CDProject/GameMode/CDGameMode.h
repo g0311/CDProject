@@ -10,6 +10,7 @@
 namespace MatchState
 {
 	extern CDPROJECT_API const FName Cooldown;
+	extern CDPROJECT_API const FName ModeSelect;
 }
 UCLASS()
 class CDPROJECT_API ACDGameMode : public AGameMode
@@ -38,6 +39,7 @@ public:
 	float Countdown=10.f;
 	float LevelStartingTime=0.f;
 	bool bNotifiedCooldown=false;
+	//bool IsModeSelecting=true;
 	//Round
 	int32 MaxRound=9;
 	

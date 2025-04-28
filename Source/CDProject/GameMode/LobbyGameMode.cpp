@@ -4,6 +4,7 @@
 #include "LobbyGameMode.h"
 
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/HUD/CDHUD.h"
 #include "GameFramework/GameStateBase.h"
 
 ALobbyGameMode::ALobbyGameMode()
@@ -20,7 +21,6 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ALobbyGameMode::StartGame);
 	}
-	
 }
 
 void ALobbyGameMode::StartGame()
@@ -28,7 +28,14 @@ void ALobbyGameMode::StartGame()
 	UWorld* World = GetWorld();
 	if (World)
 	{
+		if (APlayerController* PC = World->GetFirstPlayerController())
+		{
+			if (ACDHUD* CDHUD = Cast<ACDHUD>(PC->GetHUD()))
+			{
+				CDHUD->AddModeSelect();
+			}
+		}
 		bUseSeamlessTravel = true;
-		World->ServerTravel(FString("/Game/Maps/CDGameMap?listen"));
+		//World->ServerTravel(FString("/Game/Maps/CDGameMap?listen"));
 	}
 }

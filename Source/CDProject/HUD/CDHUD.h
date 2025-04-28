@@ -71,6 +71,11 @@ public:
 	UPROPERTY()
 	class UKDOverlay* KDOverlay;
 
+	UPROPERTY(EditAnywhere, Category="ModeSelect")
+	TSubclassOf<UUserWidget> ModeSelectClass;
+
+	UPROPERTY()
+	class UModeSelect* ModeSelect;
 
 	void AddSniperScope();
 	void AddCharacterOverlay();
@@ -79,6 +84,7 @@ public:
 	void AddCompass();
 	void AddStore(bool IsActivate);
 	void AddKDOverlay(bool IsActivate);
+	void AddModeSelect();
 protected:
 	virtual void BeginPlay() override;
 private:

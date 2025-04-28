@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "CDProject/Widget/Announcement.h"
 #include "CDProject/Widget/CharacterOverlay.h"
+#include "CDProject/Widget/ModeSelect.h"
 #include "CDProject/Widget/ShopOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
 #include "CDProject/WidgetPlus/Compass.h"
@@ -169,6 +170,19 @@ void ACDHUD::AddKDOverlay(bool IsActivate)
 		}
 	}
 }
+
+void ACDHUD::AddModeSelect()
+{
+	if (HasAuthority())
+	{
+		if (ModeSelectClass)
+		{
+			ModeSelect=CreateWidget<UModeSelect>(GetOwningPlayerController(), ModeSelectClass);
+			if (ModeSelect) ModeSelect->AddToViewport();
+		}
+	}
+}
+
 
 void ACDHUD::BeginPlay()
 {
