@@ -53,6 +53,12 @@ public:
 	UPROPERTY()
 	class USniperScope* SniperScope;
 
+	UPROPERTY(EditAnywhere, Category="C4Progress")
+	TSubclassOf<UUserWidget> C4InteractProgressClass;
+	
+	UPROPERTY()
+	class UC4InteractProgressWidget* C4InteractProgress;
+
 	UPROPERTY(EditAnywhere, Category="Compass")
 	TSubclassOf<UUserWidget> CompassWidgetClass;
 	
@@ -85,6 +91,7 @@ public:
 	void AddStore(bool IsActivate);
 	void AddKDOverlay(bool IsActivate);
 	void AddModeSelect();
+	void AddC4Progress();
 protected:
 	virtual void BeginPlay() override;
 private:

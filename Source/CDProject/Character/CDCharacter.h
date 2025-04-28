@@ -41,6 +41,9 @@ private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
 	class USoundCue* _footstepSound;
+	UPROPERTY(VisibleAnywhere)
+	ETeam _team = ETeam::ET_NoTeam;
+	
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Dead();
@@ -50,7 +53,7 @@ private:
 	void UpdateArmMeshLocation(float DeltaTime);
 public:
 	bool _isDead = false;
-	//State로 리팩터링
+	//State로 리팩터링 필요..
 	
 private:
 	//Component
@@ -99,6 +102,7 @@ public:
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
 	FORCEINLINE class UInputMappingContext* GetInputMapping() { return _inputMappingContext; }
 	FORCEINLINE UTextureRenderTarget2D* GetMiniMapTarget() { return MiniMapRenderTarget; }
+	FORCEINLINE ETeam GetTeam() { return _team; }
 	
 private:
 	//Input
@@ -127,6 +131,8 @@ private:
 	TObjectPtr<class UInputAction> _dropWeaponAction;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _interactAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _tabAction;
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
