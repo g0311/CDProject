@@ -25,6 +25,17 @@ void AProjectileC4::Destroyed()
 	Super::Destroyed();
 }
 
+void AProjectileC4::Defused()
+{
+	if (HasAuthority())
+	{
+		if (DestroyTimer.IsValid() && GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void AProjectileC4::BeginPlay()
 {

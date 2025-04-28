@@ -6,8 +6,9 @@
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "Components/ActorComponent.h"
+#include "GameplayTagContainer.h"
+#include "CDProject/Character/CDGameplayTag.h"
 #include "CombatComponent.generated.h"
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CDPROJECT_API UCombatComponent : public UActorComponent
@@ -19,19 +20,19 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void Reset(bool isDead);
-	
-	FORCEINLINE	bool IsAiming() { return _isAiming; }//오타 수정
-	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
-	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
-	FORCEINLINE bool IsChanging() { return _isChanging; }
-	FORCEINLINE void SetIsChanging(bool tf) { _isChanging = tf; }
-	FORCEINLINE bool IsReloading() { return _isReloading; }
-	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
+	void DeadAction();
+
+	void InsertCombatState(FGameplayTag StateTag);
+	void RemoveCombatState(FGameplayTag StateTag);
+	bool IsInCombatState(FGameplayTag StateTag) const;
+	FORCEINLINE	bool IsAiming() { return IsInCombatState(CombatTags::State_Combat_Aiming); }//오타 수정
+	FORCEINLINE bool IsChanging() { return IsInCombatState(CombatTags::State_Combat_ChangingWeapon); }
+	FORCEINLINE bool IsReloading() { return IsInCombatState(CombatTags::State_Combat_Reloading); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE int GetCurAmmo();
 	FORCEINLINE int GetCarriedAmmo();
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
-
+	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
@@ -54,6 +55,9 @@ private:
 	class ACDCharacter* _playerCharacter;
 	UPROPERTY(VisibleAnywhere)
 	class ACDHUD* HUD;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	FGameplayTagContainer _combatStateTags;
+	//State
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
 	int _weaponIndex = -1;
@@ -61,27 +65,21 @@ private:
 	int _befIndex = -1;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isAiming;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isChanging = false; // for animation (hand IK)
-	bool _isGrenadeReady = false;
 
 	FTimerHandle _clientFireTimerHandle;
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
-	FTimerHandle _c4PlantHandle;
+	FTimerHandle _c4TimerHandle;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanFire = true;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isCanAim = true;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isReloading = false;
+	UPROPERTY(VisibleAnywhere)
+	bool _isDefusing = false;
+
 	
 	UPROPERTY(VisibleAnywhere)
-	bool _isWantToFire = false;
+	AActor* _aimedActor;
 	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
@@ -115,6 +113,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerC4Plant(bool isPlanting);
 	UFUNCTION(Server, Reliable)
+	void ServerC4Defuse(bool isDefusing);
+	UFUNCTION(Server, Reliable)
 	void ServerShotgunReload();
 	UFUNCTION(Server, Reliable)
 	void ServerCancelReload();
@@ -129,7 +129,7 @@ private:
 	void Reload();
 	void ChangeWeapon(int idx);
 	void DropWeapon();
-	void SetHUDCrosshairs(float spread, bool isEnemy);
+	void SetHUDCrosshairs(float spread);
 
 	
 	UFUNCTION(NetMulticast, Reliable)
@@ -145,18 +145,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastC4Plant(bool tf);
 	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastC4Defuse(bool tf);
+	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
 	UFUNCTION()
 	void OnRep_WeaponID();
-
-	//deprecated
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastChangeWeapon(int idx);
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastSetIsCanFire(bool tf);
-	UFUNCTION(Server, Reliable)
-	void ServerSetFireAvail();
-	UFUNCTION(Server, Reliable)
-	void ServerSetAimAvail();
 };
-

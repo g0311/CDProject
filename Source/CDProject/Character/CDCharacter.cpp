@@ -158,6 +158,8 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractStart);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
+		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractEnd);
+		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
 	}
 }
 
@@ -318,11 +320,12 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 
 void ACDCharacter::SetTeamColor(ETeam team)
 {
+	_team = team;
 	if (!GetMesh())
 		return;
 	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
 	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_BLUE"));
-	switch (team)
+	switch (_team)
 	{
 	case ETeam::ET_RedTeam:
 		GetMesh()->SetMaterial(0, RedMaterial);
@@ -375,7 +378,7 @@ void ACDCharacter::Multicast_Dead_Implementation()
 	if (HasAuthority())
 	{
 		//Drop All Weapon
-		_combat->DropAllWeapons();
+		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 		

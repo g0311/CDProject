@@ -42,6 +42,8 @@ public:
 	void ShowStoreWidget(bool bShow);
 	//Weapon
 	void ShowSniperScope();
+	void ShowC4PlantingProgress(bool isPlanting);
+	void ShowC4DefusingProgress(bool isDefusing);
 
 	//HUD initialize
 	void InitializeHUD();

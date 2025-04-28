@@ -16,6 +16,8 @@ public:
 	AProjectileC4();
 	virtual void Destroyed() override;
 
+	FORCEINLINE float GetDefusingtime() const { return _defusingTime; }
+	void Defused();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -23,4 +25,8 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	UPROPERTY(EditAnywhere)
+	float _defusingTime = 10.f;
 };
