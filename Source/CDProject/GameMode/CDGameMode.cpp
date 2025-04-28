@@ -28,15 +28,8 @@ void ACDGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	FName CurrentMatchState = GetMatchState();
-	//UE_LOG(LogTemp, Display, TEXT("ACDGameMode::Tick - Current MatchState: %s"), *CurrentMatchState.ToString());
-	// if (MatchState == MatchState::ModeSelect)
-	// {
-	// 	//Mode Selecting
-	// 	return;
-	// }
 	if (MatchState==MatchState::WaitingToStart)
 	{
-		bNotifiedCooldown=false;
 		Countdown=FMath::CeilToInt(WarmUpTime+LevelStartingTime-GetWorld()->GetTimeSeconds());
 		UE_LOG(LogTemp,Display,TEXT("%f"), Countdown);
 		if (Countdown==-1)
@@ -55,17 +48,12 @@ void ACDGameMode::Tick(float DeltaSeconds)
 	else if (MatchState==MatchState::Cooldown)
 	{
 		Countdown= CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
-		if (!bNotifiedCooldown)
-		{
-			NotifyPlayersCooldown(true);
-			bNotifiedCooldown=true;
-		}
 		if (Countdown<=0.f)
 		{
-			NotifyPlayersCooldown(false);
 			RestartGame();
 		}
 	}
+	
 }
 
 void ACDGameMode::BeginPlay()
@@ -85,18 +73,6 @@ void ACDGameMode::OnMatchStateSet()
 		if (PlayerController)
 		{
 			PlayerController->OnMatchStateSet(MatchState, bTeamsMatch);
-		}
-	}
-}
-
-void ACDGameMode::NotifyPlayersCooldown(bool IsActivate)
-{
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ACDPlayerController* CDController = Cast<ACDPlayerController>(*It);
-		if (CDController)
-		{
-			CDController->ShowStoreWidget(IsActivate); 
 		}
 	}
 }

@@ -14,7 +14,7 @@ struct FWeaponStruct: public FTableRowBase
 	FName WeaponName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Weapons)
-	int32 Cost;
+	int32 Cost=0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Weapons)
 	TSubclassOf<class AWeapon> WeaponClass;

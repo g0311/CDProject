@@ -34,6 +34,9 @@ public:
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
 
+	UFUNCTION(Client,Reliable)
+	void Client_ShowStoreWidget(bool IsActivate);
+
 	//bShowOverlay
 	
 	void ShowStoreWidget(bool bShow);

@@ -29,11 +29,10 @@ public:
 
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
-	float MatchTime = 120.f;
-	//1 Round in Matching Time
+	float MatchTime = 120.f;//	//1 Round in Matching Time
+
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime=10.f;
-	//when 1 Round End -> Waiting TIme(this) -> 2Round
 	UPROPERTY(EditDefaultsOnly)
 	float WarmUpTime=10.f;
 	float Countdown=10.f;
@@ -42,7 +41,6 @@ public:
 	//bool IsModeSelecting=true;
 	//Round
 	int32 MaxRound=9;
-	
 	bool bTeamsMatch=false;
 	
 	
@@ -50,7 +48,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
 
-	void NotifyPlayersCooldown(bool IsActivate);
 
 private:
 

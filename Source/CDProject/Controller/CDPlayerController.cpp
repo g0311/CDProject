@@ -301,7 +301,7 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	{
 		int32 Sec = CountdownTime;
 		FString CountdownText = FString::Printf(TEXT("%d"), Sec);
-		UE_LOG(LogTemp,Display,TEXT("%s"),*CountdownText);
+		//UE_LOG(LogTemp,Display,TEXT("%s"),*CountdownText);
 		CDHUD->Announcement->AnnouncementCountdown->SetText(FText::FromString(CountdownText));
 		if (CountdownTime<0.f)
 		{
@@ -357,7 +357,7 @@ void ACDPlayerController::SetGold()
 void ACDPlayerController::SetKDOverlayUI()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD)
+	if (CDHUD&&KDOverlay)
 	{
 		CDHUD->KDOverlay->SetupScoreboard();
 	}
@@ -366,12 +366,16 @@ void ACDPlayerController::SetKDOverlayUI()
 void ACDPlayerController::UpdateKDOverlayData()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD)
+	if (CDHUD&&KDOverlay)
 	{
 		CDHUD->KDOverlay->UpdateScoreboard();
 	}
 }
 
+void ACDPlayerController::Client_ShowStoreWidget_Implementation(bool IsActivate)
+{
+	ShowStoreWidget(IsActivate);
+}
 
 
 void ACDPlayerController::ShowStoreWidget(bool bActivate)

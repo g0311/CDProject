@@ -24,5 +24,7 @@ protected:
 	
 	void InitializeTeamCount();
 
+	FTimerHandle SetupTimer;
+	
 	TSet<APlayerStart*> UsedStartPoints;
 };
