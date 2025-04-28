@@ -339,6 +339,11 @@ float UCDAnimInstance::GetReloadTime()
 	return 0.f;
 }
 
+float UCDAnimInstance::GetGrenadeReadyTime()
+{
+	return _grenadeReadyMontage->GetPlayLength();
+}
+
 float UCDAnimInstance::GetGrenadeThrowTime()
 {
 	return _grenadeThrowMontage->GetPlayLength();

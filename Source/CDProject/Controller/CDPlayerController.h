@@ -43,6 +43,8 @@ public:
 	void RetryShowStoreWidget(bool bActivate);
 	//Weapon
 	void ShowSniperScope();
+	void ShowC4PlantingProgress(bool isPlanting);
+	void ShowC4DefusingProgress(bool isDefusing);
 
 	//HUD initialize
 	void InitializeHUD();

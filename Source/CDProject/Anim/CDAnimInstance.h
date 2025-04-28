@@ -106,6 +106,7 @@ public:
 	void UpdateUpperBodyProperty(float DeltaSeconds);
 
 	float GetReloadTime();
+	float GetGrenadeReadyTime();
 	float GetGrenadeThrowTime();
 	float GetEquipTime(AWeapon* nextWeapon);
 };
