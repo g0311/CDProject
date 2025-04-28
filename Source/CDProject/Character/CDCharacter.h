@@ -131,6 +131,8 @@ private:
 	TObjectPtr<class UInputAction> _dropWeaponAction;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _interactAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _tabAction;
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);

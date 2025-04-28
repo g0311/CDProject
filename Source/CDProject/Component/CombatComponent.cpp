@@ -70,6 +70,15 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 	}
 	SetHUDCrosshairs(_curSpread);
+
+	//If Defusing, Check the Aimed Actor
+	if (IsInCombatState(CombatTags::State_Combat_DefusingC4))
+	{
+		if (!Cast<AProjectileC4>(_aimedActor))
+		{
+			ServerC4Defuse(false);
+		}
+	}
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -103,6 +112,13 @@ void UCombatComponent::Reset(bool isDead)
 			}
 		}
 	}
+}
+
+void UCombatComponent::DeadAction()
+{
+	DropAllWeapons();
+	_combatStateTags.Reset();
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void UCombatComponent::InsertCombatState(FGameplayTag StateTag)
@@ -333,18 +349,17 @@ void UCombatComponent::RequestInteractStart()
 {
 	if (GetCurWeaponType() == EWeaponType::EWT_C4)
 	{
-		//Show HUD
 		if (true /* Is Avail Location To Plant Bomb */)
+		{
 			ServerC4Plant(true);
+		}
 		return;
 	}
 	
 	if (_aimedActor)
 	{
-		AProjectileC4* plantedC4 = Cast<AProjectileC4>(_aimedActor);
-		if (plantedC4)
+		if (Cast<AProjectileC4>(_aimedActor))
 		{
-			//Show HUD
 			ServerC4Defuse(true);
 		}
 	}
@@ -354,16 +369,16 @@ void UCombatComponent::RequestInteractEnd()
 {
 	if (GetCurWeaponType() == EWeaponType::EWT_C4)
 	{
-		ServerC4Plant(false);
+		if (IsInCombatState(CombatTags::State_Combat_PlantingC4))
+			ServerC4Plant(false);
 		return;
 	}
 	
 	if (_aimedActor)
 	{
 		AProjectileC4* plantedC4 = Cast<AProjectileC4>(_aimedActor);
-		if (plantedC4)
+		if (plantedC4 && IsInCombatState(CombatTags::State_Combat_DefusingC4))
 		{
-			//Show HUD
 			ServerC4Defuse(false);
 		}
 	}
@@ -486,6 +501,8 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 
 void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 {
+	//Need to Check (C4 Area)
+	
 	if (GetWorld())
 	{
 		if (isPlanting)
@@ -494,7 +511,7 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 			{
 				_playerCharacter->GetCharacterMovement()->DisableMovement();
 			}
-			GetWorld()->GetTimerManager().SetTimer(_c4PlantHandle, FTimerDelegate::CreateLambda([this]
+			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this]
 				{
 					RequestFire();
 					_weapons[_weaponIndex] = nullptr;
@@ -502,6 +519,7 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 				}),
 				_fireDelay, false);
 			NetMulticastC4Plant(true);
+			InsertCombatState(CombatTags::State_Combat_PlantingC4);
 		}
 		else
 		{
@@ -509,15 +527,46 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 			{
 				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			}
-			GetWorld()->GetTimerManager().ClearTimer(_c4PlantHandle);
+			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
 			NetMulticastC4Plant(false);
+			RemoveCombatState(CombatTags::State_Combat_PlantingC4);
 		}
 	}
 }
 
 void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
 {
+	//Is Aiming C4
+	AProjectileC4* c4Projectile = Cast<AProjectileC4>(_aimedActor);
+	if (!c4Projectile)
+		return;
 	
+	if (GetWorld())
+	{
+		if (isDefusing)
+		{
+			if (_playerCharacter)
+			{
+				_playerCharacter->GetCharacterMovement()->DisableMovement();
+			}
+			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([=]
+				{
+					if (IsValid(c4Projectile))
+						c4Projectile->Defused();
+				}),
+				c4Projectile->GetDefusingtime(), false);
+			NetMulticastC4Defuse(true);
+		}
+		else
+		{
+			if (_playerCharacter)
+			{
+				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			}
+			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
+			NetMulticastC4Defuse(true);
+		}
+	}
 }
 
 void UCombatComponent::ServerReadyGrenade_Implementation()
@@ -705,13 +754,13 @@ void UCombatComponent::ChangeWeapon(int idx)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(_fireAimAbleTimerHandle);
 	}
-	if (_c4PlantHandle.IsValid())
+	if (IsInCombatState(CombatTags::State_Combat_PlantingC4))
 	{
-		if (_playerCharacter)
-		{
-			_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-		}
-		GetWorld()->GetTimerManager().ClearTimer(_c4PlantHandle);
+		ServerC4Plant(false);
+	}
+	if (IsInCombatState(CombatTags::State_Combat_DefusingC4))
+	{
+		ServerC4Defuse(false);
 	}
 
 	RemoveCombatState(CombatTags::State_Combat_Reloading);
@@ -904,23 +953,33 @@ void UCombatComponent::NetMulticastCancelReload_Implementation()
 
 void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf)
 {
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+	if(!IsValid(pc))
+		return;
 	if (tf)
 	{
-		if (armAnim)
-			armAnim->PlayFireMontage(_fireDelay);
-
-		if (bodyAnim)
-			bodyAnim->PlayFireMontage(_fireDelay);		
+		//show hud
+		pc->ShowC4PlantingProgress(true);
 	}
 	else
 	{
-		if (armAnim && armAnim->Montage_IsPlaying(armAnim->_shotgunReloadMontage))
-			armAnim->Montage_Stop(0.1f);
+		//hide hud
+		pc->ShowC4PlantingProgress(false);
+	}
+}
 
-		if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
-			bodyAnim->Montage_Stop(0.1f);		
+void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf)
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+	if(!IsValid(pc))
+		return;
+	if (tf)
+	{
+		pc->ShowC4DefusingProgress(true);
+	}
+	else
+	{
+		pc->ShowC4DefusingProgress(false);
 	}
 }
 

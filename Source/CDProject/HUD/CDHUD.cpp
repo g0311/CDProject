@@ -6,6 +6,7 @@
 #include "CDProject/Widget/KDOverlay.h"
 #include "Blueprint/UserWidget.h"
 #include "CDProject/Widget/Announcement.h"
+#include "CDProject/Widget/C4InteractProgressWidget.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/ShopOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
@@ -166,6 +167,19 @@ void ACDHUD::AddKDOverlay(bool IsActivate)
 			{
 				KDOverlay->RemoveFromParent();
 			}
+		}
+	}
+}
+
+void ACDHUD::AddC4Progress()
+{
+	if (C4InteractProgressClass)
+	{
+		C4InteractProgress = CreateWidget<UC4InteractProgressWidget>(GetWorld(), C4InteractProgressClass);
+		if (C4InteractProgress)
+		{
+			C4InteractProgress->AddToViewport();
+			C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }

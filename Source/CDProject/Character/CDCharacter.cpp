@@ -158,6 +158,8 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractStart);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
+		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractEnd);
+		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
 	}
 }
 
@@ -376,7 +378,7 @@ void ACDCharacter::Multicast_Dead_Implementation()
 	if (HasAuthority())
 	{
 		//Drop All Weapon
-		_combat->DropAllWeapons();
+		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 		

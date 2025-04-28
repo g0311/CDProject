@@ -21,12 +21,19 @@ void AProjectileC4::Destroyed()
 	if (HasAuthority())
 	{
 		ExplodeDamage();
+	}
+	Super::Destroyed();
+}
+
+void AProjectileC4::Defused()
+{
+	if (HasAuthority())
+	{
 		if (DestroyTimer.IsValid() && GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
 		}
 	}
-	Super::Destroyed();
 }
 
 // Called when the game starts or when spawned

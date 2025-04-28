@@ -15,6 +15,7 @@
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Widget/Announcement.h"
+#include "CDProject/Widget/C4InteractProgressWidget.h"
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/KDOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
@@ -541,5 +542,36 @@ void ACDPlayerController::ShowSniperScope()
 		{
 			CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn, 0.f,1,EUMGSequencePlayMode::Reverse);
 		}
+	}
+}
+
+void ACDPlayerController::ShowC4PlantingProgress(bool tf)
+{
+	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
+	if (CDHUD == nullptr) return;
+
+	if (!CDHUD->C4InteractProgress)
+	{
+		CDHUD->AddC4Progress();
+	}
+	if (CDHUD && CDHUD->C4InteractProgress)
+	{
+		CDHUD->C4InteractProgress->Reset(true);
+		CDHUD->C4InteractProgress->SetVisibility(tf ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+	}
+}
+void ACDPlayerController::ShowC4DefusingProgress(bool tf)
+{
+	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
+	if (CDHUD == nullptr) return;
+
+	if (!CDHUD->C4InteractProgress)
+	{
+		CDHUD->AddC4Progress();
+	}
+	if (CDHUD && CDHUD->C4InteractProgress)
+	{
+		CDHUD->C4InteractProgress->Reset(false);
+		CDHUD->C4InteractProgress->SetVisibility(tf ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
 	}
 }

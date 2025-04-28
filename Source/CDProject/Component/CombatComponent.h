@@ -20,6 +20,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void Reset(bool isDead);
+	void DeadAction();
 
 	void InsertCombatState(FGameplayTag StateTag);
 	void RemoveCombatState(FGameplayTag StateTag);
@@ -69,7 +70,7 @@ private:
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
-	FTimerHandle _c4PlantHandle;
+	FTimerHandle _c4TimerHandle;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isCanFire = true;
@@ -143,6 +144,8 @@ private:
 	void NetMulticastGrenadeThrow();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastC4Plant(bool tf);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastC4Defuse(bool tf);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
 	UFUNCTION()
