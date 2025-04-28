@@ -91,6 +91,8 @@ void ACDCharacter::BeginPlay()
 			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
+	if (HasAuthority() && !IsLocallyControlled())
+		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
 
 // Called every frame

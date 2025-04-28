@@ -20,6 +20,12 @@ ATeamArea::ATeamArea()
 	AreaVolume->SetCollisionResponseToAllChannels(ECR_Overlap);
 }
 
+void ATeamArea::Destroyed()
+{
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+	Super::Destroyed();
+}
+
 void ATeamArea::BeginPlay()
 {
 	Super::BeginPlay();
@@ -32,21 +38,34 @@ void ATeamArea::BeginPlay()
 void ATeamArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (bAreaLocked)
+	ShowStore(OtherActor);
+}
+
+void ATeamArea::ShowStore(AActor* actor)
+{
+	if (ACDCharacter* OverlappingCharacter = Cast<ACDCharacter>(actor))
 	{
-		if (ACDCharacter* OverlappingCharacter = Cast<ACDCharacter>(OtherActor))
+		if (AController* PlayerController = OverlappingCharacter->GetController())
 		{
-			LockedCharacters.Add(OverlappingCharacter);
-			OverlappingCharacter->DisableInput(nullptr);
-			if (AController* PlayerController = OverlappingCharacter->GetController())
+			if (bAreaLocked)
 			{
+				LockedCharacters.Add(OverlappingCharacter);
+				OverlappingCharacter->DisableInput(nullptr);
 				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PlayerController))
 				{
 					CDPC->ShowStoreWidget(true);
 				}
+				GetWorld()->GetTimerManager().SetTimer(LockTimerHandle, this, &ATeamArea::UnlockArea, LockDuration, false);
 			}
 		}
-		GetWorld()->GetTimerManager().SetTimer(LockTimerHandle, this, &ATeamArea::UnlockArea, LockDuration, false);
+		else
+		{
+			GetWorld()->GetTimerManager().SetTimerForNextTick([this, actor]()
+			{
+				if (IsValid(actor) && IsValid(this))
+					this->ShowStore(actor);
+			});
+		}
 	}
 }
 
