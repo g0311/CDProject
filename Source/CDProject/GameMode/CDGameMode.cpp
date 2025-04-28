@@ -77,9 +77,10 @@ void ACDGameMode::OnMatchStateSet()
 	}
 }
 
-void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController,
+void ACDGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
                                    ACDPlayerController* AttackerController)
 {
+	//Server Called
 	if (AttackerController==nullptr||AttackerController->PlayerState==nullptr) return;
 	if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
@@ -89,22 +90,16 @@ void ACDGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class A
 	{
 		AttackerPlayerState->AddKill();
 		AttackerPlayerState->AddGold(200);
-		//AttackerController->SetGold();
 	}
 	if (VictimPlayerState)
 	{
 		VictimPlayerState->AddDeath();
 	}
-	
-	if (ElimmedCharacter)
-	{
-		//ElimmedCharacter->Elim(); Need
-	}
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
 		if (CDPC)
-		{
+		{//Need to Set Client RPC
 			CDPC->UpdateKDOverlayData();
 		}
 	}

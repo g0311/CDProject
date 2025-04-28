@@ -20,7 +20,7 @@ class CDPROJECT_API ACDGameMode : public AGameMode
 public:
 	ACDGameMode();
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void PlayerEliminated(class ACDCharacter* ElimmedCharacter,
+	virtual void PlayerEliminated(
 		class ACDPlayerController* VictimController,
 		ACDPlayerController* AttackerController
 		);
