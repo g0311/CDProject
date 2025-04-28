@@ -26,40 +26,45 @@ void ATeamArea::BeginPlay()
 	AGameMode* CDGameMode=Cast<AGameMode>(GetWorld()->GetAuthGameMode());
 	//LockDuration=CDGameMode->
 	AreaVolume->OnComponentBeginOverlap.AddDynamic(this, &ATeamArea::OnOverlapBegin);
+	GameStartFlag=true;
 }
 
 void ATeamArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (ACDCharacter* OverlappingCharacter = Cast<ACDCharacter>(OtherActor))
+	if (bAreaLocked)
 	{
-		LockedCharacters.Add(OverlappingCharacter);
-		OverlappingCharacter->DisableInput(nullptr);
-		AController* PlayerController = OverlappingCharacter->GetController();
-		ACDPlayerController* CDPC = Cast<ACDPlayerController>(PlayerController);
-		if (CDPC)
+		if (ACDCharacter* OverlappingCharacter = Cast<ACDCharacter>(OtherActor))
 		{
-			CDPC->ShowStoreWidget(true);
-			//CDPC->Client_ShowStoreWidget(true);
+			LockedCharacters.Add(OverlappingCharacter);
+			OverlappingCharacter->DisableInput(nullptr);
+			if (AController* PlayerController = OverlappingCharacter->GetController())
+			{
+				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PlayerController))
+				{
+					CDPC->ShowStoreWidget(true);
+				}
+			}
 		}
-		if (!GetWorld()->GetTimerManager().IsTimerActive(LockTimerHandle))
-		{
-			GetWorld()->GetTimerManager().SetTimer(LockTimerHandle, this, &ATeamArea::UnlockArea, LockDuration, false);
-		}
-	}	
+		GetWorld()->GetTimerManager().SetTimer(LockTimerHandle, this, &ATeamArea::UnlockArea, LockDuration, false);
+	}
 }
 
 void ATeamArea::UnlockArea()
 {
+	bAreaLocked = false; 
 	for (ACharacter* Character : LockedCharacters)
 	{
 		if (Character)
 		{
-			Character->EnableInput(nullptr);
-			AController* PlayerController = Character->GetController();
-			ACDPlayerController* CDPC = Cast<ACDPlayerController>(PlayerController);
-			CDPC->ShowStoreWidget(false);
-			CDPC->Client_ShowStoreWidget(false);
+			if (AController* PlayerController = Character->GetController())
+			{
+				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PlayerController))
+				{
+					CDPC->ShowStoreWidget(false); 
+					Character->EnableInput(CDPC);
+				}
+			}
 		}
 	}
 	LockedCharacters.Empty();

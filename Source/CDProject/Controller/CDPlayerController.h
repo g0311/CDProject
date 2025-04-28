@@ -40,6 +40,7 @@ public:
 	//bShowOverlay
 	
 	void ShowStoreWidget(bool bShow);
+	void RetryShowStoreWidget(bool bActivate);
 	//Weapon
 	void ShowSniperScope();
 

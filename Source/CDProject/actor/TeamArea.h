@@ -32,6 +32,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	float LockDuration = 10.0f;
 
+	bool bAreaLocked = true;
+	bool GameStartFlag = true;
 	FTimerHandle LockTimerHandle;
 
 	UPROPERTY()

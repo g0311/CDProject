@@ -380,13 +380,25 @@ void ACDPlayerController::Client_ShowStoreWidget_Implementation(bool IsActivate)
 
 void ACDPlayerController::ShowStoreWidget(bool bActivate)
 {
+	if (!IsLocalController()) return;
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
 		CDHUD->AddStore(bActivate);
 	}
+	else
+	{
+		FTimerDelegate TimerDel;
+		TimerDel.BindUFunction(this, FName("RetryShowStoreWidget"), bActivate);
+		GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDel);
+		//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ACDPlayerController::ShowStoreWidget(bActivate));
+	}
+	
 }
-
+void ACDPlayerController::RetryShowStoreWidget(bool bActivate)
+{
+	ShowStoreWidget(bActivate);
+}
 
 //120 -> 119 -> 118
 void ACDPlayerController::InitializeHUD()
