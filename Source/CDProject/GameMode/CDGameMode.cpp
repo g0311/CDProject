@@ -27,7 +27,7 @@ void ACDGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	FName CurrentMatchState = GetMatchState();
-	UE_LOG(LogTemp, Display, TEXT("ACDGameMode::Tick - Current MatchState: %s"), *CurrentMatchState.ToString());
+	//UE_LOG(LogTemp, Display, TEXT("ACDGameMode::Tick - Current MatchState: %s"), *CurrentMatchState.ToString());
 	if (MatchState==MatchState::WaitingToStart)
 	{
 		bNotifiedCooldown=false;

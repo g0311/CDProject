@@ -4,6 +4,7 @@
 #include "CDPlayerState.h"
 
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Controller/CDPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -49,6 +50,9 @@ void ACDPlayerState::OnRep_Team()
 
 void ACDPlayerState::OnRep_Gold()
 {
+	UE_LOG(LogTemp, Display, TEXT("Gold = %d"), Gold);
+	ACDPlayerController* PC=Cast<ACDPlayerController>(GetOwningController());
+	PC->SetGold();
 	return;
 }
 

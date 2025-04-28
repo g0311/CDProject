@@ -414,7 +414,7 @@ void ACDPlayerController::HideRoundScore(bool IsHide)
 	}
 }
 
-void ACDPlayerController::SetHUDRedTeam(int32 RedScore)
+void ACDPlayerController:: SetHUDRedTeam(int32 RedScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore)
