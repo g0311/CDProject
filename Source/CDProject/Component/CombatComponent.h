@@ -143,9 +143,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeThrow();
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Plant(bool tf);
+	void NetMulticastC4Plant(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Defuse(bool tf);
+	void NetMulticastC4Defuse(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
 	UFUNCTION()
