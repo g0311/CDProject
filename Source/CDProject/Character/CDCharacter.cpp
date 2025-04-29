@@ -12,6 +12,7 @@
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/GameMode/CDGameMode.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -91,6 +92,8 @@ void ACDCharacter::BeginPlay()
 			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
+	if (HasAuthority() && !IsLocallyControlled())
+		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
 
 // Called every frame
@@ -158,8 +161,8 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractStart);
 		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
-		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractEnd);
-		// enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::TabStart);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::TabEnd);
 	}
 }
 
@@ -222,7 +225,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		}
 	}
 	//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
-	HandleDamage(finalDamage);
+	HandleDamage(finalDamage, EventInstigator);
 	
 	//for listen server
 	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
@@ -351,7 +354,7 @@ void ACDCharacter::ServerPlayFootStepSound_Implementation()
 	PlayFootStepSound();	
 }
 
-void ACDCharacter::Multicast_Dead_Implementation()
+void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorController)
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
@@ -377,9 +380,24 @@ void ACDCharacter::Multicast_Dead_Implementation()
 	}
 	if (HasAuthority())
 	{
-		//Drop All Weapon
+		//Drop All Weapon & Reset Tag & Clear Timer
 		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		//Update Mode
+		if(GetWorld() && GetWorld()->GetAuthGameMode())
+		{
+			ACDGameMode* GameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+			if (GameMode)
+			{
+				if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
+				{
+					if (ACDPlayerController* attackerPlayerController = Cast<ACDPlayerController>(instigatorController))
+					{
+						GameMode->PlayerEliminated(victimPlayerController, attackerPlayerController);
+					}
+				}
+			}
+		}
 	}
 		
 	if (bodyAnim)
@@ -403,7 +421,7 @@ void ACDCharacter::Multicast_Hit_Implementation()
 	}
 }
 
-void ACDCharacter::HandleDamage(float FinalDamage)
+void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController)
 {
 	if (_attributeSet == nullptr) return;
 
@@ -423,7 +441,7 @@ void ACDCharacter::HandleDamage(float FinalDamage)
 	
 	if (CurHealth == 0.f)
 	{
-		Multicast_Dead();
+		Multicast_Dead(instigatorController);
 	}
 	else
 	{
@@ -592,6 +610,22 @@ void ACDCharacter::RequestInteractEnd()
 	if (!_combat)
 		return;
 	_combat->RequestInteractEnd();
+}
+
+void ACDCharacter::TabStart()
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(GetController());	
+	if(!IsValid(pc))
+		return;
+	pc->ShowKDOverlay(true);
+}
+
+void ACDCharacter::TabEnd()
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(GetController());	
+	if(!IsValid(pc))
+		return;
+	pc->ShowKDOverlay(false);
 }
 
 //Always Called By Server

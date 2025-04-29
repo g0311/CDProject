@@ -110,10 +110,10 @@ void ATeamGameMode::HandleMatchHasStarted()
 	}
 }
 
-void ATeamGameMode::PlayerEliminated(class ACDCharacter* ElimmedCharacter, class ACDPlayerController* VictimController,
+void ATeamGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
 	ACDPlayerController* AttackerController)
 {
-	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
+	Super::PlayerEliminated(VictimController, AttackerController);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;

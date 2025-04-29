@@ -59,6 +59,9 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void ReceivedPlayer() override;
 	virtual float GetServerTime();
+
+	//KDO Overlay
+	void ShowKDOverlay(bool isShowing);
 	
 	void OnMatchStateSet(FName State, bool bTeamsMatch=false);
 	void HandleMatchHasStarted(bool bTeamsMatch=false);

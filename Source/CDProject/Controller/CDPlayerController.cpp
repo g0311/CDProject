@@ -108,6 +108,22 @@ float ACDPlayerController::GetServerTime()
 	else return GetWorld()->GetTimeSeconds()+ClientServerDelta;//클라이언트라면 보정값 반환
 }
 
+void ACDPlayerController::ShowKDOverlay(bool isShowing)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		if (isShowing)
+		{
+			CDHUD->AddKDOverlay(true);
+		}
+		else
+		{
+			CDHUD->AddKDOverlay(false);
+		}
+	}
+}
+
 void ACDPlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
@@ -262,7 +278,6 @@ void ACDPlayerController::SetHUDMatchCount(float CountdownTime)
 		FString CountdownText = FString::Printf(TEXT("%d:%d"), Min,Sec);
 		CDHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountdownText));
 	}
-	
 }
 void ACDPlayerController::SetHUDTime()
 {
@@ -392,7 +407,6 @@ void ACDPlayerController::ShowStoreWidget(bool bActivate)
 		GetWorld()->GetTimerManager().SetTimerForNextTick(TimerDel);
 		//GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ACDPlayerController::ShowStoreWidget(bActivate));
 	}
-	
 }
 void ACDPlayerController::RetryShowStoreWidget(bool bActivate)
 {

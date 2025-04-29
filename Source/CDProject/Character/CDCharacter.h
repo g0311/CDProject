@@ -46,10 +46,10 @@ private:
 	
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Dead();
+	void Multicast_Dead(class AController* instigatorController);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Hit();
-	void HandleDamage(float FinalDamage);
+	void HandleDamage(float FinalDamage, class AController* instigatorController);
 	void UpdateArmMeshLocation(float DeltaTime);
 public:
 	bool _isDead = false;
@@ -148,6 +148,8 @@ private:
 	void RequestDropWeapon();
 	void RequestInteractStart();
 	void RequestInteractEnd();
+	void TabStart();
+	void TabEnd();
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	float _mouseSensitivity = 1.f;
