@@ -124,6 +124,7 @@ void ACDPlayerController::ServerRequestServerTime_Implementation(float TimeOfCli
 	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReceipt);
 }
 //접속한 모든 클라들은 서버에 접속하면 서버에게 현재시간 보고, 서버는 서버시간, 해당 클라시간을 같이 클라에 보냄.
+
 void ACDPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest,
                                                                  float TimeServerReceivedClientRequest)
 {
@@ -142,7 +143,6 @@ void ACDPlayerController::CheckTimeSync(float DeltaTime)
 		TimeSyncRunningTime=0.f;
 	}
 }
-
 
 void ACDPlayerController::HandleCooldown()
 {
@@ -233,6 +233,7 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 	}
 }
 
+
 void ACDPlayerController::SetHUDCarriedAmmo(int32 CarriedAmmo)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->CarriedAmmoAmount)
@@ -290,7 +291,6 @@ void ACDPlayerController::SetHUDTime()
 		{
 			SetHUDMatchCount(TimeLeft);
 		}
-		
 	}
 	CountdownInt=SecondsLeft;
 }
@@ -312,8 +312,6 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 	}
 	
 }
-
-
 
 void ACDPlayerController::SetMinimap()
 {
