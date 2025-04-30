@@ -33,10 +33,12 @@ public:
 	void SetGold();
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
+	
 
 	UFUNCTION(Client,Reliable)
 	void Client_ShowStoreWidget(bool IsActivate);
-
+	UFUNCTION(Client,Reliable)
+	void ClientUpdateKDOverlayData();
 	//bShowOverlay
 	
 	void ShowStoreWidget(bool bShow);
@@ -72,11 +74,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateGoldUI(int32 Gold);
 
-	
-	
-
-	
 protected:
 	virtual void BeginPlay() override;
 

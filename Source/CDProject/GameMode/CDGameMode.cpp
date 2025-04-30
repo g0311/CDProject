@@ -31,7 +31,6 @@ void ACDGameMode::Tick(float DeltaSeconds)
 	if (MatchState==MatchState::WaitingToStart)
 	{
 		Countdown=FMath::CeilToInt(WarmUpTime+LevelStartingTime-GetWorld()->GetTimeSeconds());
-		UE_LOG(LogTemp,Display,TEXT("%f"), Countdown);
 		if (Countdown==-1)
 		{
 			StartMatch();
@@ -101,6 +100,7 @@ void ACDGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
 		if (CDPC)
 		{//Need to Set Client RPC
 			CDPC->UpdateKDOverlayData();
+			CDPC->ClientUpdateKDOverlayData();
 		}
 	}
 }

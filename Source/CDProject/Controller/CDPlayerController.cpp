@@ -82,6 +82,14 @@ void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, f
 	}
 }
 
+void ACDPlayerController::ClientUpdateGoldUI_Implementation(int32 Gold)
+{
+	if (IsLocalController())
+	{
+		SetGold();
+	}
+}
+
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -384,6 +392,11 @@ void ACDPlayerController::UpdateKDOverlayData()
 	{
 		CDHUD->KDOverlay->UpdateScoreboard();
 	}
+}
+
+void ACDPlayerController::ClientUpdateKDOverlayData_Implementation()
+{
+	CDHUD->KDOverlay->UpdateScoreboard();
 }
 
 void ACDPlayerController::Client_ShowStoreWidget_Implementation(bool IsActivate)
