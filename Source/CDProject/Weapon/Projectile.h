@@ -15,6 +15,7 @@ public:
 	// Sets default values for this actor's properties
 	AProjectile();
 	virtual void Destroyed() override;//Pawn Cascade
+	FORCEINLINE float GetDestroyTime() { return DestroyTime; }
 
 	UPROPERTY(EditAnywhere)
 	float InitialSpeed=15000.f;

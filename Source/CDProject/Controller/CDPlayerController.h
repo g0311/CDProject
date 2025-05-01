@@ -73,7 +73,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
-	
+	UFUNCTION(Client, Reliable)
+	void ClientSetMatchTime(float matchTime);
 	
 
 	

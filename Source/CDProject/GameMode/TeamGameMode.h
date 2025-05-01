@@ -17,6 +17,8 @@ public:
 	ATeamGameMode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+
+	void OnC4Planted();
 protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void PlayerEliminated(class ACDPlayerController* VictimController, ACDPlayerController* AttackerController) override;

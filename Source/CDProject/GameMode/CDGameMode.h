@@ -26,6 +26,7 @@ public:
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
 	
+	void SetMatchTime(float c4ExplodeTime);
 
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
@@ -47,7 +48,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
-
 
 private:
 

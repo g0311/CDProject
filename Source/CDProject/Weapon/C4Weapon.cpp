@@ -7,6 +7,7 @@
 #include "VectorTypes.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
+#include "CDProject/GameMode/TeamGameMode.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -33,7 +34,7 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 	FVector _plantLocation =
 		character->GetActorLocation() - FVector(0, 0, character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
 	if (!_projectileClass||!World) return;
-	AProjectile* Grenade = World->SpawnActor<AProjectile>(
+	AProjectile* c4Projectile = World->SpawnActor<AProjectile>(
 		_projectileClass,
 		_plantLocation,
 		FRotator::ZeroRotator,
@@ -41,8 +42,13 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 	);
 
 	//GameMode Set Time
-
-	//Update HUD Time
-	
+	if (GetWorld()->GetAuthGameMode())
+	{
+		ACDGameMode* teamGameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+		if (teamGameMode)
+		{
+			teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
+		}
+	}
 	Destroy();
 }

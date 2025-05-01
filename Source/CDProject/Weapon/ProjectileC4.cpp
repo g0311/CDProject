@@ -3,6 +3,8 @@
 
 #include "ProjectileC4.h"
 
+#include "CDProject/GameMode/CDGameMode.h"
+#include "CDProject/GameMode/TeamGameMode.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -43,6 +45,15 @@ void AProjectileC4::Defused()
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
 		}
+
+		if (GetWorld()->GetAuthGameMode())
+        {
+        	ACDGameMode* teamGameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+        	if (teamGameMode)
+        	{
+        		teamGameMode->SetMatchTime(0);
+        	}
+        }
 		//GameMode Blue Team Win
 	}
 }

@@ -82,6 +82,11 @@ void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, f
 	}
 }
 
+void ACDPlayerController::ClientSetMatchTime_Implementation(float matchTime)
+{
+	MatchTime = matchTime;
+}
+
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
