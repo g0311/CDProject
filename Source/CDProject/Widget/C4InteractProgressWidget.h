@@ -39,4 +39,9 @@ protected:
 	float _progress = 0.f;
 	float _targetTime = 1.f;
 	float _elapsedTime = 0.f;
+
+	UPROPERTY(EditAnywhere)
+	class USoundBase* _interactSound;
+	UPROPERTY()
+	class UAudioComponent* _interactAudioComponent;
 };

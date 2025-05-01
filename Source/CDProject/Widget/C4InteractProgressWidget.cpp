@@ -1,6 +1,9 @@
 ﻿#include "C4InteractProgressWidget.h"
+
+#include "Components/AudioComponent.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 void UC4InteractProgressWidget::NativeDestruct()
 {
@@ -19,7 +22,9 @@ void UC4InteractProgressWidget::SetProgressTime(float Time)
 	_targetTime = Time;
 	_elapsedTime = 0.f;
 	_progress = 0.f;
-
+	if (_interactSound)
+		_interactAudioComponent = UGameplayStatics::SpawnSound2D(this, _interactSound);
+	
 	GetWorld()->GetTimerManager().SetTimer(
 		_progressTimerHandle,
 		this,
@@ -60,4 +65,6 @@ void UC4InteractProgressWidget::UpdateProgress()
 void UC4InteractProgressWidget::StopProgress()
 {
 	GetWorld()->GetTimerManager().ClearTimer(_progressTimerHandle);
+	if (_interactAudioComponent)
+		_interactAudioComponent->Stop();
 }
