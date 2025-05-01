@@ -90,6 +90,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
 	DOREPLIFETIME(UCombatComponent, _combatStateTags);
+	DOREPLIFETIME(UCombatComponent, _isC4Area);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -349,7 +350,7 @@ void UCombatComponent::RequestInteractStart()
 {
 	if (GetCurWeaponType() == EWeaponType::EWT_C4)
 	{
-		if (true /* Is Avail Location To Plant Bomb */)
+		if (_isC4Area)
 		{
 			ServerC4Plant(true);
 		}
@@ -507,7 +508,7 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 {
 	//Need to Check (C4 Area)
-	if (false)
+	if (!_isC4Area)
 		return;
 	
 	if (GetWorld())

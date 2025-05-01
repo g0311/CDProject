@@ -38,7 +38,7 @@ protected:
 
 	//C4 Access
 	UPROPERTY(VisibleAnywhere)
-	AC4Weapon* _c4Weapon;
+	class AC4Weapon* _c4Weapon;
 	UPROPERTY(VisibleAnywhere)
-	AC4Weapon* _cProjectile;
+	class AProjectileC4* _cProjectile;
 };
