@@ -3,6 +3,8 @@
 
 #include "ProjectileC4.h"
 
+#include "Net/UnrealNetwork.h"
+
 
 // Sets default values
 AProjectileC4::AProjectileC4()
@@ -21,18 +23,27 @@ void AProjectileC4::Destroyed()
 	if (HasAuthority())
 	{
 		ExplodeDamage();
+		//GameMode Red Team Win
 	}
 	Super::Destroyed();
+}
+
+void AProjectileC4::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AProjectileC4, _isDefused);
 }
 
 void AProjectileC4::Defused()
 {
 	if (HasAuthority())
 	{
+		_isDefused = true;
 		if (DestroyTimer.IsValid() && GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
 		}
+		//GameMode Blue Team Win
 	}
 }
 

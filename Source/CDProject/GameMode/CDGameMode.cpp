@@ -53,7 +53,6 @@ void ACDGameMode::Tick(float DeltaSeconds)
 			RestartGame();
 		}
 	}
-	
 }
 
 void ACDGameMode::BeginPlay()

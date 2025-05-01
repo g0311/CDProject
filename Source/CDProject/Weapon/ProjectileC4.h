@@ -15,9 +15,11 @@ public:
 	// Sets default values for this actor's properties
 	AProjectileC4();
 	virtual void Destroyed() override;
-
-	FORCEINLINE float GetDefusingtime() const { return _defusingTime; }
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	void Defused();
+	
+	FORCEINLINE float GetDefusingtime() const { return _defusingTime; }
+	FORCEINLINE float IsDefused() const { return _isDefused; }
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -29,4 +31,7 @@ public:
 private:
 	UPROPERTY(EditAnywhere)
 	float _defusingTime = 10.f;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool _isDefused = false;
 };

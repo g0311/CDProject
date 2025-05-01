@@ -39,6 +39,10 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 		FRotator::ZeroRotator,
 		SpawnParams
 	);
+
+	//GameMode Set Time
+
+	//Update HUD Time
 	
 	Destroy();
 }
