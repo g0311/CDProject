@@ -25,6 +25,14 @@ void AProjectileC4::Destroyed()
 	if (HasAuthority())
 	{
 		ExplodeDamage();
+		if (GetWorld()->GetAuthGameMode())
+		{
+			ATeamGameMode* teamGameMode = Cast<ATeamGameMode>(GetWorld()->GetAuthGameMode());
+			if (teamGameMode)
+			{
+				teamGameMode->TeamWin(true);
+			}
+		}
 		//GameMode Red Team Win
 	}
 	Super::Destroyed();
@@ -48,13 +56,13 @@ void AProjectileC4::Defused()
 
 		if (GetWorld()->GetAuthGameMode())
         {
-        	ACDGameMode* teamGameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+        	ATeamGameMode* teamGameMode = Cast<ATeamGameMode>(GetWorld()->GetAuthGameMode());
         	if (teamGameMode)
         	{
+        		teamGameMode->TeamWin(false);
         		teamGameMode->SetMatchTime(0);
         	}
         }
-		//GameMode Blue Team Win
 	}
 	NetMulticastPlayDefuseSound();
 }

@@ -120,18 +120,3 @@ void ACDGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Elim
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[SelectionPlayerStartingPoint]);
 	}
 }
-
-void ACDGameMode::SetMatchTime(float c4ExplodeTime)
-{
-	MatchTime = c4ExplodeTime - WarmUpTime - LevelStartingTime + GetWorld()->GetTimeSeconds();
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
-		if (PC)
-		{
-			PC->ClientSetMatchTime(MatchTime);
-		}
-	}
-}
-
-

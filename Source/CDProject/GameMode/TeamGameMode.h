@@ -17,8 +17,11 @@ public:
 	ATeamGameMode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+	void SetMatchTime(float c4ExplodeTime);
+	void TeamWin(bool isRed);
+	virtual void SetMatchState(FName NewState) override;
 
-	void OnC4Planted();
+	FORCEINLINE void SetIsPlanted(bool tf) {_isPlanted = tf;}
 protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void PlayerEliminated(class ACDPlayerController* VictimController, ACDPlayerController* AttackerController) override;
@@ -29,4 +32,6 @@ protected:
 	FTimerHandle SetupTimer;
 	
 	TSet<APlayerStart*> UsedStartPoints;
+
+	bool _isPlanted = false;
 };

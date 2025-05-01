@@ -25,8 +25,6 @@ public:
 		ACDPlayerController* AttackerController
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
-	
-	void SetMatchTime(float c4ExplodeTime);
 
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
