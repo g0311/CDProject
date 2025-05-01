@@ -5,11 +5,13 @@
 
 #include "Projectile.h"
 #include "VectorTypes.h"
+#include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/TeamGameMode.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 AC4Weapon::AC4Weapon()
@@ -20,35 +22,36 @@ AC4Weapon::AC4Weapon()
 
 void AC4Weapon::Fire(const FVector& HitTarget)
 {
+	if (IsValid(_plantedSound))
+		UGameplayStatics::PlaySound2D(this, _plantedSound);
+
 	ACDCharacter* character = Cast<ACDCharacter>(GetOwner());
-	if (!character || !character->HasAuthority())
-		return;
-
-	UE_LOG(LogTemp, Log, TEXT("Called"));
-	
-	//Spawn C4 Projectile
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = character;
-	SpawnParams.Instigator=character;
-	UWorld* World = GetWorld();
-	FVector _plantLocation =
-		character->GetActorLocation() - FVector(0, 0, character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
-	if (!_projectileClass||!World) return;
-	AProjectile* c4Projectile = World->SpawnActor<AProjectile>(
-		_projectileClass,
-		_plantLocation,
-		FRotator::ZeroRotator,
-		SpawnParams
-	);
-
-	//GameMode Set Time
-	if (GetWorld()->GetAuthGameMode())
+	if (character && character->HasAuthority())
 	{
-		ACDGameMode* teamGameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
-		if (teamGameMode)
+		//Spawn C4 Projectile
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = character;
+		SpawnParams.Instigator=character;
+		UWorld* World = GetWorld();
+		FVector _plantLocation =
+			character->GetActorLocation() - FVector(0, 0, character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight());
+		if (!_projectileClass||!World) return;
+		AProjectile* c4Projectile = World->SpawnActor<AProjectile>(
+			_projectileClass,
+			_plantLocation,
+			FRotator::ZeroRotator,
+			SpawnParams
+		);
+
+		//GameMode Set Time
+		if (GetWorld()->GetAuthGameMode())
 		{
-			teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
+			ACDGameMode* teamGameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+			if (teamGameMode)
+			{
+				teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
+			}
 		}
+		Destroy();
 	}
-	Destroy();
 }

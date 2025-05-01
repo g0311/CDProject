@@ -56,6 +56,13 @@ void AProjectileC4::Defused()
         }
 		//GameMode Blue Team Win
 	}
+	NetMulticastPlayDefuseSound();
+}
+
+void AProjectileC4::NetMulticastPlayDefuseSound_Implementation()
+{
+	if (IsValid(_defuseSound))
+		UGameplayStatics::PlaySound2D(this, _defuseSound);
 }
 
 // Called when the game starts or when spawned
@@ -73,4 +80,3 @@ void AProjectileC4::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-

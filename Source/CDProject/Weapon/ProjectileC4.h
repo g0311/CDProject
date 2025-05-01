@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Projectile.h"
+#include "Kismet/GameplayStatics.h"
 #include "ProjectileC4.generated.h"
 
 UCLASS()
@@ -21,6 +22,8 @@ public:
 	FORCEINLINE float GetDefusingtime() const { return _defusingTime; }
 	FORCEINLINE float IsDefused() const { return _isDefused; }
 protected:
+	UFUNCTION(NetMulticast, Unreliable)
+	void NetMulticastPlayDefuseSound();
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -34,4 +37,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isDefused = false;
+	
+	UPROPERTY(EditAnywhere)
+	USoundBase* _defuseSound;
 };
