@@ -504,6 +504,8 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 {
 	//Need to Check (C4 Area)
+	if (false)
+		return;
 	
 	if (GetWorld())
 	{
@@ -516,7 +518,7 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this]
 				{
 					RequestFire();
-					//GameMode Set Bomb Planted
+					//In C4 Fire, GameMode Set Bomb Planted
 					
 					ServerC4Plant(false);
 					_weapons[_weaponIndex] = nullptr;
