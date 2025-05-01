@@ -361,8 +361,9 @@ void UCombatComponent::RequestInteractStart()
 		UE_LOG(LogTemp, Log, TEXT("%s"), *_aimedActor->GetName());
 		if (AProjectileC4* c4 = Cast<AProjectileC4>(_aimedActor))
 		{
-			if (!c4->IsDefused())
-				ServerC4Defuse(true);
+			if (c4->IsDefused() || _playerCharacter->GetTeam() == ETeam::ET_RedTeam)
+				return;
+			ServerC4Defuse(true);
 		}
 	}
 }
@@ -490,6 +491,8 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 		}
 		break;
 	case EWeaponType::EWT_C4:
+		if (_playerCharacter->GetTeam() == ETeam::ET_BlueTeam)
+			return;
 		if (!_weapons[5])
 		{
 			weapon->SetOwner(_playerCharacter);
@@ -543,6 +546,8 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 
 void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
 {
+	if (_playerCharacter->GetTeam() == ETeam::ET_RedTeam)
+		return;
 	//Is Aiming C4
 	if (GetWorld())
 	{

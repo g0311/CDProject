@@ -33,5 +33,12 @@ protected:
 	
 	TSet<APlayerStart*> UsedStartPoints;
 
+	//임시
 	bool _isPlanted = false;
+
+	//C4 Access
+	UPROPERTY(VisibleAnywhere)
+	AC4Weapon* _c4Weapon;
+	UPROPERTY(VisibleAnywhere)
+	AC4Weapon* _cProjectile;
 };
