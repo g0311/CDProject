@@ -82,6 +82,53 @@ void ATeamGameMode::Logout(AController* Exiting)
 	}
 }
 
+void ATeamGameMode::SetMatchTime(float c4ExplodeTime)
+{
+	MatchTime = c4ExplodeTime - WarmUpTime - LevelStartingTime + GetWorld()->GetTimeSeconds();
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
+		if (PC)
+		{
+			PC->ClientSetMatchTime(MatchTime);
+		}
+	}
+}
+
+void ATeamGameMode::TeamWin(bool isRed)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+		if (CDPC)
+		{
+			ACDPlayerState* playerState = Cast<ACDPlayerState>(CDPC->PlayerState);
+			if (playerState)
+			{
+				if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+				{
+					playerState->AddGold(300);
+					UE_LOG(LogTemp, Display, TEXT("Red Team Win"));
+				}
+				else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+				{
+					playerState->AddGold(300);
+					UE_LOG(LogTemp, Display, TEXT("Blue Team Win"));
+				}
+			}
+		}
+	}
+}
+
+inline void ATeamGameMode::SetMatchState(FName NewState)
+{
+	if (!_isPlanted && NewState == MatchState::Cooldown)
+	{
+		TeamWin(false);
+	}
+	Super::SetMatchState(NewState);
+}
+
 void ATeamGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();

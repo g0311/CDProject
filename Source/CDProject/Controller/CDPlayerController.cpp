@@ -82,6 +82,11 @@ void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, f
 	}
 }
 
+void ACDPlayerController::ClientSetMatchTime_Implementation(float matchTime)
+{
+	MatchTime = matchTime;
+}
+
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -574,7 +579,7 @@ void ACDPlayerController::ShowSniperScope()
 	}
 }
 
-void ACDPlayerController::ShowC4PlantingProgress(bool tf)
+void ACDPlayerController::ShowC4PlantingProgress(bool isPlanting, float time)
 {
 	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
 	if (CDHUD == nullptr) return;
@@ -586,21 +591,33 @@ void ACDPlayerController::ShowC4PlantingProgress(bool tf)
 	if (CDHUD && CDHUD->C4InteractProgress)
 	{
 		CDHUD->C4InteractProgress->Reset(true);
-		CDHUD->C4InteractProgress->SetVisibility(tf ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		if (isPlanting)
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
+			CDHUD->C4InteractProgress->SetProgressTime(time);
+		}
+		else
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
-void ACDPlayerController::ShowC4DefusingProgress(bool tf)
+void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
 {
 	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
 	if (CDHUD == nullptr) return;
 
-	if (!CDHUD->C4InteractProgress)
-	{
-		CDHUD->AddC4Progress();
-	}
 	if (CDHUD && CDHUD->C4InteractProgress)
 	{
 		CDHUD->C4InteractProgress->Reset(false);
-		CDHUD->C4InteractProgress->SetVisibility(tf ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		if (isDefusing)
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
+			CDHUD->C4InteractProgress->SetProgressTime(time);
+		}
+		else
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }

@@ -43,8 +43,8 @@ public:
 	void RetryShowStoreWidget(bool bActivate);
 	//Weapon
 	void ShowSniperScope();
-	void ShowC4PlantingProgress(bool isPlanting);
-	void ShowC4DefusingProgress(bool isDefusing);
+	void ShowC4PlantingProgress(bool isPlanting, float duration = 0.f);
+	void ShowC4DefusingProgress(bool isDefusing, float duration = 0.f);
 
 	//HUD initialize
 	void InitializeHUD();
@@ -73,7 +73,8 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
-	
+	UFUNCTION(Client, Reliable)
+	void ClientSetMatchTime(float matchTime);
 	
 
 	

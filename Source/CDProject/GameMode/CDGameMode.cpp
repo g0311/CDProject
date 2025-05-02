@@ -53,7 +53,6 @@ void ACDGameMode::Tick(float DeltaSeconds)
 			RestartGame();
 		}
 	}
-	
 }
 
 void ACDGameMode::BeginPlay()
@@ -120,9 +119,4 @@ void ACDGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Elim
 		int32 SelectionPlayerStartingPoint=FMath::RandRange(0,PlayerStarts.Num()-1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[SelectionPlayerStartingPoint]);
 	}
-	
 }
-
-
-
-

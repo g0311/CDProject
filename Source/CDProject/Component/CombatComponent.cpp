@@ -70,9 +70,10 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 	}
 	SetHUDCrosshairs(_curSpread);
-
+	
 	//If Defusing, Check the Aimed Actor
-	if (IsInCombatState(CombatTags::State_Combat_DefusingC4))
+	if (_playerCharacter && _playerCharacter->IsLocallyControlled() &&
+		IsInCombatState(CombatTags::State_Combat_DefusingC4))
 	{
 		if (!Cast<AProjectileC4>(_aimedActor))
 		{
@@ -89,6 +90,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
 	DOREPLIFETIME(UCombatComponent, _combatStateTags);
+	DOREPLIFETIME(UCombatComponent, _isC4Area);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -268,7 +270,6 @@ void UCombatComponent::RequestFire()
 {
 	if (IsInCombatState(CombatTags::State_Combat_Reloading) || 
 		IsInCombatState(CombatTags::State_Combat_ChangingWeapon) || 
-		IsInCombatState(CombatTags::State_Combat_PlantingC4) || 
 		IsInCombatState(CombatTags::State_Combat_DefusingC4))
 	{
 		return;
@@ -349,17 +350,20 @@ void UCombatComponent::RequestInteractStart()
 {
 	if (GetCurWeaponType() == EWeaponType::EWT_C4)
 	{
-		if (true /* Is Avail Location To Plant Bomb */)
+		if (_isC4Area)
 		{
 			ServerC4Plant(true);
 		}
 		return;
 	}
 	
-	if (_aimedActor)
+	if (IsValid(_aimedActor))
 	{
-		if (Cast<AProjectileC4>(_aimedActor))
+		UE_LOG(LogTemp, Log, TEXT("%s"), *_aimedActor->GetName());
+		if (AProjectileC4* c4 = Cast<AProjectileC4>(_aimedActor))
 		{
+			if (c4->IsDefused() || _playerCharacter->GetTeam() == ETeam::ET_RedTeam)
+				return;
 			ServerC4Defuse(true);
 		}
 	}
@@ -488,6 +492,8 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 		}
 		break;
 	case EWeaponType::EWT_C4:
+		if (_playerCharacter->GetTeam() == ETeam::ET_BlueTeam)
+			return;
 		if (!_weapons[5])
 		{
 			weapon->SetOwner(_playerCharacter);
@@ -502,6 +508,8 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 {
 	//Need to Check (C4 Area)
+	if (!_isC4Area)
+		return;
 	
 	if (GetWorld())
 	{
@@ -514,11 +522,14 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this]
 				{
 					RequestFire();
+					//In C4 Fire, GameMode Set Bomb Planted
+					
+					ServerC4Plant(false);
 					_weapons[_weaponIndex] = nullptr;
 					ChangeToNextWeapon();
 				}),
 				_fireDelay, false);
-			NetMulticastC4Plant(true);
+			NetMulticastC4Plant(true, _fireDelay);
 			InsertCombatState(CombatTags::State_Combat_PlantingC4);
 		}
 		else
@@ -536,26 +547,31 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 
 void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
 {
-	//Is Aiming C4
-	AProjectileC4* c4Projectile = Cast<AProjectileC4>(_aimedActor);
-	if (!c4Projectile)
+	if (_playerCharacter->GetTeam() == ETeam::ET_RedTeam)
 		return;
-	
+	//Is Aiming C4
 	if (GetWorld())
 	{
 		if (isDefusing)
 		{
+			AProjectileC4* c4Projectile = Cast<AProjectileC4>(_aimedActor);
+			if (!c4Projectile)
+				return;
+			
 			if (_playerCharacter)
 			{
 				_playerCharacter->GetCharacterMovement()->DisableMovement();
 			}
-			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([=]
+			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this, c4Projectile]
 				{
+					if (IsValid(this))
+						ServerC4Defuse(false);
 					if (IsValid(c4Projectile))
 						c4Projectile->Defused();
 				}),
 				c4Projectile->GetDefusingtime(), false);
-			NetMulticastC4Defuse(true);
+			NetMulticastC4Defuse(true, c4Projectile->GetDefusingtime());
+			InsertCombatState(CombatTags::State_Combat_DefusingC4);
 		}
 		else
 		{
@@ -564,7 +580,8 @@ void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
 				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			}
 			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
-			NetMulticastC4Defuse(true);
+			NetMulticastC4Defuse(false);
+			RemoveCombatState(CombatTags::State_Combat_DefusingC4);
 		}
 	}
 }
@@ -750,9 +767,9 @@ void UCombatComponent::ChangeWeapon(int idx)
 	if (!armAnim)
 		return;
 	
-	if (_fireAimAbleTimerHandle.IsValid())
+	if (IsInCombatState(CombatTags::State_Combat_Firing))
 	{
-		GetWorld()->GetTimerManager().ClearTimer(_fireAimAbleTimerHandle);
+		RemoveCombatState(CombatTags::State_Combat_Firing);
 	}
 	if (IsInCombatState(CombatTags::State_Combat_PlantingC4))
 	{
@@ -866,7 +883,7 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 		armAnim->PlayFireMontage(_fireDelay);
 	
 	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
-	if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
+	if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass && GetCurWeaponType() != EWeaponType::EWT_C4)
 	{
 		playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
 	}
@@ -951,15 +968,18 @@ void UCombatComponent::NetMulticastCancelReload_Implementation()
 		bodyAnim->Montage_Stop(0.1f);
 }
 
-void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf)
+void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf, float duration)
 {
+	if (!_playerCharacter)
+		return;
+	
 	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
 	if(!IsValid(pc))
 		return;
 	if (tf)
 	{
 		//show hud
-		pc->ShowC4PlantingProgress(true);
+		pc->ShowC4PlantingProgress(true, duration);
 	}
 	else
 	{
@@ -968,14 +988,17 @@ void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf)
 	}
 }
 
-void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf)
+void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf, float duration)
 {
+	if (!_playerCharacter || !_playerCharacter->IsLocallyControlled())
+		return;
+
 	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
 	if(!IsValid(pc))
 		return;
 	if (tf)
 	{
-		pc->ShowC4DefusingProgress(true);
+		pc->ShowC4DefusingProgress(true, duration);
 	}
 	else
 	{

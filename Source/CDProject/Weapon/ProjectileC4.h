@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Projectile.h"
+#include "Kismet/GameplayStatics.h"
 #include "ProjectileC4.generated.h"
 
 UCLASS()
@@ -15,10 +16,14 @@ public:
 	// Sets default values for this actor's properties
 	AProjectileC4();
 	virtual void Destroyed() override;
-
-	FORCEINLINE float GetDefusingtime() const { return _defusingTime; }
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	void Defused();
+	
+	FORCEINLINE float GetDefusingtime() const { return _defusingTime; }
+	FORCEINLINE float IsDefused() const { return _isDefused; }
 protected:
+	UFUNCTION(NetMulticast, Unreliable)
+	void NetMulticastPlayDefuseSound();
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -29,4 +34,10 @@ public:
 private:
 	UPROPERTY(EditAnywhere)
 	float _defusingTime = 10.f;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool _isDefused = false;
+	
+	UPROPERTY(EditAnywhere)
+	USoundBase* _defuseSound;
 };

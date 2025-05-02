@@ -32,6 +32,7 @@ public:
 	FORCEINLINE int GetCurAmmo();
 	FORCEINLINE int GetCarriedAmmo();
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
+	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
 	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
@@ -65,18 +66,15 @@ private:
 	int _befIndex = -1;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool _isC4Area = false;	
+
 
 	FTimerHandle _clientFireTimerHandle;
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
-	FTimerHandle _c4TimerHandle;
-	
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isCanFire = true;
-	UPROPERTY(VisibleAnywhere)
-	bool _isDefusing = false;
-
+	FTimerHandle _c4TimerHandle;	
 	
 	UPROPERTY(VisibleAnywhere)
 	AActor* _aimedActor;
@@ -143,9 +141,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeThrow();
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Plant(bool tf);
+	void NetMulticastC4Plant(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Defuse(bool tf);
+	void NetMulticastC4Defuse(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
 	UFUNCTION()

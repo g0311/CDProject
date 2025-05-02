@@ -25,7 +25,6 @@ public:
 		ACDPlayerController* AttackerController
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
-	
 
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
@@ -47,7 +46,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
-
 
 private:
 
