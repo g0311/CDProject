@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "CDProject/Types/CurMatchState.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
@@ -63,7 +64,7 @@ public:
 	//KDO Overlay
 	void ShowKDOverlay(bool isShowing);
 	
-	void OnMatchStateSet(FName State, bool bTeamsMatch=false, float time = 0);
+	void OnMatchStateSet(ECurMatchState State, bool bTeamsMatch=false, float time = 0);
 	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
@@ -71,13 +72,13 @@ public:
 	void ServerCheckMatchState();
 
 	UFUNCTION(Client, Reliable)
-	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
+	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchTime(float matchTime);
 
 	UFUNCTION(Client, Reliable)
-	void ClientSetMatchState(FName state, float curTime);
+	void ClientSetMatchState(ECurMatchState state, float curTime);
 
 	
 protected:
@@ -113,7 +114,7 @@ private:
 	TSubclassOf<class UCharacterOverlay> CharacterOverlay;
 
 	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
-	FName MatchState;
+	ECurMatchState MatchState;
 
 	UFUNCTION()
 	void OnRep_MatchState();

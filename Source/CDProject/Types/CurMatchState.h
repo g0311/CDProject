@@ -1,0 +1,9 @@
+#pragma once
+
+UENUM(BlueprintType)
+enum class ECurMatchState : uint8
+{
+	EMS_Waiting     UMETA(DisplayName = "Waiting (Shop)"),
+	EMS_InGame      UMETA(DisplayName = "In Game"),
+	EMS_CoolDown    UMETA(DisplayName = "Cool Down")
+};

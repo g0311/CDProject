@@ -120,14 +120,14 @@ void ADemolitionGameMode::TeamWin(bool isRed)
 	}
 }
 
-inline void ADemolitionGameMode::SetMatchState(FName NewState)
+void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState)
 {
-	if (!_isPlanted && NewState == MatchState::Cooldown)
+	if (!_isPlanted && NewState == ECurMatchState::EMS_CoolDown)
 	{
 		CooldownStartTime = GetWorld()->GetTimeSeconds();
 		TeamWin(false);
 	}
-	Super::SetMatchState(NewState);
+	Super::SetCurMatchState(NewState);
 }
 
 void ADemolitionGameMode::HandleMatchHasStarted()
@@ -176,7 +176,7 @@ void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimCont
 			{
 				BGameState->RedTeamScoreAdd();
 				CooldownStartTime = GetWorld()->GetTimeSeconds();
-				SetMatchState(MatchState::Cooldown);
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 			
 		}
@@ -187,7 +187,7 @@ void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimCont
 			{
 				BGameState->BlueTeamScoreAdd();
 				CooldownStartTime = GetWorld()->GetTimeSeconds();
-				SetMatchState(MatchState::Cooldown);
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 		}
 	}

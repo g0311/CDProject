@@ -19,7 +19,7 @@ public:
 	virtual void Logout(AController* Exiting) override;
 	void SetMatchTime(float c4ExplodeTime);
 	void TeamWin(bool isRed);
-	virtual void SetMatchState(FName NewState) override;
+	virtual void SetCurMatchState(ECurMatchState NewState) override;
 
 	FORCEINLINE void SetIsPlanted(bool tf) {_isPlanted = tf;}
 protected:

@@ -3,11 +3,8 @@
 
 #include "RoundGameMode.h"
 
-#include "EngineUtils.h"
-#include "DemolitionGameMode.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "CDProject/HUD/CDHUD.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerStart.h"
@@ -29,23 +26,23 @@ ARoundGameMode::ARoundGameMode()
 void ARoundGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (MatchState==MatchState::WaitingToStart || MatchState==MatchState::PreInProgress)
+	if (_curMatchState==ECurMatchState::EMS_Waiting)
 	{
 		Countdown=FMath::CeilToInt(WaitingStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
 		if (Countdown==-1)
 		{
-			StartMatch();
+			SetCurMatchState(ECurMatchState::EMS_InGame);
 		}
 	}
-	else if (MatchState==MatchState::InProgress)
+	else if (_curMatchState==ECurMatchState::EMS_InGame)
 	{
 		Countdown=MatchStartTime + MatchTime-GetWorld()->GetTimeSeconds();
 		if (Countdown<=0.f)
 		{
-			SetMatchState(MatchState::Cooldown);
+			SetCurMatchState(ECurMatchState::EMS_CoolDown);
 		}
 	}
-	else if (MatchState==MatchState::Cooldown)
+	else if (_curMatchState==ECurMatchState::EMS_CoolDown)
 	{
 		Countdown=CooldownStartTime + CooldownTime-GetWorld()->GetTimeSeconds();
 		//UE_LOG(LogGameMode, Log, TEXT("%f %f %f"), CooldownTime, CooldownStartTime, GetWorld()->GetTimeSeconds());
@@ -61,29 +58,28 @@ void ARoundGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	//LevelStartingTime=GetWorld()->GetTimeSeconds();
-	
+
+	StartMatch();
 }
 
-void ARoundGameMode::OnMatchStateSet()
+void ARoundGameMode::OnCurMatchStateSet()
 {
-	Super::OnMatchStateSet();
-	
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator();PCIter;++PCIter)
 	{
 		ACDPlayerController* PlayerController=Cast<ACDPlayerController> (*PCIter);
 		if (PlayerController)
 		{
-			if(MatchState==MatchState::WaitingToStart)
+			if(_curMatchState==ECurMatchState::EMS_Waiting)
 			{
-				PlayerController->OnMatchStateSet(MatchState, bTeamsMatch, WaitingStartTime);
+				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, WaitingStartTime);
 			}
-			else if(MatchState==MatchState::InProgress)
+			else if(_curMatchState==ECurMatchState::EMS_InGame)
 			{
-				PlayerController->OnMatchStateSet(MatchState, bTeamsMatch, MatchStartTime);			
+				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, MatchStartTime);			
 			}
-			else if (MatchState==MatchState::Cooldown)
+			else if (_curMatchState==ECurMatchState::EMS_CoolDown)
 			{
-				PlayerController->OnMatchStateSet(MatchState, bTeamsMatch, CooldownStartTime);
+				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, CooldownStartTime);
 			}
 		}
 	}
@@ -161,7 +157,7 @@ void ARoundGameMode::RestartGame()
 	}
 	WaitingStartTime = GetWorld()->GetTimeSeconds();
 	MatchTime = defaultMatchTime;
-	SetMatchState(MatchState::PreInProgress);
+	SetCurMatchState(ECurMatchState::EMS_Waiting);
 }
 
 AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
@@ -210,25 +206,30 @@ AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, cons
 	return Super::FindPlayerStart_Implementation(Player, IncomingName);
 }
 
+void ARoundGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+}
+
 // bool ARoundGameMode::ShouldSpawnAtStartSpot(AController* Player)
 // {
 // 	return false;
 // 	//return Super::ShouldSpawnAtStartSpot(Player);
 // }
 
-void ARoundGameMode::SetMatchState(FName NewState)
+void ARoundGameMode::SetCurMatchState(ECurMatchState NewState)
 {
-	if (NewState == MatchState::WaitingToStart)
+	if (NewState == ECurMatchState::EMS_Waiting)
 	{
 		WaitingStartTime = GetWorld()->GetTimeSeconds();
 	}
-	else if (NewState == MatchState::InProgress)
+	else if (NewState == ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = GetWorld()->GetTimeSeconds();
 	}
-	else if (NewState == MatchState::Cooldown)
+	else if (NewState == ECurMatchState::EMS_CoolDown)
 	{
 		CooldownStartTime = GetWorld()->GetTimeSeconds();
 	}
-	Super::SetMatchState(NewState);
+	OnCurMatchStateSet();
 }

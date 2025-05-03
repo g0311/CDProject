@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
-#include "GameFramework/GameModeBase.h"
+#include "CDProject/Types/CurMatchState.h"
 #include "RoundGameMode.generated.h"
 
 namespace MatchState
@@ -13,6 +13,7 @@ namespace MatchState
 	extern CDPROJECT_API const FName Cooldown;
 	extern CDPROJECT_API const FName ModeSelect;
 }
+
 UCLASS()
 class CDPROJECT_API ARoundGameMode : public AGameMode
 {
@@ -23,14 +24,16 @@ public:
 	virtual void RestartGame() override;
 	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = L"") override;
 	//virtual bool ShouldSpawnAtStartSpot(AController* Player) override;
-	virtual void SetMatchState(FName NewState) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void SetCurMatchState(ECurMatchState NewState);
 	virtual void PlayerEliminated(
 		class ACDPlayerController* VictimController,
 		ACDPlayerController* AttackerController
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
-	
-	
+
+	ECurMatchState GetCurMatchState(){ return _curMatchState; }
+
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
 	float defaultMatchTime = 90.f;//	//1 Round in Matching Time
@@ -53,10 +56,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void OnMatchStateSet() override;
+	virtual void OnCurMatchStateSet();
 private:
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> _createdActors;
 
 	TMap<FString, TArray<APlayerStart*>> AvailStartPoints;
+
+	ECurMatchState _curMatchState = ECurMatchState::EMS_Waiting;
 };

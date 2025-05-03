@@ -64,13 +64,13 @@ void ACDPlayerController::ServerCheckMatchState_Implementation()
 		MatchTime = GameMode->MatchTime;
 		LevelStartingTime = GameMode->WaitingStartTime;
 		CooldownTime=GameMode->CooldownTime;
-		MatchState = GameMode->GetMatchState();
+		MatchState = GameMode->GetCurMatchState();
 		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 	}
 }
 //GameMode is accessible only on the server
 
-void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match,
+void ACDPlayerController::ClientJoinMidgame_Implementation(ECurMatchState StateOfMatch, float Warmup, float Match,
 	float Cooldown,float StartingTime)
 {
 	WarmupTime = Warmup;
@@ -79,7 +79,7 @@ void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, f
 	CooldownTime=Cooldown;
 	MatchState = StateOfMatch;
 	OnMatchStateSet(MatchState);
-	if (CDHUD && MatchState == MatchState::WaitingToStart)
+	if (CDHUD && MatchState == ECurMatchState::EMS_Waiting)
 	{
 		CDHUD->AddAnnouncement();
 	}
@@ -90,7 +90,7 @@ void ACDPlayerController::ClientSetMatchTime_Implementation(float matchTime)
 	MatchTime = matchTime;
 }
 
-void ACDPlayerController::ClientSetMatchState_Implementation(FName state, float curTime)
+void ACDPlayerController::ClientSetMatchState_Implementation(ECurMatchState state, float curTime)
 {
 	MatchState = state;
 	OnMatchStateSet(MatchState);
@@ -297,15 +297,15 @@ void ACDPlayerController::SetHUDTime()
 {
 	float TimeLeft = 0.f;
 	
-	if (MatchState == MatchState::WaitingToStart)
+	if (MatchState == ECurMatchState::EMS_Waiting)
 	{
 		TimeLeft = WaitingStartTime + WarmupTime - GetServerTime();
 	}
-	else if (MatchState == MatchState::InProgress)
+	else if (MatchState == ECurMatchState::EMS_InGame)
 	{
 		TimeLeft = MatchStartTime + MatchTime - GetServerTime();
 	}
-	else if (MatchState == MatchState::Cooldown)
+	else if (MatchState == ECurMatchState::EMS_CoolDown)
 	{
 		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
 		if (!HasAuthority())
@@ -314,11 +314,11 @@ void ACDPlayerController::SetHUDTime()
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	if (CountdownInt!=SecondsLeft)
 	{
-		if (MatchState == MatchState::WaitingToStart||MatchState==MatchState::Cooldown)
+		if (MatchState == ECurMatchState::EMS_Waiting||MatchState==ECurMatchState::EMS_CoolDown)
 		{
 			SetHUDAnnouncementCountdown(TimeLeft);
 		}
-		if (MatchState == MatchState::InProgress)
+		if (MatchState == ECurMatchState::EMS_InGame)
 		{
 			SetHUDMatchCount(TimeLeft);
 		}
@@ -513,19 +513,19 @@ void ACDPlayerController::OnPossess(APawn* InPawn)
 }
 
 
-void ACDPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch, float time)
+void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch, float time)
 {
 	MatchState=State;
-	if (MatchState==MatchState::WaitingToStart)
+	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		WaitingStartTime = time;
 	}
-	else if (MatchState==MatchState::InProgress)
+	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = time;
 		HandleMatchHasStarted(bTeamsMatch);
 	}
-	else if (MatchState==MatchState::Cooldown)
+	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
 		CooldownStartTime = time;
 		HandleCooldown();
@@ -534,11 +534,11 @@ void ACDPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch, float t
 
 void ACDPlayerController::OnRep_MatchState()
 {
-	if (MatchState==MatchState::InProgress)
+	if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		HandleMatchHasStarted();
 	}
-	else if (MatchState==MatchState::Cooldown)
+	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
 		HandleCooldown();
 	}
