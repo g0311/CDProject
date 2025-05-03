@@ -12,7 +12,7 @@
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "CDProject/GameMode/CDGameMode.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -256,50 +256,25 @@ void ACDCharacter::PossessedBy(AController* NewController)
 	}
 }
 
-//Should Be MultiCast
-void ACDCharacter::RespawnPlayer()
+void ACDCharacter::Reset()
 {
+	//ServerCall
+	Super::Reset();
 	if (_attributeSet->GetHealth() > 0)
-	{
-		if (HasAuthority())
-		{
-			_combat->Reset(false);
-			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-			GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			//Move To Spawn Point	
-			
-		}
+	{ //Alive
+		_combat->Reset(false);
+		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		SetActorLocation(FVector::Zero());
+		Multicast_Reset(true);
+		//ServerPart
 	}
 	else
 	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
-		if (HasAuthority())
-		{
-			_combat->Reset(true);
-			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-			
-			//Move to Spawn Point
-			
-		}
-		else if (IsLocallyControlled())
-		{
-			_armMesh->SetVisibility(true);
-			//Enable Input
-			APlayerController* PC = Cast<APlayerController>(GetController());
-			if (PC)
-			{
-				ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-				if (LocalPlayer)
-				{
-					UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-					if (Subsystem)
-					{
-						Subsystem->AddMappingContext(_inputMappingContext, 0);
-					}
-				}
-			}
-		}
+		//Dead
+		_combat->Reset(true);
+		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		SetActorLocation(FVector::Zero());
+		Multicast_Reset(false);
 	}
 }
 
@@ -386,7 +361,7 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 		//Update Mode
 		if(GetWorld() && GetWorld()->GetAuthGameMode())
 		{
-			ACDGameMode* GameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+			ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
 				if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
@@ -418,6 +393,36 @@ void ACDCharacter::Multicast_Hit_Implementation()
 	if (armAnim)
 	{
 		armAnim->PlayHitMontage();
+	}
+}
+
+void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
+{
+	if (isAlive)
+	{
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
+	else
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
+		_armMesh->SetVisibility(true);
+		if (IsLocallyControlled())
+		{
+			APlayerController* PC = Cast<APlayerController>(GetController());
+			if (PC)
+			{
+				ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+				if (LocalPlayer)
+				{
+					UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+					if (Subsystem)
+					{
+						Subsystem->AddMappingContext(_inputMappingContext, 0);
+					}
+				}
+			}
+		}
 	}
 }
 

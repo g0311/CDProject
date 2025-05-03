@@ -5,48 +5,58 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
 #include "GameFramework/GameModeBase.h"
-#include "CDGameMode.generated.h"
+#include "RoundGameMode.generated.h"
 
 namespace MatchState
 {
+	extern CDPROJECT_API const FName PreInProgress;
 	extern CDPROJECT_API const FName Cooldown;
 	extern CDPROJECT_API const FName ModeSelect;
 }
 UCLASS()
-class CDPROJECT_API ACDGameMode : public AGameMode
+class CDPROJECT_API ARoundGameMode : public AGameMode
 {
 	GENERATED_BODY()
-	
 public:
-	ACDGameMode();
+	ARoundGameMode();
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void RestartGame() override;
+	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = L"") override;
+	//virtual bool ShouldSpawnAtStartSpot(AController* Player) override;
+	virtual void SetMatchState(FName NewState) override;
 	virtual void PlayerEliminated(
 		class ACDPlayerController* VictimController,
 		ACDPlayerController* AttackerController
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
-
+	
+	
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
-	float MatchTime = 120.f;//	//1 Round in Matching Time
-
+	float defaultMatchTime = 90.f;//	//1 Round in Matching Time
+	float MatchTime = 90.f;
+	
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime=10.f;
 	UPROPERTY(EditDefaultsOnly)
 	float WarmUpTime=10.f;
 	float Countdown=10.f;
-	float LevelStartingTime=0.f;
 	bool bNotifiedCooldown=false;
 	//bool IsModeSelecting=true;
 	//Round
 	int32 MaxRound=9;
 	bool bTeamsMatch=false;
-	
-	
+
+	float WaitingStartTime = 0.f;
+	float MatchStartTime = 0.f;
+	float CooldownStartTime = 0.f;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnMatchStateSet() override;
-
 private:
+	UPROPERTY(VisibleAnywhere)
+	TArray<AActor*> _createdActors;
 
+	TMap<FString, TArray<APlayerStart*>> AvailStartPoints;
 };

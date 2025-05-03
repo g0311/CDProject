@@ -8,7 +8,7 @@
 #include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
-#include "CDProject/GameMode/TeamGameMode.h"
+#include "CDProject/GameMode/DemolitionGameMode.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -46,7 +46,7 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 		//GameMode Set Time
 		if (GetWorld()->GetAuthGameMode())
 		{
-			ATeamGameMode* teamGameMode = Cast<ATeamGameMode>(GetWorld()->GetAuthGameMode());
+			ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
 			if (teamGameMode)
 			{
 				teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());

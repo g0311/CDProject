@@ -10,7 +10,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CombatComponent.h"
-#include "CDProject/GameMode/CDGameMode.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -50,16 +50,19 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME(ACDPlayerController, HUDGoldCount);
 	DOREPLIFETIME(ACDPlayerController, HUDDeathCount);
 	DOREPLIFETIME(ACDPlayerController, HUDKillCount);
+	DOREPLIFETIME(ACDPlayerController, WaitingStartTime);
+	DOREPLIFETIME(ACDPlayerController, MatchStartTime);
+	DOREPLIFETIME(ACDPlayerController, CooldownStartTime);
 }
 
 void ACDPlayerController::ServerCheckMatchState_Implementation()
 {
-	ACDGameMode* GameMode=Cast<ACDGameMode>(UGameplayStatics::GetGameMode(this));
+	ARoundGameMode* GameMode=Cast<ARoundGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GameMode)
 	{
 		WarmupTime=GameMode->WarmUpTime;
 		MatchTime = GameMode->MatchTime;
-		LevelStartingTime = GameMode->LevelStartingTime;
+		LevelStartingTime = GameMode->WaitingStartTime;
 		CooldownTime=GameMode->CooldownTime;
 		MatchState = GameMode->GetMatchState();
 		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
@@ -85,6 +88,12 @@ void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, f
 void ACDPlayerController::ClientSetMatchTime_Implementation(float matchTime)
 {
 	MatchTime = matchTime;
+}
+
+void ACDPlayerController::ClientSetMatchState_Implementation(FName state, float curTime)
+{
+	MatchState = state;
+	OnMatchStateSet(MatchState);
 }
 
 void ACDPlayerController::BeginPlay()
@@ -290,15 +299,17 @@ void ACDPlayerController::SetHUDTime()
 	
 	if (MatchState == MatchState::WaitingToStart)
 	{
-		TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
+		TimeLeft = WaitingStartTime + WarmupTime - GetServerTime();
 	}
 	else if (MatchState == MatchState::InProgress)
 	{
-		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+		TimeLeft = MatchStartTime + MatchTime - GetServerTime();
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
-		TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
+		if (!HasAuthority())
+			UE_LOG(LogGameplayTags, Log, TEXT("Cooldown Time: %f, CooldownStartTime: %f, ServerTime: %f"), CooldownTime, CooldownStartTime, GetServerTime());
 	}
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	if (CountdownInt!=SecondsLeft)
@@ -502,15 +513,21 @@ void ACDPlayerController::OnPossess(APawn* InPawn)
 }
 
 
-void ACDPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch)
+void ACDPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch, float time)
 {
 	MatchState=State;
-	if (MatchState==MatchState::InProgress)
+	if (MatchState==MatchState::WaitingToStart)
 	{
+		WaitingStartTime = time;
+	}
+	else if (MatchState==MatchState::InProgress)
+	{
+		MatchStartTime = time;
 		HandleMatchHasStarted(bTeamsMatch);
 	}
 	else if (MatchState==MatchState::Cooldown)
 	{
+		CooldownStartTime = time;
 		HandleCooldown();
 	}
 }

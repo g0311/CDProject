@@ -63,7 +63,7 @@ public:
 	//KDO Overlay
 	void ShowKDOverlay(bool isShowing);
 	
-	void OnMatchStateSet(FName State, bool bTeamsMatch=false);
+	void OnMatchStateSet(FName State, bool bTeamsMatch=false, float time = 0);
 	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
@@ -75,7 +75,9 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchTime(float matchTime);
-	
+
+	UFUNCTION(Client, Reliable)
+	void ClientSetMatchState(FName state, float curTime);
 
 	
 protected:
@@ -128,6 +130,13 @@ private:
 	float WarmupTime=0.f;
 	float CooldownTime=0.f;
 	int32 CountdownInt=0;
+
+	UPROPERTY(Replicated)
+	float WaitingStartTime = 0.f;
+	UPROPERTY(Replicated)
+	float MatchStartTime = 0.f;
+	UPROPERTY(Replicated)
+	float CooldownStartTime = 0.f;
 	
 	//State Variable
 	float HUDHealth;

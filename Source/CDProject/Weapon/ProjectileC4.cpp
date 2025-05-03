@@ -3,8 +3,8 @@
 
 #include "ProjectileC4.h"
 
-#include "CDProject/GameMode/CDGameMode.h"
-#include "CDProject/GameMode/TeamGameMode.h"
+#include "CDProject/GameMode/RoundGameMode.h"
+#include "CDProject/GameMode/DemolitionGameMode.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -27,7 +27,7 @@ void AProjectileC4::Destroyed()
 		ExplodeDamage();
 		if (GetWorld()->GetAuthGameMode())
 		{
-			ATeamGameMode* teamGameMode = Cast<ATeamGameMode>(GetWorld()->GetAuthGameMode());
+			ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
 			if (teamGameMode)
 			{
 				teamGameMode->TeamWin(true);
@@ -56,7 +56,7 @@ void AProjectileC4::Defused()
 
 		if (GetWorld()->GetAuthGameMode())
         {
-        	ATeamGameMode* teamGameMode = Cast<ATeamGameMode>(GetWorld()->GetAuthGameMode());
+        	ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
         	if (teamGameMode)
         	{
         		teamGameMode->TeamWin(false);

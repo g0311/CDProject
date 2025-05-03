@@ -44,7 +44,7 @@ void ACDPlayerState::OnRep_Team()
 	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
 	if (BCharacter)
 	{
-		//BCharacter->SetTeamColor(Team);
+		BCharacter->SetTeamColor(Team);
 	}
 }
 
@@ -64,7 +64,7 @@ void ACDPlayerState::SetTeam(ETeam TeamToSet)
 	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
 	if (BCharacter)
 	{
-		//BCharacter->SetTeamColor(Team);
+		BCharacter->SetTeamColor(Team);
 	}
 }
 

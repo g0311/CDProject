@@ -3,18 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CDGameMode.h"
-#include "TeamGameMode.generated.h"
+#include "RoundGameMode.h"
+#include "DemolitionGameMode.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class CDPROJECT_API ATeamGameMode : public ACDGameMode
+class CDPROJECT_API ADemolitionGameMode : public ARoundGameMode
 {
 	GENERATED_BODY()
 public:
-	ATeamGameMode();
+	ADemolitionGameMode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	void SetMatchTime(float c4ExplodeTime);
