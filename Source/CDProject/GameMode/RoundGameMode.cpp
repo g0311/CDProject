@@ -3,6 +3,8 @@
 
 #include "RoundGameMode.h"
 
+#include <filesystem>
+
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
@@ -26,9 +28,11 @@ ARoundGameMode::ARoundGameMode()
 void ARoundGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+	
 	if (_curMatchState==ECurMatchState::EMS_Waiting)
 	{
 		Countdown=FMath::CeilToInt(WaitingStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
+		//UE_LOG(LogGameMode, Log, TEXT("Countdown %f"), Countdown);
 		if (Countdown==-1)
 		{
 			SetCurMatchState(ECurMatchState::EMS_InGame);
@@ -49,7 +53,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 		if (Countdown<=0.f)
 		{
 			UE_LOG(LogGameMode, Log, TEXT("Restart Called"));
-			RestartGame();
+			RestartMatch();
 		}
 	}
 }
@@ -86,10 +90,10 @@ void ARoundGameMode::OnCurMatchStateSet()
 }
 
 void ARoundGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
-                                   ACDPlayerController* AttackerController)
+                                      ACDPlayerController* AttackerController)
 {
-	if (AttackerController==nullptr||AttackerController->PlayerState==nullptr) return;
-	if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
+		if (AttackerController==nullptr||AttackerController->PlayerState==nullptr) return;
+		if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
 	
@@ -128,8 +132,9 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 	}
 }
 
-void ARoundGameMode::RestartGame()
+void ARoundGameMode::RestartMatch(bool isForce)
 {
+	UE_LOG(LogGameMode, Log, TEXT("REstart called"));
 	for (auto actor : _createdActors)
 	{
 		if (IsValid(actor))
@@ -145,6 +150,8 @@ void ARoundGameMode::RestartGame()
 			ACDCharacter* Character = Cast<ACDCharacter>((*PCIter)->GetCharacter());
 			if (Character)
 			{
+				if (isForce)
+					Character->Kill();
 				Character->Reset();
 				AActor* playerStart = FindPlayerStart(controller);
 				if (playerStart)
@@ -155,8 +162,6 @@ void ARoundGameMode::RestartGame()
 			}
 		}
 	}
-	WaitingStartTime = GetWorld()->GetTimeSeconds();
-	MatchTime = defaultMatchTime;
 	SetCurMatchState(ECurMatchState::EMS_Waiting);
 }
 
@@ -206,30 +211,35 @@ AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, cons
 	return Super::FindPlayerStart_Implementation(Player, IncomingName);
 }
 
-void ARoundGameMode::PostLogin(APlayerController* NewPlayer)
+void ARoundGameMode::SendPlayerJoined()
 {
-	Super::PostLogin(NewPlayer);
+	//need Refactor to check all player joined
+	_joinedClinetCount++;
+	if (_joinedClinetCount >= _maxClientCount)
+	{
+		RestartMatch(true);
+	}
+	//게임 모드에서 체크 시 컨트롤러 초기화가 덜되서 스테이트 on rep이 호출이 안됨
 }
-
-// bool ARoundGameMode::ShouldSpawnAtStartSpot(AController* Player)
-// {
-// 	return false;
-// 	//return Super::ShouldSpawnAtStartSpot(Player);
-// }
 
 void ARoundGameMode::SetCurMatchState(ECurMatchState NewState)
 {
-	if (NewState == ECurMatchState::EMS_Waiting)
+	_curMatchState = NewState;
+	if (_curMatchState == ECurMatchState::EMS_Waiting)
 	{
+		MatchTime = defaultMatchTime;
 		WaitingStartTime = GetWorld()->GetTimeSeconds();
+		UE_LOG(LogGameMode, Log, TEXT("EMS_Waiting"));
 	}
-	else if (NewState == ECurMatchState::EMS_InGame)
+	else if (_curMatchState == ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = GetWorld()->GetTimeSeconds();
+		UE_LOG(LogGameMode, Log, TEXT("EMS_InGame"));
 	}
-	else if (NewState == ECurMatchState::EMS_CoolDown)
+	else if (_curMatchState == ECurMatchState::EMS_CoolDown)
 	{
 		CooldownStartTime = GetWorld()->GetTimeSeconds();
+		UE_LOG(LogGameMode, Log, TEXT("EMS_CoolDown"));
 	}
 	OnCurMatchStateSet();
 }

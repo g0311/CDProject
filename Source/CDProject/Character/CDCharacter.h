@@ -37,6 +37,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerPlayFootStepSound();
 
+	void Kill();
 private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
@@ -53,6 +54,7 @@ private:
 	void Multicast_Reset(bool isAlive);
 	void HandleDamage(float FinalDamage, class AController* instigatorController);
 	void UpdateArmMeshLocation(float DeltaTime);
+
 public:
 	bool _isDead = false;
 	//State로 리팩터링 필요..

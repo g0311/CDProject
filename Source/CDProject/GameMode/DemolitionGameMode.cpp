@@ -16,7 +16,6 @@ ADemolitionGameMode::ADemolitionGameMode()
 
 void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 {
-	Super::PostLogin(NewPlayer);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 
 	if (BGameState)
@@ -53,6 +52,7 @@ void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 			);
 		}
 	}
+	Super::PostLogin(NewPlayer);
 }
 
 void ADemolitionGameMode::Logout(AController* Exiting)

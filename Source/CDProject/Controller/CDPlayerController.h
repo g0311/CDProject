@@ -57,7 +57,6 @@ public:
 	
 	//MatchState
 	virtual void AcknowledgePossession(class APawn* P) override;
-	virtual void OnPossess(APawn* InPawn) override;
 	virtual void ReceivedPlayer() override;
 	virtual float GetServerTime();
 
@@ -65,11 +64,15 @@ public:
 	void ShowKDOverlay(bool isShowing);
 	
 	void OnMatchStateSet(ECurMatchState State, bool bTeamsMatch=false, float time = 0);
+	void HandleWaiting();
 	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
 	UFUNCTION(Server, Reliable)
 	void ServerCheckMatchState();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSendClientJoined();
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
@@ -113,7 +116,7 @@ private:
 	UPROPERTY(EditAnywhere, Category="HUD")
 	TSubclassOf<class UCharacterOverlay> CharacterOverlay;
 
-	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_MatchState)
 	ECurMatchState MatchState;
 
 	UFUNCTION()

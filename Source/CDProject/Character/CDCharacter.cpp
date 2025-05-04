@@ -259,12 +259,11 @@ void ACDCharacter::PossessedBy(AController* NewController)
 void ACDCharacter::Reset()
 {
 	//ServerCall
-	Super::Reset();
+	//Super::Reset();
 	if (_attributeSet->GetHealth() > 0)
 	{ //Alive
 		_combat->Reset(false);
 		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-		SetActorLocation(FVector::Zero());
 		Multicast_Reset(true);
 		//ServerPart
 	}
@@ -273,7 +272,6 @@ void ACDCharacter::Reset()
 		//Dead
 		_combat->Reset(true);
 		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-		SetActorLocation(FVector::Zero());
 		Multicast_Reset(false);
 	}
 }
@@ -336,20 +334,9 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 
 	if (IsLocallyControlled())
 	{
-		//Disable Input
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		if (PC)
-		{
-			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-			if (LocalPlayer)
-			{
-				UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-				if (Subsystem)
-				{
-					Subsystem->RemoveMappingContext(_inputMappingContext);
-				}
-			}
-		}
+		APlayerController* controller = Cast<APlayerController>(GetController());
+		if (IsValid(controller))
+			DisableInput(controller);
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
 	}
@@ -410,18 +397,8 @@ void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 		if (IsLocallyControlled())
 		{
 			APlayerController* PC = Cast<APlayerController>(GetController());
-			if (PC)
-			{
-				ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-				if (LocalPlayer)
-				{
-					UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-					if (Subsystem)
-					{
-						Subsystem->AddMappingContext(_inputMappingContext, 0);
-					}
-				}
-			}
+			if (IsValid(PC))
+				EnableInput(PC);
 		}
 	}
 }
@@ -494,6 +471,13 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 	else
 		NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
 	_camera->SetFieldOfView(NewFOV);
+}
+
+void ACDCharacter::Kill()
+{
+	_attributeSet->SetHealth(-1.f);
+	if (_combat)
+		_combat->DeadAction();
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)
