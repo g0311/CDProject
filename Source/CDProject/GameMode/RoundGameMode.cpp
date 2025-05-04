@@ -52,7 +52,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 		//UE_LOG(LogGameMode, Log, TEXT("%f %f %f"), CooldownTime, CooldownStartTime, GetWorld()->GetTimeSeconds());
 		if (Countdown<=0.f)
 		{
-			UE_LOG(LogGameMode, Log, TEXT("Restart Called"));
+			//UE_LOG(LogGameMode, Log, TEXT("Restart Called"));
 			RestartMatch();
 		}
 	}
@@ -134,7 +134,7 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 
 void ARoundGameMode::RestartMatch(bool isForce)
 {
-	UE_LOG(LogGameMode, Log, TEXT("REstart called"));
+	//UE_LOG(LogGameMode, Log, TEXT("REstart called"));
 	for (auto actor : _createdActors)
 	{
 		if (IsValid(actor))
@@ -181,7 +181,6 @@ AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, cons
 		}
 	}
 
-	UE_LOG(LogGameMode, Log, TEXT("%s"), *TeamTag);
 	// StartPoint init
 	if (!AvailStartPoints.Contains(TeamTag))
 	{

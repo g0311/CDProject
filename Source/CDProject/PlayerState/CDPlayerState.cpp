@@ -22,6 +22,15 @@ ACDPlayerState::ACDPlayerState()
 	bReplicates=true;
 }
 
+void ACDPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	//For Clietn to Set Team
+		//If Team Alreadey Set, Rep Func doesn't Call
+	SetTeam(Team);
+}
+
 void ACDPlayerState::AddGold(int32 Amount)
 {
 	Gold+=Amount;
@@ -44,7 +53,7 @@ void ACDPlayerState::OnRep_Team()
 	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
 	if (BCharacter)
 	{
-		BCharacter->SetTeamColor(Team);
+		BCharacter->SetTeam(Team);
 	}
 }
 
@@ -60,11 +69,24 @@ void ACDPlayerState::OnRep_Gold()
 
 void ACDPlayerState::SetTeam(ETeam TeamToSet)
 {
+	UE_LOG(LogTemp, Warning, TEXT("TeamToSet = %d"), TeamToSet);
 	Team=TeamToSet;
+
 	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
 	if (BCharacter)
 	{
-		BCharacter->SetTeamColor(Team);
+		BCharacter->SetTeam(Team);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Set Team Character NULL"));
+		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this, TeamToSet]()
+		{
+			if (IsValid(this))
+			{
+				SetTeam(TeamToSet);
+			}
+		}));
 	}
 }
 

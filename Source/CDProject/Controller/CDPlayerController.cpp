@@ -178,8 +178,6 @@ void ACDPlayerController::CheckTimeSync(float DeltaTime)
 
 void ACDPlayerController::HandleWaiting()
 {
-	if (!HasAuthority())
-		UE_LOG(LogGameplayTags, Log, TEXT("Client HandleWaiting Called"));
 	if (!IsLocalController())
 		return;
 	if (IsValid(GetPawn()))
@@ -205,8 +203,6 @@ void ACDPlayerController::HandleWaiting()
 
 void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
-	if (!HasAuthority())
-		UE_LOG(LogGameplayTags, Log, TEXT("Client HandleMatchStart Called"));
 	if (!IsLocalController())
 		return;
 	if (IsValid(GetPawn()))
@@ -582,8 +578,6 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 
 void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch, float time)
 {
-	UE_LOG(LogGameplayTags, Log, TEXT("OnMatchStateSet"));
-
 	MatchState=State;
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{

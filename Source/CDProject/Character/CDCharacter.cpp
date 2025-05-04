@@ -80,7 +80,7 @@ ACDCharacter::ACDCharacter()
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (!MiniMapRenderTarget)
 	{
 		MiniMapRenderTarget = NewObject<UTextureRenderTarget2D>(this, UTextureRenderTarget2D::StaticClass(), TEXT("MiniMapRenderTarget"));
@@ -276,6 +276,20 @@ void ACDCharacter::Reset()
 	}
 }
 
+void ACDCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	// ACDPlayerState* playerState = Cast<ACDPlayerState>(GetController());
+	// if (playerState)
+	// {
+	// 	SetTeam(playerState->GetTeam());
+	// }
+	//컨트롤러 PS, 폰
+	//서버 => 컨트롤러 PS, 폰
+	//클라 => 컨트롤러 ????
+	//컨트롤러 // PS 폰, 폰 PS
+}
+
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 {
 	if (isWatching)
@@ -294,13 +308,14 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 	}
 }
 
-void ACDCharacter::SetTeamColor(ETeam team)
+void ACDCharacter::SetTeam(ETeam team)
 {
 	_team = team;
+	UE_LOG(LogTemp, Log, TEXT("Set Team Called"));
 	if (!GetMesh())
 		return;
 	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
-	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_BLUE"));
+	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_BLUE.M_UE4Man_Body_BLUE"));
 	switch (_team)
 	{
 	case ETeam::ET_RedTeam:

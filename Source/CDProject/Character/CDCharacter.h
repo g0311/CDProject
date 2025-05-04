@@ -30,9 +30,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Reset() override;
+	virtual void OnRep_PlayerState() override;
 	
 	void UpdateVisibilityForSpectator(bool isWatching);
-	void SetTeamColor(ETeam team);
+	void SetTeam(ETeam team);
 	void PlayFootStepSound();
 	UFUNCTION(Server, Reliable)
 	void ServerPlayFootStepSound();
