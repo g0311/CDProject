@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "CDProject/Types/CurMatchState.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
@@ -56,26 +57,31 @@ public:
 	
 	//MatchState
 	virtual void AcknowledgePossession(class APawn* P) override;
-	virtual void OnPossess(APawn* InPawn) override;
 	virtual void ReceivedPlayer() override;
 	virtual float GetServerTime();
 
 	//KDO Overlay
 	void ShowKDOverlay(bool isShowing);
 	
-	void OnMatchStateSet(FName State, bool bTeamsMatch=false);
+	void OnMatchStateSet(ECurMatchState State, bool bTeamsMatch=false, float time = 0);
+	void HandleWaiting();
 	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
 	UFUNCTION(Server, Reliable)
 	void ServerCheckMatchState();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSendClientJoined();
 
 	UFUNCTION(Client, Reliable)
-	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
+	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchTime(float matchTime);
-	
+
+	UFUNCTION(Client, Reliable)
+	void ClientSetMatchState(ECurMatchState state, float curTime);
 
 	
 protected:
@@ -110,8 +116,8 @@ private:
 	UPROPERTY(EditAnywhere, Category="HUD")
 	TSubclassOf<class UCharacterOverlay> CharacterOverlay;
 
-	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
-	FName MatchState;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_MatchState)
+	ECurMatchState MatchState;
 
 	UFUNCTION()
 	void OnRep_MatchState();
@@ -128,6 +134,13 @@ private:
 	float WarmupTime=0.f;
 	float CooldownTime=0.f;
 	int32 CountdownInt=0;
+
+	UPROPERTY(Replicated)
+	float WaitingStartTime = 0.f;
+	UPROPERTY(Replicated)
+	float MatchStartTime = 0.f;
+	UPROPERTY(Replicated)
+	float CooldownStartTime = 0.f;
 	
 	//State Variable
 	float HUDHealth;

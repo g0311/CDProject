@@ -912,6 +912,8 @@ void UCombatComponent::NetMulticastReload_Implementation()
 
 void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 {
+	if (!IsValid(weapon))
+		return;
 	weapon->GetWeaponMesh()->SetVisibility(true);
 	weapon->GetWeaponMesh3p()->SetVisibility(false);
 }
