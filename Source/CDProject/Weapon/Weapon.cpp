@@ -84,6 +84,15 @@ void AWeapon::SpendCarriedAmmo(int32 ReloadAmount)
 	CarriedAmmo = FMath::Max(CarriedAmmo - ReloadAmount, 0);
 }
 
+void AWeapon::SetWeaponVisible(bool tf)
+{
+	WeaponVisible = tf;
+	if (HasAuthority())
+	{
+		OnRep_WeaponVisible();
+	}
+}
+
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay()
 {
@@ -146,6 +155,12 @@ void AWeapon::OnRep_WeaponState()
 		EnableCustomDepth(false);
 		break;
 	}
+}
+
+void AWeapon::OnRep_WeaponVisible()
+{
+	GetWeaponMesh()->SetVisibility(WeaponVisible);
+	GetWeaponMesh3p()->SetVisibility(WeaponVisible);
 }
 
 void AWeapon::SpendAmmo()
@@ -222,6 +237,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeapon, WeaponVisible);
 	DOREPLIFETIME(AWeapon, Ammo);
 	DOREPLIFETIME(AWeapon, CarriedAmmo);
 	DOREPLIFETIME(AWeapon, WeaponState);

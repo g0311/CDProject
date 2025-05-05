@@ -11,6 +11,9 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 namespace MatchState
 {
@@ -138,22 +141,27 @@ void ARoundGameMode::RestartMatch(bool isForce)
 	for (auto actor : _createdActors)
 	{
 		if (IsValid(actor))
+		{
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+				continue;
 			actor->Destroy();
+		}
 	}
+	_createdActors.Empty();
 	
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator();PCIter;++PCIter)
 	{
 		AController* controller = Cast<AController>(*PCIter);
 		if (controller)
 		{
-			//AActor* startSpot = GetSpawnPoint(controller);
+			ACDPlayerController* playerController=Cast<ACDPlayerController>(controller);
 			ACDCharacter* Character = Cast<ACDCharacter>((*PCIter)->GetCharacter());
-			if (Character)
+			if (Character && playerController)
 			{
 				if (isForce)
 					Character->Kill();
 				Character->Reset();
-				AActor* playerStart = FindPlayerStart(controller);
+				AActor* playerStart = FindPlayerStart(playerController);
 				if (playerStart)
 				{
 					Character->SetActorLocation(playerStart->GetActorLocation());

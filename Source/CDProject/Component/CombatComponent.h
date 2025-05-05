@@ -60,7 +60,7 @@ private:
 	FGameplayTagContainer _combatStateTags;
 	//State
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	int _weaponIndex = -1;
 	UPROPERTY(VisibleAnywhere)
 	int _befIndex = -1;
@@ -74,6 +74,7 @@ private:
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
+	FTimerHandle _weaponVisibleTimerHandle;
 	FTimerHandle _c4TimerHandle;	
 	
 	UPROPERTY(VisibleAnywhere)
@@ -136,6 +137,8 @@ private:
 	void NetMulticastReload();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastChangeWeapon(int idx);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeReady();
 	UFUNCTION(NetMulticast, Reliable)

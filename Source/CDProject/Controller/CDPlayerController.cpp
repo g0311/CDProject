@@ -551,6 +551,28 @@ void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
 	}
 }
 
+void ACDPlayerController::ShowAnnounceText(bool bShow)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		if (bShow)
+		{
+			CDHUD->AddAnnouncement();
+			if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
+			{
+				FString AnnouncementText = "Starting Match...";
+				CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+				CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
+			}
+		}
+		else
+		{
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
 void ACDPlayerController::AcknowledgePossession(class APawn* P)
 {
 	Super::AcknowledgePossession(P);
@@ -601,9 +623,11 @@ void ACDPlayerController::OnRep_MatchState()
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		HandleWaiting();
+		//Show Store HUD
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
+		//Hide Store HUD
 		HandleMatchHasStarted();
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
