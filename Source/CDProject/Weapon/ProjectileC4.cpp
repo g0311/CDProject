@@ -24,6 +24,12 @@ void AProjectileC4::Destroyed()
 {
 	if (HasAuthority())
 	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
+			return;
+		}
+		
 		ExplodeDamage();
 		if (GetWorld()->GetAuthGameMode())
 		{
@@ -33,9 +39,8 @@ void AProjectileC4::Destroyed()
 				teamGameMode->TeamWin(true);
 			}
 		}
-		//GameMode Red Team Win
+		NetMulticastCreateExplodeEffect();
 	}
-	Super::Destroyed();
 }
 
 void AProjectileC4::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -69,6 +74,8 @@ void AProjectileC4::Defused()
 
 void AProjectileC4::NetMulticastPlayDefuseSound_Implementation()
 {
+	if (!IsValid(this))
+		return;
 	if (IsValid(_defuseSound))
 		UGameplayStatics::PlaySound2D(this, _defuseSound);
 }
@@ -87,4 +94,12 @@ void AProjectileC4::BeginPlay()
 void AProjectileC4::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AProjectileC4::NetMulticastCreateExplodeEffect_Implementation()
+{
+	if (!IsValid(this))
+		return;
+
+	Super::Destroyed();
 }
