@@ -436,6 +436,7 @@ ARoundGameMode* UCombatComponent::GetRoundGameMode()
 			}
 		}
 	}
+	return nullptr;
 }
 
 void UCombatComponent::ServerFire_Implementation(FVector fireDir)

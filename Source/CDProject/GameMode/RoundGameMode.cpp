@@ -166,6 +166,7 @@ void ARoundGameMode::RestartMatch(bool isForce)
 				{
 					Character->SetActorLocation(playerStart->GetActorLocation());
 					Character->SetActorRotation(playerStart->GetActorRotation());
+					controller->SetControlRotation(playerStart->GetActorRotation());
 				}
 			}
 		}
