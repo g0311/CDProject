@@ -32,6 +32,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastCreateExplodeEffect();
+	
 	UPROPERTY(EditAnywhere)
 	float _defusingTime = 10.f;
 
@@ -41,3 +44,4 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundBase* _defuseSound;
 };
+

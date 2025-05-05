@@ -19,6 +19,10 @@ void UC4InteractProgressWidget::Reset(bool isPlanting)
 
 void UC4InteractProgressWidget::SetProgressTime(float Time)
 {
+	if (Time <= 0.f)
+	{
+		StopProgress();
+	}
 	_targetTime = Time;
 	_elapsedTime = 0.f;
 	_progress = 0.f;

@@ -69,7 +69,7 @@ void ACDPlayerState::OnRep_Gold()
 
 void ACDPlayerState::SetTeam(ETeam TeamToSet)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TeamToSet = %d"), TeamToSet);
+	//UE_LOG(LogTemp, Warning, TEXT("TeamToSet = %d"), TeamToSet);
 	Team=TeamToSet;
 
 	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
@@ -79,7 +79,7 @@ void ACDPlayerState::SetTeam(ETeam TeamToSet)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Set Team Character NULL"));
+		//UE_LOG(LogTemp, Warning, TEXT("Set Team Character NULL"));
 		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this, TeamToSet]()
 		{
 			if (IsValid(this))

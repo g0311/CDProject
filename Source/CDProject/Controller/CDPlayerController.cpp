@@ -24,6 +24,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -551,6 +552,28 @@ void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
 	}
 }
 
+void ACDPlayerController::ShowAnnounceText(bool bShow)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		if (bShow)
+		{
+			CDHUD->AddAnnouncement();
+			if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
+			{
+				FString AnnouncementText = "Starting Match...";
+				CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+				CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
+			}
+		}
+		else
+		{
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
 void ACDPlayerController::AcknowledgePossession(class APawn* P)
 {
 	Super::AcknowledgePossession(P);
@@ -582,10 +605,12 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		WaitingStartTime = time;
+		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = time;
+		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
@@ -601,9 +626,11 @@ void ACDPlayerController::OnRep_MatchState()
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		HandleWaiting();
+		//Show Store HUD
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
+		//Hide Store HUD
 		HandleMatchHasStarted();
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
@@ -662,12 +689,12 @@ void ACDPlayerController::ShowC4PlantingProgress(bool isPlanting, float time)
 		if (isPlanting)
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
-			CDHUD->C4InteractProgress->SetProgressTime(time);
 		}
 		else
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
+		CDHUD->C4InteractProgress->SetProgressTime(time);
 	}
 }
 void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
@@ -681,11 +708,11 @@ void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
 		if (isDefusing)
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
-			CDHUD->C4InteractProgress->SetProgressTime(time);
 		}
 		else
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
+		CDHUD->C4InteractProgress->SetProgressTime(time);
 	}
 }

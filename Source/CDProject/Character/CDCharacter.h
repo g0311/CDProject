@@ -39,6 +39,8 @@ public:
 	void ServerPlayFootStepSound();
 
 	void Kill();
+	void GiveC4();
+
 private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
@@ -141,6 +143,7 @@ private:
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
+	void Jump() override;
 	void Crouch(bool bClientSimulation = false) override;
 	void Walk();
 	void UnWalk();

@@ -42,7 +42,6 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 			FRotator::ZeroRotator,
 			SpawnParams
 		);
-
 		//GameMode Set Time
 		if (GetWorld()->GetAuthGameMode())
 		{
@@ -51,6 +50,8 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 			{
 				teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
 				teamGameMode->SetIsPlanted(true);
+
+				teamGameMode->AddDestroyableActor(c4Projectile);
 			}
 		}
 		Destroy();

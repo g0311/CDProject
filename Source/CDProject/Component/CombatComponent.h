@@ -40,6 +40,7 @@ public:
 	EWeaponType GetCurWeaponType();
 	void SetWeaponVisible(bool tf);
 	void SetBefWeaponVisible(bool tf);
+	class ARoundGameMode* GetRoundGameMode();
 	
 	FHUDPackage HUDPackage;
 	
@@ -47,6 +48,8 @@ public:
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> _c4Weapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
 private:
@@ -60,7 +63,7 @@ private:
 	FGameplayTagContainer _combatStateTags;
 	//State
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	int _weaponIndex = -1;
 	UPROPERTY(VisibleAnywhere)
 	int _befIndex = -1;
@@ -74,6 +77,7 @@ private:
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
+	FTimerHandle _weaponVisibleTimerHandle;
 	FTimerHandle _c4TimerHandle;	
 	
 	UPROPERTY(VisibleAnywhere)
@@ -120,6 +124,7 @@ public:
 		void Aim(bool tf);
 	void DropAllWeapons();
 	void ChangeToNextWeapon();
+	void CreateC4Weapon();
 
 private:
 	//Implementation
@@ -136,6 +141,8 @@ private:
 	void NetMulticastReload();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastChangeWeapon(int idx);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeReady();
 	UFUNCTION(NetMulticast, Reliable)

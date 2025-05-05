@@ -67,4 +67,6 @@ private:
 
 	UPROPERTY(visibleAnywhere)
 	ECurMatchState _curMatchState = ECurMatchState::EMS_None;
+
+	FTimerHandle _startGameTimerHandle;
 };

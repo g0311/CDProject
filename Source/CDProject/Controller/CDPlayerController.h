@@ -39,7 +39,6 @@ public:
 	void Client_ShowStoreWidget(bool IsActivate);
 
 	//bShowOverlay
-	
 	void ShowStoreWidget(bool bShow);
 	void RetryShowStoreWidget(bool bActivate);
 	//Weapon
@@ -54,6 +53,7 @@ public:
 	void HideRoundScore(bool IsHide);
 	void SetHUDRedTeam(int32 RedScore);
 	void SetHUDBlueTeam(int32 BlueScore);
+	void ShowAnnounceText(bool bShow);
 	
 	//MatchState
 	virtual void AcknowledgePossession(class APawn* P) override;

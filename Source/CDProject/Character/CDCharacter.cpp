@@ -279,15 +279,7 @@ void ACDCharacter::Reset()
 void ACDCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
-	// ACDPlayerState* playerState = Cast<ACDPlayerState>(GetController());
-	// if (playerState)
-	// {
-	// 	SetTeam(playerState->GetTeam());
-	// }
-	//컨트롤러 PS, 폰
-	//서버 => 컨트롤러 PS, 폰
-	//클라 => 컨트롤러 ????
-	//컨트롤러 // PS 폰, 폰 PS
+
 }
 
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
@@ -311,7 +303,6 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 void ACDCharacter::SetTeam(ETeam team)
 {
 	_team = team;
-	UE_LOG(LogTemp, Log, TEXT("Set Team Called"));
 	if (!GetMesh())
 		return;
 	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
@@ -357,6 +348,7 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 	}
 	if (HasAuthority())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Die Called In Server"));
 		//Drop All Weapon & Reset Tag & Clear Timer
 		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -490,14 +482,24 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 
 void ACDCharacter::Kill()
 {
-	_attributeSet->SetHealth(-1.f);
+	GetAttributeSet()->SetHealth(0.f);
 	if (_combat)
 		_combat->DeadAction();
 }
 
+void ACDCharacter::GiveC4()
+{
+	if (_combat)
+		_combat->CreateC4Weapon();
+}
+
 void ACDCharacter::Move(const FInputActionValue& value)
 {
-	if (!Controller)
+	if (!Controller ||
+		!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4)
+	)
 		return;
 	
 	FVector inputVal = value.Get<FVector>();
@@ -528,6 +530,16 @@ void ACDCharacter::Look(const FInputActionValue& value)
 		AddControllerYawInput(LookAxisVector.X * FinalSensitivity);
 		AddControllerPitchInput(-LookAxisVector.Y * FinalSensitivity);
 	}
+}
+
+void ACDCharacter::Jump()
+{
+	if (!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4))
+		return;
+	
+	Super::Jump();
 }
 
 void ACDCharacter::Crouch(bool bClientSimulation)

@@ -11,6 +11,10 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
+#include "TimerManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PawnMovementComponent.h"
+#include "Runtime/Core/Tests/Containers/TestUtils.h"
 
 namespace MatchState
 {
@@ -134,34 +138,54 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 
 void ARoundGameMode::RestartMatch(bool isForce)
 {
-	//UE_LOG(LogGameMode, Log, TEXT("REstart called"));
-	for (auto actor : _createdActors)
+	TArray<AController*> PlayerControllers;
+	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
-		if (IsValid(actor))
-			actor->Destroy();
+		if (AController* Controller = Cast<AController>(*PCIter))
+		{
+			PlayerControllers.Add(Controller);
+		}
 	}
-	
-	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator();PCIter;++PCIter)
+	Test::Shuffle(PlayerControllers);
+
+	bool isC4Given = false;
+	for (AController* controller : PlayerControllers)
 	{
-		AController* controller = Cast<AController>(*PCIter);
 		if (controller)
 		{
-			//AActor* startSpot = GetSpawnPoint(controller);
-			ACDCharacter* Character = Cast<ACDCharacter>((*PCIter)->GetCharacter());
-			if (Character)
+			ACDPlayerController* playerController=Cast<ACDPlayerController>(controller);
+			ACDCharacter* Character = Cast<ACDCharacter>(controller->GetCharacter());
+			if (Character && playerController)
 			{
 				if (isForce)
 					Character->Kill();
 				Character->Reset();
-				AActor* playerStart = FindPlayerStart(controller);
+				AActor* playerStart = FindPlayerStart(playerController);
 				if (playerStart)
 				{
 					Character->SetActorLocation(playerStart->GetActorLocation());
 					Character->SetActorRotation(playerStart->GetActorRotation());
+					controller->SetControlRotation(playerStart->GetActorRotation());
+				}
+				if (!isC4Given && Character->GetTeam() == ETeam::ET_RedTeam)
+				{
+					isC4Given = true;
+					Character->GiveC4();
 				}
 			}
 		}
 	}
+	for (auto actor : _createdActors)
+	{
+		if (IsValid(actor))
+		{
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+				continue;
+			actor->Destroy();
+		}
+	}
+	_createdActors.Empty();
+	
 	SetCurMatchState(ECurMatchState::EMS_Waiting);
 }
 
