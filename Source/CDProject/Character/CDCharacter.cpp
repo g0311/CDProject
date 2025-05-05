@@ -495,7 +495,11 @@ void ACDCharacter::GiveC4()
 
 void ACDCharacter::Move(const FInputActionValue& value)
 {
-	if (!Controller)
+	if (!Controller ||
+		!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4)
+	)
 		return;
 	
 	FVector inputVal = value.Get<FVector>();
@@ -526,6 +530,16 @@ void ACDCharacter::Look(const FInputActionValue& value)
 		AddControllerYawInput(LookAxisVector.X * FinalSensitivity);
 		AddControllerPitchInput(-LookAxisVector.Y * FinalSensitivity);
 	}
+}
+
+void ACDCharacter::Jump()
+{
+	if (!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4))
+		return;
+	
+	Super::Jump();
 }
 
 void ACDCharacter::Crouch(bool bClientSimulation)

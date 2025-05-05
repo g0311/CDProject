@@ -24,6 +24,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -604,10 +605,12 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		WaitingStartTime = time;
+		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = time;
+		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{

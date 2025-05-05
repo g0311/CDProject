@@ -143,6 +143,7 @@ private:
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
+	void Jump() override;
 	void Crouch(bool bClientSimulation = false) override;
 	void Walk();
 	void UnWalk();

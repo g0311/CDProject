@@ -526,23 +526,16 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 
 void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 {
-	//Need to Check (C4 Area)
-	if (!_isC4Area)
-		return;
-	
 	if (GetWorld())
 	{
-		if (isPlanting)
+		if (isPlanting && _isC4Area)
 		{
-			if (_playerCharacter)
-			{
-				_playerCharacter->GetCharacterMovement()->DisableMovement();
-			}
 			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this]
 				{
+					if (!IsValid(this))
+						return;
 					RequestFire();
 					//In C4 Fire, GameMode Set Bomb Planted
-					
 					ServerC4Plant(false);
 					_weapons[_weaponIndex] = nullptr;
 					ChangeToNextWeapon();
@@ -553,10 +546,6 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 		}
 		else
 		{
-			if (_playerCharacter)
-			{
-				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-			}
 			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
 			NetMulticastC4Plant(false);
 			RemoveCombatState(CombatTags::State_Combat_PlantingC4);
@@ -576,11 +565,6 @@ void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
 			AProjectileC4* c4Projectile = Cast<AProjectileC4>(_aimedActor);
 			if (!c4Projectile)
 				return;
-			
-			if (_playerCharacter)
-			{
-				_playerCharacter->GetCharacterMovement()->DisableMovement();
-			}
 			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this, c4Projectile]
 				{
 					if (IsValid(this))
@@ -594,10 +578,6 @@ void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
 		}
 		else
 		{
-			if (_playerCharacter)
-			{
-				_playerCharacter->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-			}
 			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
 			NetMulticastC4Defuse(false);
 			RemoveCombatState(CombatTags::State_Combat_DefusingC4);
