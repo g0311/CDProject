@@ -14,6 +14,7 @@
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
+#include "Runtime/Core/Tests/Containers/TestUtils.h"
 
 namespace MatchState
 {
@@ -137,13 +138,23 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 
 void ARoundGameMode::RestartMatch(bool isForce)
 {
-	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator();PCIter;++PCIter)
+	TArray<AController*> PlayerControllers;
+	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
-		AController* controller = Cast<AController>(*PCIter);
+		if (AController* Controller = Cast<AController>(*PCIter))
+		{
+			PlayerControllers.Add(Controller);
+		}
+	}
+	Test::Shuffle(PlayerControllers);
+
+	bool isC4Given = false;
+	for (AController* controller : PlayerControllers)
+	{
 		if (controller)
 		{
 			ACDPlayerController* playerController=Cast<ACDPlayerController>(controller);
-			ACDCharacter* Character = Cast<ACDCharacter>((*PCIter)->GetCharacter());
+			ACDCharacter* Character = Cast<ACDCharacter>(controller->GetCharacter());
 			if (Character && playerController)
 			{
 				if (isForce)
@@ -155,6 +166,11 @@ void ARoundGameMode::RestartMatch(bool isForce)
 					Character->SetActorLocation(playerStart->GetActorLocation());
 					Character->SetActorRotation(playerStart->GetActorRotation());
 					controller->SetControlRotation(playerStart->GetActorRotation());
+				}
+				if (!isC4Given && Character->GetTeam() == ETeam::ET_RedTeam)
+				{
+					isC4Given = true;
+					Character->GiveC4();
 				}
 			}
 		}

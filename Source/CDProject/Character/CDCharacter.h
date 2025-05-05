@@ -39,6 +39,8 @@ public:
 	void ServerPlayFootStepSound();
 
 	void Kill();
+	void GiveC4();
+
 private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")

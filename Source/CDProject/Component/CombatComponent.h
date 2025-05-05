@@ -49,6 +49,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
 	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> _c4Weapon;
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
 private:
 	virtual void BeginPlay() override;
@@ -122,6 +124,7 @@ public:
 		void Aim(bool tf);
 	void DropAllWeapons();
 	void ChangeToNextWeapon();
+	void CreateC4Weapon();
 
 private:
 	//Implementation

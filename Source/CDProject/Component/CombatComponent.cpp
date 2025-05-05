@@ -704,6 +704,24 @@ void UCombatComponent::ChangeToNextWeapon()
 	}
 }
 
+void UCombatComponent::CreateC4Weapon()
+{
+	if (_c4Weapon)
+	{
+		if (_weapons[4])
+		{
+			_weapons[4]->Destroy();
+		}
+		
+		_weapons[4] = GetWorld()->SpawnActor<AWeapon>(_c4Weapon, FVector::ZeroVector, FRotator::ZeroRotator);
+		if (_weapons[4])
+		{
+			_weapons[4]->SetOwner(_playerCharacter);
+			_weapons[4]->AttachToPlayer();
+		}
+	}
+}
+
 void UCombatComponent::Fire(FVector fireDir)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])

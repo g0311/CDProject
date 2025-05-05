@@ -483,7 +483,14 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 void ACDCharacter::Kill()
 {
 	GetAttributeSet()->SetHealth(0.f);
-	_combat->DeadAction();
+	if (_combat)
+		_combat->DeadAction();
+}
+
+void ACDCharacter::GiveC4()
+{
+	if (_combat)
+		_combat->CreateC4Weapon();
 }
 
 void ACDCharacter::Move(const FInputActionValue& value)
