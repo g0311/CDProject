@@ -165,6 +165,7 @@ void ARoundGameMode::RestartMatch(bool isForce)
 				{
 					Character->SetActorLocation(playerStart->GetActorLocation());
 					Character->SetActorRotation(playerStart->GetActorRotation());
+					Character->GetCharacterMovement()->Deactivate();
 					controller->SetControlRotation(playerStart->GetActorRotation());
 				}
 				if (!isC4Given && Character->GetTeam() == ETeam::ET_RedTeam)

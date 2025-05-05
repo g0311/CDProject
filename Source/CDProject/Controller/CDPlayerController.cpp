@@ -686,12 +686,12 @@ void ACDPlayerController::ShowC4PlantingProgress(bool isPlanting, float time)
 		if (isPlanting)
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
-			CDHUD->C4InteractProgress->SetProgressTime(time);
 		}
 		else
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
+		CDHUD->C4InteractProgress->SetProgressTime(time);
 	}
 }
 void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
@@ -705,11 +705,11 @@ void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
 		if (isDefusing)
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
-			CDHUD->C4InteractProgress->SetProgressTime(time);
 		}
 		else
 		{
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
+		CDHUD->C4InteractProgress->SetProgressTime(time);
 	}
 }

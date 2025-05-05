@@ -73,7 +73,7 @@ protected:
 	FTimerHandle DestroyTimer;
 
 	UPROPERTY(EditAnywhere)
-	float DestroyTime=3.f;
+	float DestroyTime=30.f;
 	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* Tracer;
