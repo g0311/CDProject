@@ -40,6 +40,7 @@ public:
 	EWeaponType GetCurWeaponType();
 	void SetWeaponVisible(bool tf);
 	void SetBefWeaponVisible(bool tf);
+	class ARoundGameMode* GetRoundGameMode();
 	
 	FHUDPackage HUDPackage;
 	

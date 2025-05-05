@@ -15,6 +15,7 @@
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "CDProject/Character/CDGameplayTag.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -192,7 +193,6 @@ void UCombatComponent::CreateDefaultWeapons()
 		if (_weapons[1])
 		{
 			_weapons[1]->Destroy();
-			return;
 		}
 		
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
@@ -208,13 +208,13 @@ void UCombatComponent::CreateDefaultWeapons()
 		if (_weapons[2])
 		{
 			_weapons[2]->Destroy();
-			return;
 		}
 		
 		_weapons[2] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[2])
 		{
-			//UE_LOG(LogTemp, Log, TEXT("Combat Create"));
+			if (_playerCharacter->IsLocallyControlled())
+				UE_LOG(LogTemp, Log, TEXT("Combat Create"));
 			_weapons[2]->SetOwner(_playerCharacter);
 			_weapons[2]->AttachToPlayer();
 		}
@@ -422,6 +422,20 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 	_weapons[_befIndex]->SetWeaponVisible(tf);
 
 	_befIndex = _weaponIndex;
+}
+
+ARoundGameMode* UCombatComponent::GetRoundGameMode()
+{
+	if (GetWorld())
+	{
+		if (GetWorld()->GetAuthGameMode())
+		{
+			if (Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				return Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
+			}
+		}
+	}
 }
 
 void UCombatComponent::ServerFire_Implementation(FVector fireDir)
@@ -665,10 +679,11 @@ void UCombatComponent::DropAllWeapons()
 	Aim(false);
 	for (int i = 0; i < _weapons.Num(); ++i)
 	{
-		if (i == 2) continue;
-
 		if (_weapons[i])
 		{
+			if (_weapons[i]->GetWeaponType() == EWeaponType::EWT_Knife)
+				continue;
+			
 			FRotator controlRot = _playerCharacter->GetControlRotation();
 			FVector lookDirection = controlRot.Vector();
 			//Add Impulse
