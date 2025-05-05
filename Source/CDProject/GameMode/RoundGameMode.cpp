@@ -137,18 +137,6 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 
 void ARoundGameMode::RestartMatch(bool isForce)
 {
-	//UE_LOG(LogGameMode, Log, TEXT("REstart called"));
-	for (auto actor : _createdActors)
-	{
-		if (IsValid(actor))
-		{
-			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
-				continue;
-			actor->Destroy();
-		}
-	}
-	_createdActors.Empty();
-	
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator();PCIter;++PCIter)
 	{
 		AController* controller = Cast<AController>(*PCIter);
@@ -171,6 +159,17 @@ void ARoundGameMode::RestartMatch(bool isForce)
 			}
 		}
 	}
+	for (auto actor : _createdActors)
+	{
+		if (IsValid(actor))
+		{
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+				continue;
+			actor->Destroy();
+		}
+	}
+	_createdActors.Empty();
+	
 	SetCurMatchState(ECurMatchState::EMS_Waiting);
 }
 

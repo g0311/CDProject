@@ -227,7 +227,6 @@ void AWeapon::Fire(const FVector& HitTarget)
 						}
 					}
 				}
-				//Edit Need
 			}
 		}
 	}

@@ -8,6 +8,7 @@
 #include "Sound/SoundCue.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 
 // Sets default values
 AProjectile::AProjectile()
@@ -43,6 +44,17 @@ void AProjectile::BeginPlay()
 			EAttachLocation::KeepWorldPosition);
 	}
 	CollisionBox->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
+	
+	if (GetWorld())
+	{
+		if (GetWorld()->GetAuthGameMode())
+		{
+			if (Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode())->AddDestroyableActor(this);	
+			}
+		}
+	}
 }
 
 void AProjectile::StartDestroyTimer()

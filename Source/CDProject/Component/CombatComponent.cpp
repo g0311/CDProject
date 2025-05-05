@@ -680,18 +680,13 @@ void UCombatComponent::DropAllWeapons()
 	Aim(false);
 	for (int i = 0; i < _weapons.Num(); ++i)
 	{
-		if (_weapons[i])
+		_weaponIndex = i;
+		if (_weapons[_weaponIndex])
 		{
-			if (_weapons[i]->GetWeaponType() == EWeaponType::EWT_Knife)
+			if (_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Knife)
 				continue;
 			
-			FRotator controlRot = _playerCharacter->GetControlRotation();
-			FVector lookDirection = controlRot.Vector();
-			//Add Impulse
-			
-			NetMulticastDropWeapon(_weapons[i]);
-			_weapons[i]->Dropped(lookDirection);
-			_weapons[i] = nullptr;
+			DropWeapon();
 		}
 	}
 	_weaponIndex = 2;
@@ -832,6 +827,10 @@ void UCombatComponent::DropWeapon()
 
 	NetMulticastDropWeapon(_weapons[_weaponIndex]);
 	_weapons[_weaponIndex]->Dropped(lookDirection);
+	if (ARoundGameMode* gameMode = GetRoundGameMode())
+	{
+		gameMode->AddDestroyableActor(_weapons[_weaponIndex]);
+	}
 	_weapons[_weaponIndex] = nullptr;
 	ChangeToNextWeapon();
 }

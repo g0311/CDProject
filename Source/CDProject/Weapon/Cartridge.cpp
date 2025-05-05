@@ -29,6 +29,13 @@ void ACartridge::BeginPlay()
 	Super::BeginPlay();
 
 	CartridgeMesh->OnComponentHit.AddDynamic(this, &ACartridge::OnHit);
+
+	FTimerHandle tempHandle;
+	GetWorld()->GetTimerManager().SetTimer(tempHandle, FTimerDelegate::CreateLambda([this]()
+	{
+		if (IsValid(this))
+			Destroy();
+	}), 10.f, false);
 }
 
 void ACartridge::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
