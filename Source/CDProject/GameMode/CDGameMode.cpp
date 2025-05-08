@@ -45,8 +45,8 @@ void ACDGameMode::Tick(float DeltaSeconds)
 		}
 	}
 	else if (MatchState==MatchState::Cooldown)
-	{
-		Countdown= CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+	{//MatchTime++?
+		Countdown= CooldownTime + WarmUpTime + - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 		if (Countdown<=0.f)
 		{
 			RestartGame();
@@ -88,7 +88,7 @@ void ACDGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
 	if (AttackerPlayerState)
 	{
 		AttackerPlayerState->AddKill();
-		AttackerPlayerState->AddGold(200);
+		//AttackerPlayerState->AddGold(200);
 	}
 	if (VictimPlayerState)
 	{

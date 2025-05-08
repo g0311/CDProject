@@ -301,20 +301,26 @@ void ACDPlayerController::SetHUDTime()
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
-		TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+		TimeLeft = CooldownTime + WarmupTime  - GetServerTime() + LevelStartingTime;
+		//TimeLeft=CooldownTime - GetServerTime() + LevelStartingTime;
 	}
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	if (CountdownInt!=SecondsLeft)
-	{
-		if (MatchState == MatchState::WaitingToStart||MatchState==MatchState::Cooldown)
-		{
-			SetHUDAnnouncementCountdown(TimeLeft);
-		}
-		if (MatchState == MatchState::InProgress)
-		{
-			SetHUDMatchCount(TimeLeft);
-		}
-	}
+     	{
+     		if (MatchState == MatchState::WaitingToStart||MatchState==MatchState::Cooldown)
+     		{
+     			UE_LOG(LogTemp,Display,TEXT("Cooldown&&WaitingToStart"));
+     			UE_LOG(LogTemp,Display,TEXT("%.1f"),TimeLeft);
+     			SetHUDAnnouncementCountdown(TimeLeft);//EditNeed TimeLeft 초기화 필요.
+     			
+     		}
+     		if (MatchState == MatchState::InProgress)
+     		{
+     			UE_LOG(LogTemp,Display,TEXT("Progress"));
+     			UE_LOG(LogTemp,Display,TEXT("%.1f"),TimeLeft);
+     			SetHUDMatchCount(TimeLeft);
+     		}
+     	}
 	CountdownInt=SecondsLeft;
 }
 
@@ -397,6 +403,7 @@ void ACDPlayerController::UpdateKDOverlayData()
 void ACDPlayerController::ClientUpdateKDOverlayData_Implementation()
 {
 	CDHUD->KDOverlay->UpdateScoreboard();
+	UE_LOG(LogTemp,Warning,TEXT("ClientUpdateKDOverlayData"));
 }
 
 void ACDPlayerController::Client_ShowStoreWidget_Implementation(bool IsActivate)
