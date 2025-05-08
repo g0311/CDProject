@@ -21,9 +21,12 @@ void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, U
 	UCombatComponent* combat = character->GetCombatComponent();
 	if (!combat)
 		return;
-
-	combat->SetBefWeaponVisible(false);
-	combat->SetWeaponVisible(true);
+	
+	if (character->HasAuthority())
+	{
+		combat->SetBefWeaponVisible(false);
+		combat->SetWeaponVisible(true);
+	}
 
 	if (combat->GetCurWeapon())
 		combat->GetCurWeapon()->SetHUDAmmo();

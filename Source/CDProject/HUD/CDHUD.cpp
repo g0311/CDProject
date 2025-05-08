@@ -100,6 +100,8 @@ void ACDHUD::AddGameStateOverlay()
 
 void ACDHUD::AddAnnouncement()
 {
+	if (IsValid(Announcement))
+		return;
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
 		Announcement=CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);

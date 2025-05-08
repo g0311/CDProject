@@ -23,4 +23,7 @@ private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true))
 	TSubclassOf<class AProjectile> _projectileClass;
+	
+	UPROPERTY(EditAnywhere)
+	USoundBase* _plantedSound;
 };

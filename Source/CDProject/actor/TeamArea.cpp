@@ -5,7 +5,7 @@
 
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "CDProject/GameMode/CDGameMode.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "Components/BoxComponent.h"
 
 

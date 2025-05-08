@@ -32,6 +32,7 @@ public:
 	FORCEINLINE int GetCurAmmo();
 	FORCEINLINE int GetCarriedAmmo();
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
+	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
 	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
@@ -39,6 +40,7 @@ public:
 	EWeaponType GetCurWeaponType();
 	void SetWeaponVisible(bool tf);
 	void SetBefWeaponVisible(bool tf);
+	class ARoundGameMode* GetRoundGameMode();
 	
 	FHUDPackage HUDPackage;
 	
@@ -46,6 +48,8 @@ public:
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> _c4Weapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
 private:
@@ -59,24 +63,22 @@ private:
 	FGameplayTagContainer _combatStateTags;
 	//State
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	int _weaponIndex = -1;
 	UPROPERTY(VisibleAnywhere)
 	int _befIndex = -1;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool _isC4Area = false;	
+
 
 	FTimerHandle _clientFireTimerHandle;
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
-	FTimerHandle _c4TimerHandle;
-	
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isCanFire = true;
-	UPROPERTY(VisibleAnywhere)
-	bool _isDefusing = false;
-
+	FTimerHandle _weaponVisibleTimerHandle;
+	FTimerHandle _c4TimerHandle;	
 	
 	UPROPERTY(VisibleAnywhere)
 	AActor* _aimedActor;
@@ -122,6 +124,7 @@ public:
 		void Aim(bool tf);
 	void DropAllWeapons();
 	void ChangeToNextWeapon();
+	void CreateC4Weapon();
 
 private:
 	//Implementation
@@ -139,13 +142,15 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
 	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastChangeWeapon(int idx);
+	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeReady();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeThrow();
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Plant(bool tf);
+	void NetMulticastC4Plant(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Defuse(bool tf);
+	void NetMulticastC4Defuse(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
 	UFUNCTION()

@@ -29,13 +29,17 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual void Reset() override;
+	virtual void OnRep_PlayerState() override;
 	
-	void RespawnPlayer();
 	void UpdateVisibilityForSpectator(bool isWatching);
-	void SetTeamColor(ETeam team);
+	void SetTeam(ETeam team);
 	void PlayFootStepSound();
 	UFUNCTION(Server, Reliable)
 	void ServerPlayFootStepSound();
+
+	void Kill();
+	void GiveC4();
 
 private:
 	//Properties
@@ -49,8 +53,11 @@ private:
 	void Multicast_Dead(class AController* instigatorController);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Hit();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Reset(bool isAlive);
 	void HandleDamage(float FinalDamage, class AController* instigatorController);
 	void UpdateArmMeshLocation(float DeltaTime);
+
 public:
 	bool _isDead = false;
 	//State로 리팩터링 필요..
@@ -136,6 +143,7 @@ private:
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
+	void Jump() override;
 	void Crouch(bool bClientSimulation = false) override;
 	void Walk();
 	void UnWalk();

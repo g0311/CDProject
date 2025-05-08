@@ -10,7 +10,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CombatComponent.h"
-#include "CDProject/GameMode/CDGameMode.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -24,6 +24,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Engine/TextureRenderTarget2D.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -50,24 +51,30 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME(ACDPlayerController, HUDGoldCount);
 	DOREPLIFETIME(ACDPlayerController, HUDDeathCount);
 	DOREPLIFETIME(ACDPlayerController, HUDKillCount);
+	DOREPLIFETIME(ACDPlayerController, WaitingStartTime);
+	DOREPLIFETIME(ACDPlayerController, MatchStartTime);
+	DOREPLIFETIME(ACDPlayerController, CooldownStartTime);
 }
 
 void ACDPlayerController::ServerCheckMatchState_Implementation()
 {
-	ACDGameMode* GameMode=Cast<ACDGameMode>(UGameplayStatics::GetGameMode(this));
+	ARoundGameMode* GameMode=Cast<ARoundGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GameMode)
 	{
 		WarmupTime=GameMode->WarmUpTime;
 		MatchTime = GameMode->MatchTime;
-		LevelStartingTime = GameMode->LevelStartingTime;
+		LevelStartingTime = GameMode->WaitingStartTime;
 		CooldownTime=GameMode->CooldownTime;
-		MatchState = GameMode->GetMatchState();
-		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
+		MatchState = GameMode->GetCurMatchState();
+		if (!IsLocalController())
+			ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
+		else
+			ClientJoinMidgame_Implementation(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 	}
 }
 //GameMode is accessible only on the server
 
-void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match,
+void ACDPlayerController::ClientJoinMidgame_Implementation(ECurMatchState StateOfMatch, float Warmup, float Match,
 	float Cooldown,float StartingTime)
 {
 	WarmupTime = Warmup;
@@ -76,10 +83,21 @@ void ACDPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, f
 	CooldownTime=Cooldown;
 	MatchState = StateOfMatch;
 	OnMatchStateSet(MatchState);
-	if (CDHUD && MatchState == MatchState::WaitingToStart)
+	if (CDHUD && MatchState == ECurMatchState::EMS_Waiting)
 	{
 		CDHUD->AddAnnouncement();
 	}
+}
+
+void ACDPlayerController::ClientSetMatchTime_Implementation(float matchTime)
+{
+	MatchTime = matchTime;
+}
+
+void ACDPlayerController::ClientSetMatchState_Implementation(ECurMatchState state, float curTime)
+{
+	MatchState = state;
+	OnMatchStateSet(MatchState);
 }
 
 void ACDPlayerController::ClientUpdateGoldUI_Implementation(int32 Gold)
@@ -168,18 +186,82 @@ void ACDPlayerController::CheckTimeSync(float DeltaTime)
 	}
 }
 
-void ACDPlayerController::HandleCooldown()
+void ACDPlayerController::HandleWaiting()
 {
+	if (!IsLocalController())
+		return;
+	if (IsValid(GetPawn()))
+	{
+		GetPawn()->DisableInput(this);
+		SetShowMouseCursor(true);
+	}
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		CDHUD->CharacterOverlay->RemoveFromParent();
+		if (CDHUD->CharacterOverlay)
+		{
+			CDHUD->CharacterOverlay->RemoveFromParent();
+		}
+		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
+		{
+			FString AnnouncementText("The Game Is Starting:");
+			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
+		}
+	}	
+}
+
+void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
+{
+	if (!IsLocalController())
+		return;
+	if (IsValid(GetPawn()))
+	{
+		GetPawn()->EnableInput(this);
+		SetShowMouseCursor(false);
+	}
+	
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		CDHUD->AddCharacterOverlay();
+		SetMinimap();
+		if (CDHUD->Announcement)
+		{
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
+void ACDPlayerController::HandleCooldown()
+{
+	if (!IsLocalController())
+		return;
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		if (CDHUD->CharacterOverlay)
+		{
+			CDHUD->CharacterOverlay->RemoveFromParent();
+		}
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
 			FString AnnouncementText("New Match Starts In:");
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
+		}
+	}
+}
+
+void ACDPlayerController::ServerSendClientJoined_Implementation()
+{
+	if (GetWorld()->GetAuthGameMode())
+	{
+		ARoundGameMode* gamemode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
+		if (IsValid(gamemode))
+		{
+			gamemode->SendPlayerJoined();
 		}
 	}
 }
@@ -291,21 +373,35 @@ void ACDPlayerController::SetHUDTime()
 {
 	float TimeLeft = 0.f;
 	
-	if (MatchState == MatchState::WaitingToStart)
+	if (MatchState == ECurMatchState::EMS_Waiting)
 	{
-		TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
+		TimeLeft = WaitingStartTime + WarmupTime - GetServerTime();
 	}
-	else if (MatchState == MatchState::InProgress)
+	else if (MatchState == ECurMatchState::EMS_InGame)
 	{
-		TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
+		TimeLeft = MatchStartTime + MatchTime - GetServerTime();
 	}
-	else if (MatchState == MatchState::Cooldown)
+	else if (MatchState == ECurMatchState::EMS_CoolDown)
 	{
+		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
 		TimeLeft = CooldownTime + WarmupTime  - GetServerTime() + LevelStartingTime;
 		//TimeLeft=CooldownTime - GetServerTime() + LevelStartingTime;
 	}
+	
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
+	
 	if (CountdownInt!=SecondsLeft)
+	{
+		if (MatchState == ECurMatchState::EMS_Waiting || MatchState==ECurMatchState::EMS_CoolDown)
+		{
+			SetHUDAnnouncementCountdown(TimeLeft);
+			
+		}
+		if (MatchState == ECurMatchState::EMS_InGame)
+		{
+			SetHUDMatchCount(TimeLeft);
+		}
+	}
      	{
      		if (MatchState == MatchState::WaitingToStart||MatchState==MatchState::Cooldown)
      		{
@@ -327,6 +423,11 @@ void ACDPlayerController::SetHUDTime()
 void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD && !CDHUD->Announcement)
+	{
+		CDHUD->AddAnnouncement();
+	}
+	
 	if (CDHUD&&CDHUD->Announcement&&CDHUD->Announcement->AnnouncementCountdown)
 	{
 		int32 Sec = CountdownTime;
@@ -484,20 +585,43 @@ void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
 	}
 }
 
+void ACDPlayerController::ShowAnnounceText(bool bShow)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		if (bShow)
+		{
+			CDHUD->AddAnnouncement();
+			if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
+			{
+				FString AnnouncementText = "Starting Match...";
+				CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+				CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
+			}
+		}
+		else
+		{
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+}
+
 void ACDPlayerController::AcknowledgePossession(class APawn* P)
 {
 	Super::AcknowledgePossession(P);
-	
-	EnableInput(this); 
 
 	if (IsLocalController()) 
 	{
+		ServerSendClientJoined();
+		
 		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
 		ACDCharacter* acdCharacter = dynamic_cast<ACDCharacter*>(P);
 		if (subSystem && acdCharacter)
 		{
 			subSystem->AddMappingContext(acdCharacter->GetInputMapping(), 0);
 		}
+
 		if (acdCharacter->GetAbilitySystemComponent())
 		{
 			acdCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
@@ -508,35 +632,41 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 	}
 }
 
-void ACDPlayerController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
-
-
-
-}
-
-
-void ACDPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch)
+void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch, float time)
 {
 	MatchState=State;
-	if (MatchState==MatchState::InProgress)
+	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
-		HandleMatchHasStarted(bTeamsMatch);
+		WaitingStartTime = time;
+		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
 	}
-	else if (MatchState==MatchState::Cooldown)
+	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
-		HandleCooldown();
+		MatchStartTime = time;
+		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 	}
+	else if (MatchState==ECurMatchState::EMS_CoolDown)
+	{
+		CooldownStartTime = time;
+	}
+	
+	if (IsLocalController() && HasAuthority()) //for Listen Server
+		OnRep_MatchState();
 }
 
 void ACDPlayerController::OnRep_MatchState()
 {
-	if (MatchState==MatchState::InProgress)
+	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
+		HandleWaiting();
+		//Show Store HUD
+	}
+	else if (MatchState==ECurMatchState::EMS_InGame)
+	{
+		//Hide Store HUD
 		HandleMatchHasStarted();
 	}
-	else if (MatchState==MatchState::Cooldown)
+	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
 		HandleCooldown();
 	}
@@ -554,23 +684,6 @@ void ACDPlayerController::OnRep_HUDKillCount()
 void ACDPlayerController::OnRep_HUDDeathCount()
 {
 }
-
-
-void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
-{
-	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD)
-	{
-		CDHUD->AddCharacterOverlay();
-		SetMinimap();
-		if (CDHUD->Announcement)
-		{
-			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
-		}
-	}
-}
-
-
 
 void ACDPlayerController::ShowSniperScope()
 {
@@ -594,7 +707,7 @@ void ACDPlayerController::ShowSniperScope()
 	}
 }
 
-void ACDPlayerController::ShowC4PlantingProgress(bool tf)
+void ACDPlayerController::ShowC4PlantingProgress(bool isPlanting, float time)
 {
 	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
 	if (CDHUD == nullptr) return;
@@ -606,21 +719,33 @@ void ACDPlayerController::ShowC4PlantingProgress(bool tf)
 	if (CDHUD && CDHUD->C4InteractProgress)
 	{
 		CDHUD->C4InteractProgress->Reset(true);
-		CDHUD->C4InteractProgress->SetVisibility(tf ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		if (isPlanting)
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
+		}
+		CDHUD->C4InteractProgress->SetProgressTime(time);
 	}
 }
-void ACDPlayerController::ShowC4DefusingProgress(bool tf)
+void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
 {
 	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
 	if (CDHUD == nullptr) return;
 
-	if (!CDHUD->C4InteractProgress)
-	{
-		CDHUD->AddC4Progress();
-	}
 	if (CDHUD && CDHUD->C4InteractProgress)
 	{
 		CDHUD->C4InteractProgress->Reset(false);
-		CDHUD->C4InteractProgress->SetVisibility(tf ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		if (isDefusing)
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
+		}
+		CDHUD->C4InteractProgress->SetProgressTime(time);
 	}
 }

@@ -3,6 +3,10 @@
 
 #include "ProjectileC4.h"
 
+#include "CDProject/GameMode/RoundGameMode.h"
+#include "CDProject/GameMode/DemolitionGameMode.h"
+#include "Net/UnrealNetwork.h"
+
 
 // Sets default values
 AProjectileC4::AProjectileC4()
@@ -20,20 +24,60 @@ void AProjectileC4::Destroyed()
 {
 	if (HasAuthority())
 	{
+		if (GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
+		{
+			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
+			return;
+		}
+		
 		ExplodeDamage();
+		if (GetWorld()->GetAuthGameMode())
+		{
+			ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
+			if (teamGameMode)
+			{
+				teamGameMode->TeamWin(true);
+			}
+		}
+		NetMulticastCreateExplodeEffect();
 	}
-	Super::Destroyed();
+}
+
+void AProjectileC4::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AProjectileC4, _isDefused);
 }
 
 void AProjectileC4::Defused()
 {
 	if (HasAuthority())
 	{
+		_isDefused = true;
 		if (DestroyTimer.IsValid() && GetWorld()->GetTimerManager().IsTimerActive(DestroyTimer))
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
 		}
+
+		if (GetWorld()->GetAuthGameMode())
+        {
+        	ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
+        	if (teamGameMode)
+        	{
+        		teamGameMode->TeamWin(false);
+        		teamGameMode->SetMatchTime(0);
+        	}
+        }
 	}
+	NetMulticastPlayDefuseSound();
+}
+
+void AProjectileC4::NetMulticastPlayDefuseSound_Implementation()
+{
+	if (!IsValid(this))
+		return;
+	if (IsValid(_defuseSound))
+		UGameplayStatics::PlaySound2D(this, _defuseSound);
 }
 
 // Called when the game starts or when spawned
@@ -52,3 +96,10 @@ void AProjectileC4::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void AProjectileC4::NetMulticastCreateExplodeEffect_Implementation()
+{
+	if (!IsValid(this))
+		return;
+
+	Super::Destroyed();
+}

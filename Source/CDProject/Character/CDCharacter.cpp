@@ -12,7 +12,7 @@
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "CDProject/GameMode/CDGameMode.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -80,7 +80,7 @@ ACDCharacter::ACDCharacter()
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (!MiniMapRenderTarget)
 	{
 		MiniMapRenderTarget = NewObject<UTextureRenderTarget2D>(this, UTextureRenderTarget2D::StaticClass(), TEXT("MiniMapRenderTarget"));
@@ -256,51 +256,30 @@ void ACDCharacter::PossessedBy(AController* NewController)
 	}
 }
 
-//Should Be MultiCast
-void ACDCharacter::RespawnPlayer()
+void ACDCharacter::Reset()
 {
+	//ServerCall
+	//Super::Reset();
 	if (_attributeSet->GetHealth() > 0)
-	{
-		if (HasAuthority())
-		{
-			_combat->Reset(false);
-			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-			GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			//Move To Spawn Point	
-			
-		}
+	{ //Alive
+		_combat->Reset(false);
+		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		Multicast_Reset(true);
+		//ServerPart
 	}
 	else
 	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
-		if (HasAuthority())
-		{
-			_combat->Reset(true);
-			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-			
-			//Move to Spawn Point
-			
-		}
-		else if (IsLocallyControlled())
-		{
-			_armMesh->SetVisibility(true);
-			//Enable Input
-			APlayerController* PC = Cast<APlayerController>(GetController());
-			if (PC)
-			{
-				ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-				if (LocalPlayer)
-				{
-					UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-					if (Subsystem)
-					{
-						Subsystem->AddMappingContext(_inputMappingContext, 0);
-					}
-				}
-			}
-		}
+		//Dead
+		_combat->Reset(true);
+		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		Multicast_Reset(false);
 	}
+}
+
+void ACDCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
 }
 
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
@@ -321,13 +300,13 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 	}
 }
 
-void ACDCharacter::SetTeamColor(ETeam team)
+void ACDCharacter::SetTeam(ETeam team)
 {
 	_team = team;
 	if (!GetMesh())
 		return;
 	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
-	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_BLUE"));
+	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_BLUE.M_UE4Man_Body_BLUE"));
 	switch (_team)
 	{
 	case ETeam::ET_RedTeam:
@@ -361,32 +340,22 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 
 	if (IsLocallyControlled())
 	{
-		//Disable Input
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		if (PC)
-		{
-			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-			if (LocalPlayer)
-			{
-				UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-				if (Subsystem)
-				{
-					Subsystem->RemoveMappingContext(_inputMappingContext);
-				}
-			}
-		}
+		APlayerController* controller = Cast<APlayerController>(GetController());
+		if (IsValid(controller))
+			DisableInput(controller);
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
 	}
 	if (HasAuthority())
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Die Called In Server"));
 		//Drop All Weapon & Reset Tag & Clear Timer
 		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		//Update Mode
 		if(GetWorld() && GetWorld()->GetAuthGameMode())
 		{
-			ACDGameMode* GameMode = Cast<ACDGameMode>(GetWorld()->GetAuthGameMode());
+			ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
 				if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
@@ -418,6 +387,26 @@ void ACDCharacter::Multicast_Hit_Implementation()
 	if (armAnim)
 	{
 		armAnim->PlayHitMontage();
+	}
+}
+
+void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
+{
+	if (isAlive)
+	{
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	}
+	else
+	{
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
+		_armMesh->SetVisibility(true);
+		if (IsLocallyControlled())
+		{
+			APlayerController* PC = Cast<APlayerController>(GetController());
+			if (IsValid(PC))
+				EnableInput(PC);
+		}
 	}
 }
 
@@ -491,9 +480,26 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 	_camera->SetFieldOfView(NewFOV);
 }
 
+void ACDCharacter::Kill()
+{
+	GetAttributeSet()->SetHealth(0.f);
+	if (_combat)
+		_combat->DeadAction();
+}
+
+void ACDCharacter::GiveC4()
+{
+	if (_combat)
+		_combat->CreateC4Weapon();
+}
+
 void ACDCharacter::Move(const FInputActionValue& value)
 {
-	if (!Controller)
+	if (!Controller ||
+		!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4)
+	)
 		return;
 	
 	FVector inputVal = value.Get<FVector>();
@@ -524,6 +530,16 @@ void ACDCharacter::Look(const FInputActionValue& value)
 		AddControllerYawInput(LookAxisVector.X * FinalSensitivity);
 		AddControllerPitchInput(-LookAxisVector.Y * FinalSensitivity);
 	}
+}
+
+void ACDCharacter::Jump()
+{
+	if (!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4))
+		return;
+	
+	Super::Jump();
 }
 
 void ACDCharacter::Crouch(bool bClientSimulation)

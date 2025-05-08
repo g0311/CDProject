@@ -67,6 +67,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* WeaponImage;
 
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_WeaponVisible)
+	bool WeaponVisible = false;
+
 	//Crosshair
 	UPROPERTY(EditAnywhere, Category=Crosshair)
 	class UTexture2D* CrosshairCenter;
@@ -117,7 +120,7 @@ public:
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
-	
+	FORCEINLINE void SetWeaponVisible(bool tf);
 protected:
 	virtual void BeginPlay() override;
 
@@ -156,12 +159,12 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_WeaponState();
-
 	
-
+	UFUNCTION()
+	void OnRep_WeaponVisible();
+	
 	void SpendAmmo();
-
-
+	
 protected:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* WeaponMesh;
@@ -190,7 +193,6 @@ protected:
 	int32 InitAmmoCount;
 	int32 InitCarriedAmmoCount;
 	
-
 };
 
 

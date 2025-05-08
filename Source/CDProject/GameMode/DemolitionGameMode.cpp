@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TeamGameMode.h"
+#include "DemolitionGameMode.h"
 
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameState/CDGameState.h"
@@ -9,14 +9,13 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
-ATeamGameMode::ATeamGameMode()
+ADemolitionGameMode::ADemolitionGameMode()
 {
 	bTeamsMatch=true;
 }
 
-void ATeamGameMode::PostLogin(APlayerController* NewPlayer)
+void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 {
-	Super::PostLogin(NewPlayer);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 
 	if (BGameState)
@@ -53,9 +52,10 @@ void ATeamGameMode::PostLogin(APlayerController* NewPlayer)
 			);
 		}
 	}
+	Super::PostLogin(NewPlayer);
 }
 
-void ATeamGameMode::Logout(AController* Exiting)
+void ADemolitionGameMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
@@ -82,7 +82,55 @@ void ATeamGameMode::Logout(AController* Exiting)
 	}
 }
 
-void ATeamGameMode::HandleMatchHasStarted()
+void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)
+{
+	MatchTime = c4ExplodeTime - WarmUpTime - WaitingStartTime + GetWorld()->GetTimeSeconds();
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
+		if (PC)
+		{
+			PC->ClientSetMatchTime(MatchTime);
+		}
+	}
+}
+
+void ADemolitionGameMode::TeamWin(bool isRed)
+{
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+		if (CDPC)
+		{
+			ACDPlayerState* playerState = Cast<ACDPlayerState>(CDPC->PlayerState);
+			if (playerState)
+			{
+				if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+				{
+					playerState->AddGold(300);
+					UE_LOG(LogTemp, Display, TEXT("Red Team Win"));
+				}
+				else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+				{
+					playerState->AddGold(300);
+					UE_LOG(LogTemp, Display, TEXT("Blue Team Win"));
+				}
+			}
+		}
+	}
+}
+
+void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState)
+{
+	if (!_isPlanted && NewState == ECurMatchState::EMS_CoolDown)
+	{
+		CooldownStartTime = GetWorld()->GetTimeSeconds();
+		TeamWin(false);
+	}
+	Super::SetCurMatchState(NewState);
+}
+
+void ADemolitionGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
 
@@ -110,7 +158,7 @@ void ATeamGameMode::HandleMatchHasStarted()
 	}
 }
 
-void ATeamGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
+void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
 	ACDPlayerController* AttackerController)
 {
 	Super::PlayerEliminated(VictimController, AttackerController);
@@ -127,7 +175,8 @@ void ATeamGameMode::PlayerEliminated(class ACDPlayerController* VictimController
 			if (BGameState->AliveBlueTeam.Num()==0)
 			{
 				BGameState->RedTeamScoreAdd();
-				SetMatchState(MatchState::Cooldown);
+				CooldownStartTime = GetWorld()->GetTimeSeconds();
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 			
 		}
@@ -137,13 +186,14 @@ void ATeamGameMode::PlayerEliminated(class ACDPlayerController* VictimController
 			if (BGameState->AliveRedTeam.Num()==0)
 			{
 				BGameState->BlueTeamScoreAdd();
-				SetMatchState(MatchState::Cooldown);
+				CooldownStartTime = GetWorld()->GetTimeSeconds();
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 		}
 	}
 }
 
-void ATeamGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
+void ADemolitionGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
 {
 	if (ElimmedCharacter)
 	{
@@ -165,10 +215,9 @@ void ATeamGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* El
 			return;
 		}
 	}
-	
 }
 
-void ATeamGameMode::InitializeTeamCount()
+void ADemolitionGameMode::InitializeTeamCount()
 {
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	if (BGameState)

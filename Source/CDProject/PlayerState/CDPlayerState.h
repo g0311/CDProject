@@ -18,7 +18,7 @@ class CDPROJECT_API ACDPlayerState : public APlayerState
 
 public:
 	ACDPlayerState();
-
+	virtual void BeginPlay() override;
 
 	
 	void AddKill(){Kills++;}
@@ -40,11 +40,11 @@ public:
 
 	UFUNCTION()
 	void OnRep_Gold();
-	
+
 	void SetTeam(ETeam TeamToSet);
 
 protected:
-	UPROPERTY(ReplicatedUsing=OnRep_Team)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Team)
 	ETeam Team=ETeam::ET_NoTeam;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
