@@ -17,7 +17,6 @@ ADemolitionGameMode::ADemolitionGameMode()
 void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-
 	if (BGameState)
 	{
 		ACDPlayerState* BPState=NewPlayer->GetPlayerState<ACDPlayerState>();

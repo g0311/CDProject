@@ -36,7 +36,9 @@ public:
 	
 
 public:
+	UPROPERTY(VisibleAnywhere)
 	TArray<ACDPlayerState*> RedTeam;//TArray -> AddUnique, Contains, Remove
+	UPROPERTY(VisibleAnywhere)
 	TArray<ACDPlayerState*> BlueTeam;
 
 	TArray<ACDPlayerState*> AliveRedTeam;

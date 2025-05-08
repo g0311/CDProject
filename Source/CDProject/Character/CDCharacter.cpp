@@ -92,7 +92,7 @@ void ACDCharacter::BeginPlay()
 			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
-	if (HasAuthority() && !IsLocallyControlled())
+	if (HasAuthority())
 		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
 
@@ -276,12 +276,6 @@ void ACDCharacter::Reset()
 	}
 }
 
-void ACDCharacter::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
-
-}
-
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 {
 	if (isWatching)
@@ -302,6 +296,7 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 
 void ACDCharacter::SetTeam(ETeam team)
 {
+	UE_LOG(LogGameMode, Log, TEXT("Char Set Team Called"));
 	_team = team;
 	if (!GetMesh())
 		return;

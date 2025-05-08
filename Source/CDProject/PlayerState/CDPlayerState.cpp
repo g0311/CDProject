@@ -11,7 +11,8 @@ ACDPlayerState::ACDPlayerState()
 void ACDPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-	SetTeam(Team);
+	if (Team != ETeam::ET_NoTeam)
+		SetTeam(Team);
 }
 
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -66,6 +67,14 @@ void ACDPlayerState::OnRep_Team()
 	if (Character)
 	{
 		Character->SetTeam(Team);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this]()
+		{
+			if (IsValid(this))
+				OnRep_Team();
+		}));
 	}
 }
 
