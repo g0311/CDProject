@@ -30,27 +30,16 @@ void ACDGameState::CheckTeamElimination()
 {
 	bool bRedTeamEliminated = AliveRedTeam.Num() == 0;
 	bool bBlueTeamEliminated = AliveBlueTeam.Num() == 0;
-	bool bScoreUpdated = false;
 
 	if (bRedTeamEliminated)
 	{
 		UpdateTeamScore(false);
-		bScoreUpdated = true;
 	}
-
 	if (bBlueTeamEliminated)
 	{
 		UpdateTeamScore(true);
-		bScoreUpdated = true;
+	
 	}
-	// if (bScoreUpdated)
-	// {
-	// 	ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
-	// 	if (GameMode)
-	// 	{
-	// 		GameMode->SetCurMatchState(ECurMatchState::EMS_CoolDown);
-	// 	}
-	// }
 }
 
 void ACDGameState::OnRep_RedTeamScore()

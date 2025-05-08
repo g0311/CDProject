@@ -18,9 +18,14 @@ class CDPROJECT_API UShopButton : public UUserWidget
 public:
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FWeaponStruct WeaponData;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
+	FName RowName;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon Data")
+	UDataTable* WeaponDataTable;
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	// FWeaponStruct WeaponData;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnShopButtonClicked OnShopButtonClicked;

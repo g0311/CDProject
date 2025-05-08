@@ -21,6 +21,8 @@ private:
 	UPROPERTY(EditAnywhere, Category=Weapons)
 	UDataTable* WeaponDataTable;
 
+	UPROPERTY(meta=(BindWidget))
+	UShopButton* PistolButton1;
 	UPROPERTY(meta = (BindWidget))
 	UShopButton* RifleButton1;
 	UPROPERTY(meta=(BindWidget))

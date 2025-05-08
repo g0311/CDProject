@@ -21,6 +21,4 @@ struct FWeaponStruct: public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Weapons)
 	FText Description;
-
-	
 };

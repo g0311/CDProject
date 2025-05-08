@@ -14,9 +14,13 @@ void UShopOverlay::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (RifleButton1)
+	if (RifleButton1&&SniperButton1&&SMGButton1&&PistolButton1&&ShotgunButton1)
 	{
 		RifleButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
+		SniperButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
+		PistolButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
+		SMGButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
+		ShotgunButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
 	}
 }
 
@@ -29,6 +33,7 @@ void UShopOverlay::OnShopButtonClicked(const FWeaponStruct& WeaponData)
 bool UShopOverlay::CanPurchase(const FWeaponStruct& WeaponData)
 {
 	PS = PS ? PS : Cast<ACDPlayerState>(GetOwningPlayerState());
+	if (!PS) return false;
 	return PS && PS->GetGold() >= WeaponData.Cost;
 }
 
