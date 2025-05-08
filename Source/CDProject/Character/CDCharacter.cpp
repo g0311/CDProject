@@ -387,21 +387,15 @@ void ACDCharacter::Multicast_Hit_Implementation()
 
 void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 {
-	if (isAlive)
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
+	_armMesh->SetVisibility(true);
+	if (IsLocallyControlled())
 	{
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	}
-	else
-	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
-		_armMesh->SetVisibility(true);
-		if (IsLocallyControlled())
-		{
-			APlayerController* PC = Cast<APlayerController>(GetController());
-			if (IsValid(PC))
-				EnableInput(PC);
-		}
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (IsValid(PC))
+			EnableInput(PC);
 	}
 }
 

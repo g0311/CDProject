@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Runtime/Core/Tests/Containers/TestUtils.h"
@@ -179,8 +180,8 @@ void ARoundGameMode::RestartMatch(bool isForce)
 	{
 		if (IsValid(actor))
 		{
-			// if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
-			// 	continue;
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+				continue;
 			actor->Destroy();
 		}
 	}
