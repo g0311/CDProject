@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,25 +5,31 @@
 #include "CDProject/WidgetPlus/PlayerRow.h"
 #include "KDOverlay.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class CDPROJECT_API UKDOverlay : public UUserWidget
 {
 	GENERATED_BODY()
+
 public:
+	void SetupScoreboard();
+	
 	UPROPERTY(meta=(BindWidget))
+	class UTextBlock* RedRound;
+
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* BlueRound;
+protected:
+	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* RedTeamBox;
 
-	UPROPERTY(meta=(BindWidget))
+	UPROPERTY(meta = (BindWidget))
 	UVerticalBox* BlueTeamBox;
 
-	UPROPERTY(EditAnywhere, Category="Scoreboard")
-	TSubclassOf<class UPlayerRow> PlayerRowClass;
-	
+	UPROPERTY(EditAnywhere, Category = "Scoreboard")
+	TSubclassOf<UPlayerRow> PlayerRowClass;
+
+private:
 	TArray<UPlayerRow*> PlayerRows;
 
-	void UpdateScoreboard();
-	void SetupScoreboard();
+	void ClearScoreboard();
 };

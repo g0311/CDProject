@@ -166,31 +166,28 @@ void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimCont
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
 	
-	if (BGameState&&AttackerController)
+	if (BGameState && VictimPlayerState)
 	{
-		AttackerPlayerState->AddGold(200);
-		if (AttackerPlayerState->GetTeam()==ETeam::ET_RedTeam)
+		if (AttackerPlayerState)
 		{
-			BGameState->AliveBlueTeam.Remove(VictimPlayerState);
-			if (BGameState->AliveBlueTeam.Num()==0)
-			{
-				BGameState->RedTeamScoreAdd();
-				CooldownStartTime = GetWorld()->GetTimeSeconds();
-				SetCurMatchState(ECurMatchState::EMS_CoolDown);
-			}
-			
+			AttackerPlayerState->AddGold(200);
 		}
-		else if (AttackerPlayerState->GetTeam()==ETeam::ET_BlueTeam)
+		if (VictimPlayerState->GetTeam() == ETeam::ET_RedTeam)
 		{
 			BGameState->AliveRedTeam.Remove(VictimPlayerState);
-			if (BGameState->AliveRedTeam.Num()==0)
-			{
-				BGameState->BlueTeamScoreAdd();
-				CooldownStartTime = GetWorld()->GetTimeSeconds();
-				SetCurMatchState(ECurMatchState::EMS_CoolDown);
-			}
+		}
+		else if (VictimPlayerState->GetTeam() == ETeam::ET_BlueTeam)
+		{
+			BGameState->AliveBlueTeam.Remove(VictimPlayerState);
+		}
+		BGameState->CheckTeamElimination();
+		if (BGameState->AliveBlueTeam.Num()==0||BGameState->AliveRedTeam.Num()==0)
+		{
+			CooldownStartTime = GetWorld()->GetTimeSeconds();
+			SetCurMatchState(ECurMatchState::EMS_CoolDown);
 		}
 	}
+
 }
 
 void ADemolitionGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)

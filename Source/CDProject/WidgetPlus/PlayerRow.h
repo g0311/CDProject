@@ -25,7 +25,15 @@ public:
 	
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* GoldText;
+	
+	void Setup(class ACDPlayerState* PlayerState);
 
-	void UpdateRow(FText PlayerName, int32 Kills, int32 Deaths, int32 Gold);
-	void Setup(class ACDPlayerState* Player);
+private:
+	UFUNCTION()
+	void UpdateRow();
+
+	UFUNCTION()
+	void UpdateGold(int32 NewGold);
+
+	ACDPlayerState* PSRef;
 };

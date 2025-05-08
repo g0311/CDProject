@@ -1,15 +1,23 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "CDPlayerState.h"
-
+#include "Net/UnrealNetwork.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "Net/UnrealNetwork.h"
 
-void ACDPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+ACDPlayerState::ACDPlayerState()
+{
+	bReplicates = true;
+}
+
+void ACDPlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+	SetTeam(Team);
+}
+
+void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
 	DOREPLIFETIME(ACDPlayerState, Team);
 	DOREPLIFETIME(ACDPlayerState, Gold);
 	DOREPLIFETIME(ACDPlayerState, Kills);
@@ -17,77 +25,62 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>&
 	DOREPLIFETIME(ACDPlayerState, Name);
 }
 
-ACDPlayerState::ACDPlayerState()
+void ACDPlayerState::AddKill()
 {
-	bReplicates=true;
+	Kills++;
+	OnRep_Kills();
 }
 
-void ACDPlayerState::BeginPlay()
+void ACDPlayerState::AddDeath()
 {
-	Super::BeginPlay();
-	
-	//For Clietn to Set Team
-		//If Team Alreadey Set, Rep Func doesn't Call
-	SetTeam(Team);
+	Deaths++;
+	OnRep_Deaths();
 }
 
 void ACDPlayerState::AddGold(int32 Amount)
 {
-	Gold+=Amount;
+	Gold += Amount;
 	OnRep_Gold();
 }
 
 bool ACDPlayerState::SpendGold(int32 Amount)
 {
-	if (Gold>=Amount)
+	if (Gold >= Amount)
 	{
-		Gold-=Amount;
+		Gold -= Amount;
 		OnRep_Gold();
 		return true;
 	}
 	return false;
 }
 
+void ACDPlayerState::SetTeam(ETeam NewTeam)
+{
+	Team = NewTeam;
+	OnRep_Team();
+}
+
 void ACDPlayerState::OnRep_Team()
 {
-	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
-	if (BCharacter)
+	ACDCharacter* Character = Cast<ACDCharacter>(GetPawn());
+	if (Character)
 	{
-		BCharacter->SetTeam(Team);
+		Character->SetTeam(Team);
 	}
 }
 
 void ACDPlayerState::OnRep_Gold()
 {
-	if (Cast<ACDPlayerController>(GetOwningController()))
-	{
-		Cast<ACDPlayerController>(GetOwningController())->ClientUpdateGoldUI(Gold);
-	}
-	
+	//UE_LOG(LogTemp, Display, TEXT("Gold Updated: %d"), Gold);
+	OnGoldUpdated.Broadcast(Gold);
 }
 
-void ACDPlayerState::SetTeam(ETeam TeamToSet)
+void ACDPlayerState::OnRep_Kills()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("TeamToSet = %d"), TeamToSet);
-	Team=TeamToSet;
-
-	ACDCharacter* BCharacter=Cast<ACDCharacter>(GetPawn());
-	if (BCharacter)
-	{
-		BCharacter->SetTeam(Team);
-	}
-	else
-	{
-		//UE_LOG(LogTemp, Warning, TEXT("Set Team Character NULL"));
-		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this, TeamToSet]()
-		{
-			if (IsValid(this))
-			{
-				SetTeam(TeamToSet);
-			}
-		}));
-	}
+	OnScoreUpdated.Broadcast();
 }
 
-
-
+void ACDPlayerState::OnRep_Deaths()
+{
+	OnScoreUpdated.Broadcast();
+}

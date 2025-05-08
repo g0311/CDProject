@@ -37,8 +37,7 @@ public:
 
 	UFUNCTION(Client,Reliable)
 	void Client_ShowStoreWidget(bool IsActivate);
-	UFUNCTION(Client,Reliable)
-	void ClientUpdateKDOverlayData();
+
 	//bShowOverlay
 	void ShowStoreWidget(bool bShow);
 	void RetryShowStoreWidget(bool bActivate);
@@ -77,9 +76,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
-	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
-	UFUNCTION(Client, Reliable)
-	void ClientUpdateGoldUI(int32 Gold);
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchTime(float matchTime);

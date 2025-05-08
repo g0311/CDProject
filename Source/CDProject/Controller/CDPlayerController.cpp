@@ -100,14 +100,6 @@ void ACDPlayerController::ClientSetMatchState_Implementation(ECurMatchState stat
 	OnMatchStateSet(MatchState);
 }
 
-void ACDPlayerController::ClientUpdateGoldUI_Implementation(int32 Gold)
-{
-	if (IsLocalController())
-	{
-		SetGold();
-	}
-}
-
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -124,7 +116,6 @@ void ACDPlayerController::BeginPlay()
 			SetHUDShield(_character->GetAttributeSet()->GetShield());
 		}
 	}
-
 	ServerCheckMatchState();
 }
 
@@ -384,8 +375,6 @@ void ACDPlayerController::SetHUDTime()
 	else if (MatchState == ECurMatchState::EMS_CoolDown)
 	{
 		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
-		TimeLeft = CooldownTime + WarmupTime  - GetServerTime() + LevelStartingTime;
-		//TimeLeft=CooldownTime - GetServerTime() + LevelStartingTime;
 	}
 	
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
@@ -402,21 +391,6 @@ void ACDPlayerController::SetHUDTime()
 			SetHUDMatchCount(TimeLeft);
 		}
 	}
-     	{
-     		if (MatchState == MatchState::WaitingToStart||MatchState==MatchState::Cooldown)
-     		{
-     			UE_LOG(LogTemp,Display,TEXT("Cooldown&&WaitingToStart"));
-     			UE_LOG(LogTemp,Display,TEXT("%.1f"),TimeLeft);
-     			SetHUDAnnouncementCountdown(TimeLeft);//EditNeed TimeLeft 초기화 필요.
-     			
-     		}
-     		if (MatchState == MatchState::InProgress)
-     		{
-     			UE_LOG(LogTemp,Display,TEXT("Progress"));
-     			UE_LOG(LogTemp,Display,TEXT("%.1f"),TimeLeft);
-     			SetHUDMatchCount(TimeLeft);
-     		}
-     	}
 	CountdownInt=SecondsLeft;
 }
 
@@ -437,7 +411,6 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 		if (CountdownTime<0.f)
 		{
 			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
-			return;
 		}
 	}
 	
@@ -497,14 +470,8 @@ void ACDPlayerController::UpdateKDOverlayData()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&KDOverlay)
 	{
-		CDHUD->KDOverlay->UpdateScoreboard();
+		CDHUD->KDOverlay->SetupScoreboard();
 	}
-}
-
-void ACDPlayerController::ClientUpdateKDOverlayData_Implementation()
-{
-	CDHUD->KDOverlay->UpdateScoreboard();
-	UE_LOG(LogTemp,Warning,TEXT("ClientUpdateKDOverlayData"));
 }
 
 void ACDPlayerController::Client_ShowStoreWidget_Implementation(bool IsActivate)
@@ -564,13 +531,14 @@ void ACDPlayerController::HideRoundScore(bool IsHide)
 	}
 }
 
-void ACDPlayerController:: SetHUDRedTeam(int32 RedScore)
+void ACDPlayerController::SetHUDRedTeam(int32 RedScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore)
+	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore&&CDHUD->KDOverlay)
 	{
 		FString ScoreText=FString::Printf(TEXT("%d"), RedScore);
 		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+		CDHUD->KDOverlay->RedRound->SetText(FText::FromString(ScoreText));
 	}
 	
 }
@@ -578,10 +546,11 @@ void ACDPlayerController:: SetHUDRedTeam(int32 RedScore)
 void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore)
+	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->BlueTeamScore&&CDHUD->KDOverlay)
 	{
 		FString ScoreText=FString::Printf(TEXT("%d"), BlueScore);
 		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+		CDHUD->KDOverlay->BlueRound->SetText(FText::FromString(ScoreText));
 	}
 }
 

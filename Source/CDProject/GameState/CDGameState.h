@@ -16,15 +16,16 @@ class CDPROJECT_API ACDGameState : public AGameState
 	GENERATED_BODY()
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	void UpdateTeamScore(bool bIsRedTeam);
+	void CheckTeamElimination();
 
 	UFUNCTION()
 	void OnRep_RedTeamScore();
 	
 	UFUNCTION()
 	void OnRep_BlueTeamScore();
-
-	void RedTeamScoreAdd();
-	void BlueTeamScoreAdd();
+	
 
 	UPROPERTY(ReplicatedUsing=OnRep_RedTeamScore)
 	float RedTeamScore=0.f;

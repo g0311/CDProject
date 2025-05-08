@@ -179,8 +179,8 @@ void ARoundGameMode::RestartMatch(bool isForce)
 	{
 		if (IsValid(actor))
 		{
-			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
-				continue;
+			// if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+			// 	continue;
 			actor->Destroy();
 		}
 	}

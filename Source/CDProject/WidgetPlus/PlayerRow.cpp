@@ -6,32 +6,37 @@
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "Components/TextBlock.h"
 
-void UPlayerRow::UpdateRow(FText PlayerName, int32 Kills, int32 Deaths, int32 Gold)
+void UPlayerRow::Setup(ACDPlayerState* InPlayerState)
 {
-	if (PlayerNameText) PlayerNameText->SetText(PlayerName);
-	if (KillText) KillText->SetText(FText::AsNumber(Kills));
-	if (DeathText) DeathText->SetText(FText::AsNumber(Deaths));
-	if (GoldText) GoldText->SetText(FText::AsNumber(Gold));
+	PSRef = InPlayerState;
+
+	if (PSRef)
+	{
+		PSRef->OnScoreUpdated.AddDynamic(this, &UPlayerRow::UpdateRow);
+		PSRef->OnGoldUpdated.AddDynamic(this, &UPlayerRow::UpdateGold);
+		UpdateRow(); 
+	}
 }
 
-void UPlayerRow::Setup(class ACDPlayerState* CDPlayerState)
+void UPlayerRow::UpdateRow()
 {
-	if (!CDPlayerState) return;
-
+	if (!PSRef) return;
+	
 	if (PlayerNameText)
-	{
-		PlayerNameText->SetText(CDPlayerState->GetPlayerName());
-	}
+		PlayerNameText->SetText(FText::FromString(PSRef->GetPlayerName()));
+	
 	if (KillText)
-	{
-		KillText->SetText(FText::AsNumber(CDPlayerState->GetKills()));
-	}
+		KillText->SetText(FText::AsNumber(PSRef->GetKills()));
+
 	if (DeathText)
-	{
-		DeathText->SetText(FText::AsNumber(CDPlayerState->GetDeaths()));
-	}
+		DeathText->SetText(FText::AsNumber(PSRef->GetDeaths()));
+
 	if (GoldText)
-	{
-		GoldText->SetText(FText::AsNumber(CDPlayerState->GetGold()));
-	}
+		GoldText->SetText(FText::AsNumber(PSRef->GetGold()));
+}
+
+void UPlayerRow::UpdateGold(int32 NewGold)
+{
+	if (GoldText)
+		GoldText->SetText(FText::AsNumber(NewGold));
 }
