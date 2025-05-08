@@ -144,6 +144,7 @@ void ACDHUD::AddStore(bool IsActivate)
 			if (ShopOverlay && ShopOverlay->IsInViewport())
 			{
 				ShopOverlay->RemoveFromParent();
+				ShopOverlay = nullptr;
 			}
 		}
 	}

@@ -189,6 +189,7 @@ void ACDPlayerController::HandleWaiting()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
+		ShowStoreWidget(true);
 		if (CDHUD->CharacterOverlay)
 		{
 			CDHUD->CharacterOverlay->RemoveFromParent();
@@ -199,7 +200,7 @@ void ACDPlayerController::HandleWaiting()
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 		}
-	}	
+	}
 }
 
 void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
@@ -215,6 +216,7 @@ void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
+		ShowStoreWidget(false);
 		CDHUD->AddCharacterOverlay();
 		SetMinimap();
 		if (CDHUD->Announcement)
