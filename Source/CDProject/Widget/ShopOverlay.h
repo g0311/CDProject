@@ -15,7 +15,8 @@ public:
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnShopButtonClicked(const FWeaponStruct& WeaponData);
-
+	UFUNCTION(Server, Reliable)
+	void ServerGiveWeaponToPlayer(const FWeaponStruct& WeaponData);
 	
 private:
 	UPROPERTY(EditAnywhere, Category=Weapons)
@@ -42,4 +43,5 @@ private:
 
 	bool CanPurchase(const FWeaponStruct& WeaponData);
 	void GiveWeaponToPlayer(const FWeaponStruct& WeaponData);
+	
 };

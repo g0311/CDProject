@@ -69,6 +69,7 @@ void ATeamArea::ShowStore(AActor* actor)
 	}
 }
 
+
 void ATeamArea::UnlockArea()
 {
 	bAreaLocked = false; 

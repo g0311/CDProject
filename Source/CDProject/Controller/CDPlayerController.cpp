@@ -443,7 +443,7 @@ void ACDPlayerController::SetGold()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	PS=PS==nullptr?Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>()):PS;
-
+	
 	if (CDHUD && CDHUD->CharacterOverlay && PS)
 	{
 		HUDGoldCount = PS->GetGold();
@@ -648,10 +648,12 @@ void ACDPlayerController::OnRep_HUDGoldCount()
 
 void ACDPlayerController::OnRep_HUDKillCount()
 {
+	
 }
 
 void ACDPlayerController::OnRep_HUDDeathCount()
 {
+	
 }
 
 void ACDPlayerController::ShowSniperScope()

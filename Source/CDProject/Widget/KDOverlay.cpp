@@ -37,6 +37,7 @@ void UKDOverlay::SetupScoreboard()
 	}
 }
 
+
 void UKDOverlay::ClearScoreboard()
 {
 	for (UPlayerRow* PlayerRow : PlayerRows)
