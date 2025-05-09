@@ -11,7 +11,8 @@ ACDPlayerState::ACDPlayerState()
 void ACDPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-	SetTeam(Team);
+	if (Team != ETeam::ET_NoTeam)
+		SetTeam(Team);
 }
 
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -19,6 +20,7 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACDPlayerState, Team);
+	DOREPLIFETIME(ACDPlayerState, MatchTeam);
 	DOREPLIFETIME(ACDPlayerState, Gold);
 	DOREPLIFETIME(ACDPlayerState, Kills);
 	DOREPLIFETIME(ACDPlayerState, Deaths);
@@ -60,12 +62,37 @@ void ACDPlayerState::SetTeam(ETeam NewTeam)
 	OnRep_Team();
 }
 
+void ACDPlayerState::SetMatchTeam(ETeam NewTeam)
+{
+	MatchTeam = NewTeam;
+}
+
+void ACDPlayerState::SwitchTeam()
+{
+	if (Team == ETeam::ET_BlueTeam)
+	{
+		SetTeam(ETeam::ET_RedTeam);
+	}
+	else if (Team == ETeam::ET_RedTeam)
+	{
+		SetTeam(ETeam::ET_BlueTeam);
+	}
+}
+
 void ACDPlayerState::OnRep_Team()
 {
 	ACDCharacter* Character = Cast<ACDCharacter>(GetPawn());
 	if (Character)
 	{
 		Character->SetTeam(Team);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this]()
+		{
+			if (IsValid(this))
+				OnRep_Team();
+		}));
 	}
 }
 

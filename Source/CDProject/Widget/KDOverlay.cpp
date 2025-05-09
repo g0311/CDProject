@@ -1,5 +1,10 @@
 #include "KDOverlay.h"
+
+#include <string>
+
 #include "CDProject/GameState/CDGameState.h"
+#include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -9,11 +14,15 @@ void UKDOverlay::SetupScoreboard()
 
 	ClearScoreboard();
 
-	AGameStateBase* GameState = UGameplayStatics::GetGameState(this);
+	ACDGameState* GameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	if (!GameState) return;
 
-	const TArray<APlayerState*>& PlayerArray = GameState->PlayerArray;
+	ARound->SetText(FText::FromString(FString::Printf(TEXT("%d"), GameState->TeamAScore)));
+	BRound->SetText(FText::FromString(FString::Printf(TEXT("%d"), GameState->TeamBScore)));
 
+	UpdateTeamColor();
+	
+	const TArray<APlayerState*>& PlayerArray = GameState->PlayerArray;
 	for (APlayerState* PS : PlayerArray)
 	{
 		ACDPlayerState* CDPS = Cast<ACDPlayerState>(PS);
@@ -24,19 +33,35 @@ void UKDOverlay::SetupScoreboard()
 			{
 				NewPlayerRow->Setup(CDPS); 
 				PlayerRows.Add(NewPlayerRow);
-				if (CDPS->GetTeam() == ETeam::ET_RedTeam)
+				if (CDPS->GetMatchTeam() == ETeam::ET_ATeam)
 				{
-					RedTeamBox->AddChild(NewPlayerRow);
+					ATeamBox->AddChild(NewPlayerRow);
 				}
-				else if (CDPS->GetTeam() == ETeam::ET_BlueTeam)
+				else if (CDPS->GetMatchTeam() == ETeam::ET_BTeam)
 				{
-					BlueTeamBox->AddChild(NewPlayerRow);
+					BTeamBox->AddChild(NewPlayerRow);
 				}
 			}
 		}
 	}
 }
 
+void UKDOverlay::UpdateTeamColor()
+{
+	ACDGameState* GameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if (!GameState) return;
+
+	if (GameState->IsSecondHalf)
+	{
+		TeamAColor->SetBrushTintColor(FColor::Blue);
+		TeamBColor->SetBrushTintColor(FColor::Red);
+	}
+	else
+	{
+		TeamAColor->SetBrushTintColor(FColor::Red);
+		TeamBColor->SetBrushTintColor(FColor::Blue);
+	}
+}
 
 void UKDOverlay::ClearScoreboard()
 {
@@ -50,12 +75,12 @@ void UKDOverlay::ClearScoreboard()
 
 	PlayerRows.Empty();
 
-	if (RedTeamBox)
+	if (ATeamBox)
 	{
-		RedTeamBox->ClearChildren();
+		ATeamBox->ClearChildren();
 	}
-	if (BlueTeamBox)
+	if (BTeamBox)
 	{
-		BlueTeamBox->ClearChildren();
+		BTeamBox->ClearChildren();
 	}
 }

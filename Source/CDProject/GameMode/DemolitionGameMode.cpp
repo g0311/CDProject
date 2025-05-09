@@ -3,10 +3,13 @@
 
 #include "DemolitionGameMode.h"
 
+#include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameState/CDGameState.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerStart.h"
+#include "Runtime/Core/Tests/Containers/TestUtils.h"
 #include "Kismet/GameplayStatics.h"
 
 ADemolitionGameMode::ADemolitionGameMode()
@@ -17,41 +20,43 @@ ADemolitionGameMode::ADemolitionGameMode()
 void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-
 	if (BGameState)
 	{
 		ACDPlayerState* BPState=NewPlayer->GetPlayerState<ACDPlayerState>();
 		if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
 		{
-			if (BGameState->BlueTeam.Num()>=BGameState->RedTeam.Num())
+			if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
 			{
-				BGameState->RedTeam.AddUnique(BPState);
+				BGameState->ATeam.AddUnique(BPState);
+				BPState->SetMatchTeam(ETeam::ET_ATeam);
 				BPState->SetTeam(ETeam::ET_RedTeam);
 			}
 			else
 			{
-				BGameState->BlueTeam.AddUnique(BPState);
+				BGameState->BTeam.AddUnique(BPState);
+				BPState->SetMatchTeam(ETeam::ET_BTeam);
 				BPState->SetTeam(ETeam::ET_BlueTeam);
 			}
 		}
 	}
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-		if (CDPC)
-		{
-			FTimerDelegate TimerDel;
-			TimerDel.BindUObject(CDPC, &ACDPlayerController::SetKDOverlayUI); 
-
-			FTimerHandle TimerHandle;
-			GetWorld()->GetTimerManager().SetTimer(
-				TimerHandle,
-				TimerDel,
-				0.1f,
-				false
-			);
-		}
-	}
+	//Server Call
+	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	// {
+	// 	ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+	// 	if (CDPC)
+	// 	{
+	// 		FTimerDelegate TimerDel;
+	// 		TimerDel.BindUObject(CDPC, &ACDPlayerController::SetKDOverlayUI); 
+	//
+	// 		FTimerHandle TimerHandle;
+	// 		GetWorld()->GetTimerManager().SetTimer(
+	// 			TimerHandle,
+	// 			TimerDel,
+	// 			0.1f,
+	// 			false
+	// 		);
+	// 	}
+	// }
 	Super::PostLogin(NewPlayer);
 }
 
@@ -62,24 +67,25 @@ void ADemolitionGameMode::Logout(AController* Exiting)
 	ACDPlayerState* BPState=Exiting->GetPlayerState<ACDPlayerState>();
 	if (BGameState&&BPState)
 	{
-		if (BGameState->RedTeam.Contains(BPState))
+		if (BGameState->ATeam.Contains(BPState))
 		{
-			BGameState->RedTeam.Remove(BPState);
+			BGameState->ATeam.Remove(BPState);
 		}
-		if (BGameState->BlueTeam.Contains(BPState))
+		if (BGameState->BTeam.Contains(BPState))
 		{
-			BGameState->BlueTeam.Remove(BPState);
+			BGameState->BTeam.Remove(BPState);
 		}
 		InitializeTeamCount();
 	}
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-		if (CDPC)
-		{
-			CDPC->SetKDOverlayUI(); 
-		}
-	}
+	
+	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	// {
+	// 	ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+	// 	if (CDPC)
+	// 	{
+	// 		CDPC->SetKDOverlayUI(); 
+	// 	}
+	// }
 }
 
 void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)
@@ -95,8 +101,19 @@ void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)
 	}
 }
 
-void ADemolitionGameMode::TeamWin(bool isRed)
+void ADemolitionGameMode::RoundWin(bool isRed)
 {
+	if (CurRound < MaxRound / 2)
+	{
+		if (Cast<ACDGameState>(GameState))
+			Cast<ACDGameState>(GameState)->UpdateTeamScore(isRed);
+	}
+	else
+	{
+		if (Cast<ACDGameState>(GameState))
+			Cast<ACDGameState>(GameState)->UpdateTeamScore(!isRed);
+	}
+	
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
@@ -118,16 +135,36 @@ void ADemolitionGameMode::TeamWin(bool isRed)
 			}
 		}
 	}
+	CurRound++;
 }
 
-void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState)
+void ADemolitionGameMode::SetSecondHalf()
 {
-	if (!_isPlanted && NewState == ECurMatchState::EMS_CoolDown)
+	if (ACDGameState* ACDGS = GetGameState<ACDGameState>())
 	{
-		CooldownStartTime = GetWorld()->GetTimeSeconds();
-		TeamWin(false);
+		ACDGS->UpdateIsSecondHalf(true);
 	}
-	Super::SetCurMatchState(NewState);
+	
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It))
+		{
+			if (ACDPlayerState* CDPS = Cast<ACDPlayerState>(CDPC->PlayerState))
+			{
+				CDPS->SwitchTeam();
+			}
+		}
+	}
+}
+
+void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
+{
+	CooldownStartTime = GetWorld()->GetTimeSeconds();
+	if (NewState == ECurMatchState::EMS_Waiting && CurRound == MaxRound / 2)
+	{
+		SetSecondHalf();
+	}
+	Super::SetCurMatchState(NewState, IsInit);
 }
 
 void ADemolitionGameMode::HandleMatchHasStarted()
@@ -142,14 +179,14 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 			ACDPlayerState* BPState=Cast<ACDPlayerState>(PlayerState.Get());
 			if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
 			{
-				if (BGameState->BlueTeam.Num()>=BGameState->RedTeam.Num())
+				if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
 				{
-					BGameState->RedTeam.AddUnique(BPState);
+					BGameState->ATeam.AddUnique(BPState);
 					BPState->SetTeam(ETeam::ET_RedTeam);
 				}
 				else
 				{
-					BGameState->BlueTeam.AddUnique(BPState);
+					BGameState->BTeam.AddUnique(BPState);
 					BPState->SetTeam(ETeam::ET_BlueTeam);
 				}
 			}
@@ -158,8 +195,60 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 	}
 }
 
+void ADemolitionGameMode::RestartMatch(bool isForce)
+{
+	TArray<AController*> PlayerControllers;
+	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
+	{
+		if (AController* Controller = Cast<AController>(*PCIter))
+		{
+			PlayerControllers.Add(Controller);
+		}
+	}
+	Test::Shuffle(PlayerControllers);
+
+	bool isC4Given = false;
+	for (AController* controller : PlayerControllers)
+	{
+		if (controller)
+		{
+			ACDPlayerController* playerController=Cast<ACDPlayerController>(controller);
+			ACDCharacter* Character = Cast<ACDCharacter>(controller->GetCharacter());
+			if (Character && playerController)
+			{
+				if (isForce)
+					Character->Kill();
+				Character->Reset();
+				AActor* playerStart = FindPlayerStart(playerController);
+				if (playerStart)
+				{
+					Character->SetActorLocation(playerStart->GetActorLocation());
+					Character->SetActorRotation(playerStart->GetActorRotation());
+					controller->SetControlRotation(playerStart->GetActorRotation());
+				}
+				if (!isC4Given && Character->GetTeam() == ETeam::ET_RedTeam)
+				{
+					isC4Given = true;
+					Character->GiveC4();
+				}
+			}
+		}
+	}
+	for (auto actor : _createdActors)
+	{
+		if (IsValid(actor))
+		{
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+				continue;
+			actor->Destroy();
+		}
+	}
+	_createdActors.Empty();
+	InitializeTeamCount();
+}
+
 void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
-	ACDPlayerController* AttackerController)
+                                           ACDPlayerController* AttackerController)
 {
 	Super::PlayerEliminated(VictimController, AttackerController);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
@@ -170,24 +259,47 @@ void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimCont
 	{
 		if (AttackerPlayerState)
 		{
-			AttackerPlayerState->AddGold(200);
+			AttackerPlayerState->AddGold(300);
 		}
 		if (VictimPlayerState->GetTeam() == ETeam::ET_RedTeam)
 		{
-			BGameState->AliveRedTeam.Remove(VictimPlayerState);
+			if (CurRound < MaxRound / 2)	
+				BGameState->AliveATeam.Remove(VictimPlayerState);
+			else
+				BGameState->AliveBTeam.Remove(VictimPlayerState);
 		}
 		else if (VictimPlayerState->GetTeam() == ETeam::ET_BlueTeam)
 		{
-			BGameState->AliveBlueTeam.Remove(VictimPlayerState);
+			if (CurRound < MaxRound / 2)
+				BGameState->AliveBTeam.Remove(VictimPlayerState);
+			else
+				BGameState->AliveATeam.Remove(VictimPlayerState);
 		}
-		BGameState->CheckTeamElimination();
-		if (BGameState->AliveBlueTeam.Num()==0||BGameState->AliveRedTeam.Num()==0)
+		
+		if (GetCurMatchState() != ECurMatchState::EMS_CoolDown)
 		{
-			CooldownStartTime = GetWorld()->GetTimeSeconds();
-			SetCurMatchState(ECurMatchState::EMS_CoolDown);
+			if (BGameState->AliveBTeam.Num()==0)
+			{
+				if (CurRound < MaxRound / 2)
+					RoundWin(true);
+				else
+					RoundWin(false);
+				
+				CooldownStartTime = GetWorld()->GetTimeSeconds();
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
+			}
+			else if (BGameState->AliveATeam.Num()==0)
+			{
+				if (CurRound < MaxRound / 2)
+					RoundWin(false);
+				else
+					RoundWin(true);
+				
+				CooldownStartTime = GetWorld()->GetTimeSeconds();
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
+			}
 		}
 	}
-
 }
 
 void ADemolitionGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
@@ -219,8 +331,7 @@ void ADemolitionGameMode::InitializeTeamCount()
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	if (BGameState)
 	{
-		BGameState->AliveRedTeam=BGameState->RedTeam;
-		BGameState->AliveBlueTeam=BGameState->BlueTeam;
+		BGameState->AliveATeam=BGameState->ATeam;
+		BGameState->AliveBTeam=BGameState->BTeam;
 	}
-	
 }
