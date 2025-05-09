@@ -20,6 +20,7 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACDPlayerState, Team);
+	DOREPLIFETIME(ACDPlayerState, MatchTeam);
 	DOREPLIFETIME(ACDPlayerState, Gold);
 	DOREPLIFETIME(ACDPlayerState, Kills);
 	DOREPLIFETIME(ACDPlayerState, Deaths);
@@ -59,6 +60,23 @@ void ACDPlayerState::SetTeam(ETeam NewTeam)
 {
 	Team = NewTeam;
 	OnRep_Team();
+}
+
+void ACDPlayerState::SetMatchTeam(ETeam NewTeam)
+{
+	MatchTeam = NewTeam;
+}
+
+void ACDPlayerState::SwitchTeam()
+{
+	if (Team == ETeam::ET_BlueTeam)
+	{
+		SetTeam(ETeam::ET_RedTeam);
+	}
+	else if (Team == ETeam::ET_RedTeam)
+	{
+		SetTeam(ETeam::ET_BlueTeam);
+	}
 }
 
 void ACDPlayerState::OnRep_Team()

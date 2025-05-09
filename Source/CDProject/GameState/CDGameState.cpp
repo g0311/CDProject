@@ -8,60 +8,65 @@ void ACDGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ACDGameState, RedTeamScore);
-	DOREPLIFETIME(ACDGameState, BlueTeamScore);
+	DOREPLIFETIME(ACDGameState, TeamAScore);
+	DOREPLIFETIME(ACDGameState, TeamBScore);
+	DOREPLIFETIME(ACDGameState, IsSecondHalf);
 }
 
-void ACDGameState::UpdateTeamScore(bool bIsRedTeam)
+void ACDGameState::UpdateTeamScore(bool bIsTeamA)
 {
-	if (bIsRedTeam)
+	if (bIsTeamA)
 	{
-		RedTeamScore++;
-		OnRep_RedTeamScore();
+		TeamAScore++;
+		OnRep_TeamAScore();
 	}
 	else
 	{
-		BlueTeamScore++;
-		OnRep_BlueTeamScore();
+		TeamBScore++;
+		OnRep_TeamBScore();
 	}
 }
 
-void ACDGameState::CheckTeamElimination()
+void ACDGameState::UpdateIsSecondHalf(bool bIsSecondHalf)
 {
-	bool bRedTeamEliminated = AliveRedTeam.Num() == 0;
-	bool bBlueTeamEliminated = AliveBlueTeam.Num() == 0;
-
-	if (bRedTeamEliminated)
-	{
-		UpdateTeamScore(false);
-	}
-	if (bBlueTeamEliminated)
-	{
-		UpdateTeamScore(true);
-	
-	}
+	IsSecondHalf = bIsSecondHalf;
+	OnRep_IsSecondHalf();
 }
 
-void ACDGameState::OnRep_RedTeamScore()
+void ACDGameState::OnRep_TeamAScore()
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
 		if (PC)
 		{
-			PC->SetHUDRedTeam(RedTeamScore);
+			PC->SetHUDATeam(TeamAScore);
 		}
 	}
 }
 
-void ACDGameState::OnRep_BlueTeamScore()
+void ACDGameState::OnRep_TeamBScore()
 {
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
 		if (PC)
 		{
-			PC->SetHUDBlueTeam(BlueTeamScore);
+			PC->SetHUDBTeam(TeamBScore);
+		}
+	}
+}
+
+void ACDGameState::OnRep_IsSecondHalf()
+{
+	if (IsSecondHalf)
+		UE_LOG(LogGameMode, Warning, TEXT("IS SECOND REP"));
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
+		if (PC)
+		{
+			PC->SetTeamUIColor();
 		}
 	}
 }

@@ -15,15 +15,16 @@ class CDPROJECT_API ADemolitionGameMode : public ARoundGameMode
 	GENERATED_BODY()
 public:
 	ADemolitionGameMode();
-	virtual void PostLogin(APlayerController* NewPlayer) override;
+	void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	void SetMatchTime(float c4ExplodeTime);
-	void TeamWin(bool isRed);
-	virtual void SetCurMatchState(ECurMatchState NewState) override;
+	void RoundWin(bool isRed);
+	void SetSecondHalf();
+	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
 
-	FORCEINLINE void SetIsPlanted(bool tf) {_isPlanted = tf;}
 protected:
 	virtual void HandleMatchHasStarted() override;
+	virtual void RestartMatch(bool isForce = false) override;
 	virtual void PlayerEliminated(class ACDPlayerController* VictimController, ACDPlayerController* AttackerController) override;
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController) override;
 	
@@ -32,9 +33,6 @@ protected:
 	FTimerHandle SetupTimer;
 	
 	TSet<APlayerStart*> UsedStartPoints;
-
-	//임시
-	bool _isPlanted = false;
 
 	//C4 Access
 	UPROPERTY(VisibleAnywhere)

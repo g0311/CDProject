@@ -11,6 +11,7 @@
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/RoundGameMode.h"
+#include "CDProject/GameState/CDGameState.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -533,26 +534,49 @@ void ACDPlayerController::HideRoundScore(bool IsHide)
 	}
 }
 
-void ACDPlayerController::SetHUDRedTeam(int32 RedScore)
+void ACDPlayerController::SetHUDATeam(int32 RedScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore&&CDHUD->KDOverlay)
+	if (CDHUD && CDHUD->KDOverlay)
 	{
 		FString ScoreText=FString::Printf(TEXT("%d"), RedScore);
-		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
-		CDHUD->KDOverlay->RedRound->SetText(FText::FromString(ScoreText));
+		//CDHUD->KDOverlay->SetupScoreboard();
+		CDHUD->KDOverlay->ARound->SetText(FText::FromString(ScoreText));
 	}
 	
+	// if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore&&CDHUD->KDOverlay)
+	// {
+	// 	FString ScoreText=FString::Printf(TEXT("%d"), RedScore);
+	// 	CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	// 	CDHUD->KDOverlay->ARound->SetText(FText::FromString(ScoreText));
+	// }
 }
 
-void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
+void ACDPlayerController::SetHUDBTeam(int32 BlueScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->BlueTeamScore&&CDHUD->KDOverlay)
+	if (CDHUD && CDHUD->KDOverlay)
 	{
 		FString ScoreText=FString::Printf(TEXT("%d"), BlueScore);
-		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
-		CDHUD->KDOverlay->BlueRound->SetText(FText::FromString(ScoreText));
+		//CDHUD->KDOverlay->SetupScoreboard();
+		CDHUD->KDOverlay->BRound->SetText(FText::FromString(ScoreText));
+	}
+	
+	// CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	// if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->BlueTeamScore&&CDHUD->KDOverlay)
+	// {
+	// 	FString ScoreText=FString::Printf(TEXT("%d"), BlueScore);
+	//CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	// 	CDHUD->KDOverlay->BRound->SetText(FText::FromString(ScoreText));
+	// }
+}
+
+void ACDPlayerController::SetTeamUIColor()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD && CDHUD->KDOverlay)
+	{
+		CDHUD->KDOverlay->UpdateTeamColor();
 	}
 }
 
@@ -620,6 +644,10 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch
 	{
 		CooldownStartTime = time;
 	}
+	else if (MatchState==ECurMatchState::EMS_GameEnd)
+	{
+		//?
+	}
 	
 	if (IsLocalController() && HasAuthority()) //for Listen Server
 		OnRep_MatchState();
@@ -641,6 +669,13 @@ void ACDPlayerController::OnRep_MatchState()
 	{
 		HandleCooldown();
 	}
+	else if (MatchState == ECurMatchState::EMS_GameEnd)
+	{
+		if (IsLocalController())
+		{
+			UGameplayStatics::OpenLevel(this, FName("Menu"));
+		}
+	}
 }
 
 void ACDPlayerController::OnRep_HUDGoldCount()
@@ -654,6 +689,13 @@ void ACDPlayerController::OnRep_HUDKillCount()
 
 void ACDPlayerController::OnRep_HUDDeathCount()
 {
+}
+
+void ACDPlayerController::LeaveGame()
+{
+	//temp
+	UGameplayStatics::OpenLevel(this, FName("Menu"));
+	//Super::LeaveGame();
 }
 
 void ACDPlayerController::ShowSniperScope()

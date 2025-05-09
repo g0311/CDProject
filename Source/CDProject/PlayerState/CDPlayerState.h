@@ -29,8 +29,11 @@ public:
     FString GetPlayerName() const { return Name; }
     int32 GetGold() const { return Gold; }
     ETeam GetTeam() const { return Team; }
+    ETeam GetMatchTeam() const { return MatchTeam; }
     
     void SetTeam(ETeam NewTeam);
+    void SetMatchTeam(ETeam NewTeam);
+    void SwitchTeam();
     
     UPROPERTY(BlueprintAssignable, Category = "Score")
     FOnScoreUpdated OnScoreUpdated;
@@ -52,6 +55,8 @@ protected:
 private:
     UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, Category = "Player Stats")
     ETeam Team = ETeam::ET_NoTeam;
+    UPROPERTY(Replicated, VisibleAnywhere)
+    ETeam MatchTeam = ETeam::ET_NoTeam;
     UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
     FString Name;
     UPROPERTY(ReplicatedUsing = OnRep_Kills, VisibleAnywhere, Category = "Player Stats")

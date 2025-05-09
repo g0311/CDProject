@@ -51,8 +51,9 @@ public:
 
 	//TeamMatch Controller
 	void HideRoundScore(bool IsHide);
-	void SetHUDRedTeam(int32 RedScore);
-	void SetHUDBlueTeam(int32 BlueScore);
+	void SetHUDATeam(int32 RedScore);
+	void SetHUDBTeam(int32 BlueScore);
+	void SetTeamUIColor();
 	void ShowAnnounceText(bool bShow);
 	
 	//MatchState
@@ -82,8 +83,6 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchState(ECurMatchState state, float curTime);
-
-	
 protected:
 	virtual void BeginPlay() override;
 
@@ -172,7 +171,9 @@ private:
 	bool bInitializeWeaponAmmo=false;
 	bool bInitializeWeaponInfo=false;
 	bool bInitializeGold=false;
-	
+
+private:
+	virtual void LeaveGame() /*override*/;	
 
 };
 
