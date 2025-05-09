@@ -32,7 +32,7 @@ void AShotgun::Fire(const FVector& HitTarget)
 		{
 			FVector End=TraceEndWithScatter(Start,HitTarget);
 			FHitResult FireHit;
-			// WeaponTraceHit(Start, HitTarget, FireHit);
+			WeaponTraceHit(Start, HitTarget, FireHit);
 			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHit.GetActor());
 			if (HasAuthority()&&CDCharacter)
 			{

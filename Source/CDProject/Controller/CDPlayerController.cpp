@@ -671,10 +671,13 @@ void ACDPlayerController::OnRep_MatchState()
 	}
 	else if (MatchState == ECurMatchState::EMS_GameEnd)
 	{
-		if (IsLocalController())
-		{
-			UGameplayStatics::OpenLevel(this, FName("Menu"));
-		}
+		//Show Game End UI
+		
+		
+		// if (IsLocalController())
+		// {
+		// 	UGameplayStatics::OpenLevel(this, FName("Menu"));
+		// }
 	}
 }
 

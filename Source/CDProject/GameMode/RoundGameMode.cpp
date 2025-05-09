@@ -256,5 +256,9 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 		CooldownStartTime = GetWorld()->GetTimeSeconds();
 		UE_LOG(LogGameMode, Log, TEXT("EMS_CoolDown"));
 	}
+	else if (_curMatchState == ECurMatchState::EMS_GameEnd)
+	{
+		//Shut Down Server After 30 sec
+	}
 	OnCurMatchStateSet();
 }
