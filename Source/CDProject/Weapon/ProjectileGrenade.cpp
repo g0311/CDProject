@@ -14,16 +14,22 @@ AProjectileGrenade::AProjectileGrenade()
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>("Grenade Mesh");
 	ProjectileMesh->SetupAttachment(RootComponent);
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	
+	bReplicates = true;
 	ProjectileMovementComponent=CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement Component"));
+	ProjectileMovementComponent->InitialSpeed = 1000.f;
 	ProjectileMovementComponent->bRotationFollowsVelocity=true;
 	ProjectileMovementComponent->SetIsReplicated(true);
 	ProjectileMovementComponent->bShouldBounce=true;
+	ProjectileMovementComponent->ProjectileGravityScale = 1.0f;
 }
 
 void AProjectileGrenade::Destroyed()
 {
-	ExplodeDamage();
+	if (HasAuthority())
+	{
+		ExplodeDamage();
+	}
 	Super::Destroyed();
 }
 
@@ -33,7 +39,8 @@ void AProjectileGrenade::BeginPlay()
 	Super::BeginPlay();
 	
 	SpawnTrailSystem();
-	StartDestroyTimer();
+	if (HasAuthority())
+		StartDestroyTimer();
 	
 	ProjectileMovementComponent->OnProjectileBounce.AddDynamic(this, &AProjectileGrenade::OnBounce);
 }

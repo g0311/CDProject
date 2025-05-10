@@ -22,6 +22,10 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* HealthText;
+
+	//Gold
+	UPROPERTY(meta=(BindWidget))
+	UTextBlock* Gold;
 //Team Round Score
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* RedTeamScore;

@@ -11,6 +11,8 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 void UCDAnimInstance::NativeInitializeAnimation()
 {
@@ -45,45 +47,101 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
 	if (_isFullBody)
 	{
-		if (_isAiming)
-		{
-			if (_aimFireMontage)
-			{
-				Montage_Play(_aimFireMontage, 1.f / fireRate);
-
-			}
-		}
-		else
-		{
-			if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
-			{
-				if (_pistolFireMontage)
-				{
-					Montage_Play(_pistolFireMontage, 1.f / fireRate);
-				}
-			}
-			else
-			{
-				if (_baseFireMontage)
-				{
-					Montage_Play(_baseFireMontage, 1.f / fireRate);
-				}
-			}
-		}
-	}
-	else
-	{
-		if (_weaponType == static_cast<uint8>(EWeaponType::EWT_Pistol))
+		if (_weaponType == EWeaponType::EWT_Pistol)
 		{
 			if (_pistolFireMontage)
 			{
 				Montage_Play(_pistolFireMontage, 1.f / fireRate);
 			}
 		}
+		else if (_weaponType == EWeaponType::EWT_Hand)
+		{//Grenade
+			if (_grenadeThrowMontage)
+			{
+				Montage_Play(_grenadeThrowMontage);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_Knife)
+		{//Knife
+			if (_knifeFireMontage)
+			{
+				Montage_Play(_knifeFireMontage);
+				if (_knifeFireSound)
+					UGameplayStatics::PlaySoundAtLocation(this, _knifeFireSound, _playerCharacter->GetActorLocation());
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_C4)
+		{//C4
+			// if (_knifeFireMontage)
+			// {
+			// 	Montage_Play(_knifeFireMontage);
+			// 	if (_knifeFireSound)
+			// 		UGameplayStatics::PlaySoundAtLocation(this, _knifeFireSound, _playerCharacter->GetActorLocation());
+			// }
+		}
+		else
+		{//Default
+			if (_isAiming)
+			{
+				if (_aimFireMontage)
+				{
+					Montage_Play(_aimFireMontage, 1.f / fireRate);
+				}
+			}
+			else
+			{
+				if(_baseFireMontage)
+			   {
+					Montage_Play(_baseFireMontage, 1.f / fireRate);
+			   }
+			}
+		}
+	}
+	else
+	{
+		if (_weaponType == EWeaponType::EWT_Pistol)
+		{
+			if (_pistolFireMontage)
+			{
+				Montage_Play(_pistolFireMontage, 1.f / fireRate);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_Hand)
+		{//Grenade
+			if (_grenadeThrowMontage)
+			{
+				Montage_Play(_grenadeThrowMontage);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_Knife)
+		{//Knife
+			if (_knifeFireMontage)
+			{
+				Montage_Play(_knifeFireMontage);
+			}
+		}
+		else if (_weaponType == EWeaponType::EWT_C4)
+		{//C4
+			// if (_knifeFireMontage)
+			// {
+			// 	Montage_Play(_knifeFireMontage);
+			// 	if (_knifeFireSound)
+			// 		UGameplayStatics::PlaySoundAtLocation(this, _knifeFireSound, _playerCharacter->GetActorLocation());
+			// }
+		}
 		else if (_aimFireMontage)
 		{
 			Montage_Play(_aimFireMontage, 1.f / fireRate);
 		}
+		
+	}
+}
+
+void UCDAnimInstance::PlayGrenadeReadyMontage()
+{
+	if (_grenadeReadyMontage)
+	{
+		Montage_Play(_grenadeReadyMontage);
 	}
 }
 
@@ -93,16 +151,18 @@ void UCDAnimInstance::PlayReloadMontage()
 	{
 		switch (_weaponType)
 		{
-		case static_cast<uint8>(EWeaponType::EWT_Rifle):
-		case static_cast<uint8>(EWeaponType::EWT_Sniper):
+		case EWeaponType::EWT_Rifle:
+		case EWeaponType::EWT_Sniper:
 			if (_rifleReloadMontage)
 				Montage_Play(_rifleReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
-			if (_rifleReloadMontage)
+		case EWeaponType::EWT_Shotgun:
+			if (_shotgunReloadMontage)
+			{
 				Montage_Play(_shotgunReloadMontage);
+			}
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Pistol):
+		case EWeaponType::EWT_Pistol:
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -112,16 +172,16 @@ void UCDAnimInstance::PlayReloadMontage()
 	{
 		switch (_weaponType)
 		{
-		case static_cast<uint8>(EWeaponType::EWT_Rifle):
-		case static_cast<uint8>(EWeaponType::EWT_Sniper):
+		case EWeaponType::EWT_Rifle:
+		case EWeaponType::EWT_Sniper:
 			if (_rifleReloadMontage)
 				Montage_Play(_rifleReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+		case EWeaponType::EWT_Shotgun:
 			if (_shotgunReloadMontage)
 				Montage_Play(_shotgunReloadMontage);
 			break;
-		case static_cast<uint8>(EWeaponType::EWT_Pistol):
+		case EWeaponType::EWT_Pistol:
 			if (_pistolReloadMontage)
 				Montage_Play(_pistolReloadMontage);
 			break;
@@ -133,18 +193,27 @@ void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 {
 	switch (nextWeapon->GetWeaponType())
 	{
-	case (EWeaponType::EWT_Rifle):
-	case (EWeaponType::EWT_Sniper):
-	case (EWeaponType::EWT_Shotgun):
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Shotgun:
 		if (_equipRifleMontage)
 		{
 			Montage_Play(_equipRifleMontage);
 		}
 		break;
-	case (EWeaponType::EWT_Pistol):
+	case EWeaponType::EWT_Pistol:
+	case EWeaponType::EWT_Speical:
 		if (_equipPistolMontage)
 		{
 			Montage_Play(_equipPistolMontage);
+		}
+		break;
+	case EWeaponType::EWT_Hand:
+	case EWeaponType::EWT_C4:
+	case EWeaponType::EWT_Knife:
+		if (_equipGrenadeMontage)
+		{
+			Montage_Play(_equipGrenadeMontage);
 		}
 		break;
 	default:
@@ -157,7 +226,6 @@ void UCDAnimInstance::PlayDeadMontage()
 	_leftHandIKAlpha = 0.f;
 	if (_deadMontage)
 		Montage_Play(_deadMontage);
-	
 }
 
 void UCDAnimInstance::PlayHitMontage()
@@ -185,7 +253,7 @@ void UCDAnimInstance::UpdateFullBodyProperty(float DeltaSeconds)
 	FRotator controlRot = _playerCharacter->GetControlRotation();
 	FRotator actorRot = _playerCharacter->GetActorRotation();
 	FRotator deltaRot = controlRot - actorRot;
-		
+	
 	_aimPitch = FMath::UnwindDegrees(deltaRot.Pitch);
 	_aimPitch = FMath::Clamp(_aimPitch, -75.f, 75.f);
 	_aimYaw = FMath::UnwindDegrees(deltaRot.Yaw);
@@ -212,14 +280,23 @@ void UCDAnimInstance::UpdateUpperBodyProperty(float DeltaSeconds)
 	{
 		_weaponType = combatComponent->GetCurWeaponType();
 		_isAiming = combatComponent->IsAiming();
-
-		if (combatComponent->IsChanging())
+		if (_weaponType == EWeaponType::EWT_Pistol ||
+			_weaponType == EWeaponType::EWT_C4 ||
+			_weaponType == EWeaponType::EWT_Knife)
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 10.f);
+			_isAiming = true;
+		}
+		
+		if (combatComponent->IsChanging() || combatComponent->IsReloading() ||
+			_weaponType == EWeaponType::EWT_Hand ||
+			_weaponType == EWeaponType::EWT_C4 ||
+			_weaponType == EWeaponType::EWT_Knife)
+		{
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.f, DeltaSeconds, 20.f);
 		}
 		else
 		{
-			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 0.85f, DeltaSeconds, 10.f);
+			_leftHandIKAlpha = FMath::FInterpTo(_leftHandIKAlpha, 1.0f, DeltaSeconds, 20.f);
 		}
 
 		if (combatComponent->GetCurWeapon())
@@ -245,16 +322,16 @@ float UCDAnimInstance::GetReloadTime()
 {
 	switch (_weaponType)
 	{
-	case static_cast<uint8>(EWeaponType::EWT_Rifle):
-	case static_cast<uint8>(EWeaponType::EWT_Sniper):
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
 		if (_rifleReloadMontage)
 			return _rifleReloadMontage->GetPlayLength();
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Shotgun):
+	case EWeaponType::EWT_Shotgun:
 		if (_shotgunReloadMontage)
-			return _shotgunReloadMontage->GetPlayLength();
+			return 1.7f;
 		break;
-	case static_cast<uint8>(EWeaponType::EWT_Pistol):
+	case EWeaponType::EWT_Pistol:
 		if (_pistolReloadMontage)
 			return _pistolReloadMontage->GetPlayLength();
 		break;	
@@ -262,27 +339,43 @@ float UCDAnimInstance::GetReloadTime()
 	return 0.f;
 }
 
+float UCDAnimInstance::GetGrenadeReadyTime()
+{
+	return _grenadeReadyMontage->GetPlayLength();
+}
+
+float UCDAnimInstance::GetGrenadeThrowTime()
+{
+	return _grenadeThrowMontage->GetPlayLength();
+}
+
 float UCDAnimInstance::GetEquipTime(AWeapon* nextWeapon)
 {
 	if (!nextWeapon)
-		return 0.f;
+		return 0.01f;
 	
 	switch (nextWeapon->GetWeaponType())
 	{
-	case (EWeaponType::EWT_Rifle):
-	case (EWeaponType::EWT_Sniper):
-	case (EWeaponType::EWT_Shotgun):
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Shotgun:
 		if (_equipRifleMontage)
 		{
 			return _equipRifleMontage->GetPlayLength();
 		}
 		break;
-	case (EWeaponType::EWT_Pistol):
+	case EWeaponType::EWT_Pistol:
 		if (_equipPistolMontage)
 		{
 			return _equipPistolMontage->GetPlayLength();
 		}
 		break;
+	case EWeaponType::EWT_Hand:
+		if (_equipGrenadeMontage)
+		{
+			return _equipGrenadeMontage->GetPlayLength();
+		}
+		break;
 	}
-	return 0.f;
+	return 0.01f;
 }

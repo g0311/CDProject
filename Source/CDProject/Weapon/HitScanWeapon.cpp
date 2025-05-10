@@ -6,7 +6,10 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Field/FieldSystemNodes.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 
 
@@ -30,7 +33,6 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FVector Start=SocketTransform.GetLocation();
 		FVector Direction = (HitTarget - Start).GetSafeNormal();
 		FVector ExtendedEnd = Start + Direction * 10000.f; // 예: 10000cm = 100m
-
 		
 		FCollisionQueryParams queryParams;
 		queryParams.AddIgnoredActor(this);
@@ -158,6 +160,60 @@ void AHitScanWeapon::ShowSniperScope()
 	if (bShowSniperScope())
 	{
 		//PC->SetHUDSniperScope();
+	}
+}
+
+FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVector& HitTarget)
+{
+	FVector ToTargetNormalized=(HitTarget-TraceStart).GetSafeNormal();
+	FVector SphereCenter=TraceStart+DistanceToSphere*ToTargetNormalized;
+	FVector RandomVector=UKismetMathLibrary::RandomUnitVector()*FMath::FRandRange(0.f,SphereRadius);
+	FVector EndLoc=SphereCenter+RandomVector;
+	FVector ToEndLoc=EndLoc-TraceStart;
+
+	DrawDebugSphere(GetWorld(),SphereCenter,SphereRadius,12,FColor::Red,true);
+	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
+	DrawDebugLine(
+		GetWorld(),
+		TraceStart,
+		FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size()),
+		FColor::Cyan,
+		true);
+	return FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size());
+}
+
+void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		FVector End = bUseScatter ? TraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+ 
+		World->LineTraceSingleByChannel(
+			OutHit,
+			TraceStart,
+			End,
+			ECC_GameTraceChannel1
+		);
+		FVector BeamEnd = End;
+		if (OutHit.bBlockingHit)
+		{
+			BeamEnd = OutHit.ImpactPoint;
+		}
+		if (BeamParticleSystem)
+		{
+			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+				World,
+				BeamParticleSystem,
+				TraceStart,
+				FRotator::ZeroRotator,
+				true
+			);
+			if (Beam)
+			{
+				Beam->SetVectorParameter(FName("Target"), BeamEnd);
+			}//Particle need BeamEnd
+		}
 	}
 }
 

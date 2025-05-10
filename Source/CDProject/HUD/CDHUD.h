@@ -46,18 +46,52 @@ public:
 	
 	UPROPERTY()
 	class UAnnouncement* Announcement;
-
+	
 	UPROPERTY(EditAnywhere, Category="SniperScope")
 	TSubclassOf<UUserWidget> SniperScopeClass;
 	
 	UPROPERTY()
 	class USniperScope* SniperScope;
 
+	UPROPERTY(EditAnywhere, Category="C4Progress")
+	TSubclassOf<UUserWidget> C4InteractProgressClass;
+	
+	UPROPERTY()
+	class UC4InteractProgressWidget* C4InteractProgress;
+
+	UPROPERTY(EditAnywhere, Category="Compass")
+	TSubclassOf<UUserWidget> CompassWidgetClass;
+	
+	UPROPERTY()
+	class UCompass* Compass;
+
+	UPROPERTY(EditAnywhere, Category="Store")
+	TSubclassOf<UUserWidget> StoreWidgetClass;
+
+	UPROPERTY()
+	class UShopOverlay* ShopOverlay;
+
+	UPROPERTY(EditAnywhere, Category="KDOVerlay")
+	TSubclassOf<UUserWidget> KDOverlayClass;
+
+	UPROPERTY()
+	class UKDOverlay* KDOverlay;
+
+	UPROPERTY(EditAnywhere, Category="ModeSelect")
+	TSubclassOf<UUserWidget> ModeSelectClass;
+
+	UPROPERTY()
+	class UModeSelect* ModeSelect;
 
 	void AddSniperScope();
 	void AddCharacterOverlay();
 	void AddGameStateOverlay();//KDOverlay or GameStateOverlay
 	void AddAnnouncement();
+	void AddCompass();
+	void AddStore(bool IsActivate);
+	void AddKDOverlay(bool IsActivate);
+	void AddModeSelect();
+	void AddC4Progress();
 protected:
 	virtual void BeginPlay() override;
 private:

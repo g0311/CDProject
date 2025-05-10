@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "CDProject/Types/CurMatchState.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
@@ -30,38 +31,58 @@ public:
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
 	void SetMinimap();
-	
+	void SetGold();
+	void SetKDOverlayUI();
+	void UpdateKDOverlayData();
+
+	UFUNCTION(Client,Reliable)
+	void Client_ShowStoreWidget(bool IsActivate);
+
+	//bShowOverlay
+	void ShowStoreWidget(bool bShow);
+	void RetryShowStoreWidget(bool bActivate);
 	//Weapon
 	void ShowSniperScope();
+	void ShowC4PlantingProgress(bool isPlanting, float duration = 0.f);
+	void ShowC4DefusingProgress(bool isDefusing, float duration = 0.f);
 
 	//HUD initialize
 	void InitializeHUD();
 
 	//TeamMatch Controller
 	void HideRoundScore(bool IsHide);
-	void SetHUDRedTeam(int32 RedScore);
-	void SetHUDBlueTeam(int32 BlueScore);
+	void SetHUDATeam(int32 RedScore);
+	void SetHUDBTeam(int32 BlueScore);
+	void SetTeamUIColor();
+	void ShowAnnounceText(bool bShow);
 	
 	//MatchState
 	virtual void AcknowledgePossession(class APawn* P) override;
-	virtual void OnPossess(APawn* InPawn) override;
 	virtual void ReceivedPlayer() override;
 	virtual float GetServerTime();
+
+	//KDO Overlay
+	void ShowKDOverlay(bool isShowing);
 	
-	void OnMatchStateSet(FName State, bool bTeamsMatch=false);
+	void OnMatchStateSet(ECurMatchState State, bool bTeamsMatch=false, float time = 0);
+	void HandleWaiting();
 	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
 	UFUNCTION(Server, Reliable)
 	void ServerCheckMatchState();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerSendClientJoined();
 
 	UFUNCTION(Client, Reliable)
-	void ClientJoinMidgame(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
+	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
-	
-	
+	UFUNCTION(Client, Reliable)
+	void ClientSetMatchTime(float matchTime);
 
-	
+	UFUNCTION(Client, Reliable)
+	void ClientSetMatchState(ECurMatchState state, float curTime);
 protected:
 	virtual void BeginPlay() override;
 
@@ -85,17 +106,26 @@ private:
 	UPROPERTY()
 	class ACDHUD* CDHUD;
 
+	UPROPERTY()
+	class ACDPlayerState* PS;
+	
 	UPROPERTY(EditAnywhere, Category="HUD")
 	TSubclassOf<class UKDOverlay> KDOverlay;
 	
 	UPROPERTY(EditAnywhere, Category="HUD")
 	TSubclassOf<class UCharacterOverlay> CharacterOverlay;
 
-	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
-	FName MatchState;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_MatchState)
+	ECurMatchState MatchState;
 
 	UFUNCTION()
 	void OnRep_MatchState();
+	UFUNCTION()
+	void OnRep_HUDGoldCount();
+	UFUNCTION()
+	void OnRep_HUDKillCount();
+	UFUNCTION()
+	void OnRep_HUDDeathCount();
 	
 	//MatchVariable
 	float LevelStartingTime=0.f;//Purchase Item Time
@@ -103,6 +133,13 @@ private:
 	float WarmupTime=0.f;
 	float CooldownTime=0.f;
 	int32 CountdownInt=0;
+
+	UPROPERTY(Replicated)
+	float WaitingStartTime = 0.f;
+	UPROPERTY(Replicated)
+	float MatchStartTime = 0.f;
+	UPROPERTY(Replicated)
+	float CooldownStartTime = 0.f;
 	
 	//State Variable
 	float HUDHealth;
@@ -116,9 +153,13 @@ private:
 
 	
 	//Match KDState
+	UPROPERTY(ReplicatedUsing=OnRep_HUDGoldCount)
 	float HUDGoldCount;
+	UPROPERTY(ReplicatedUsing=OnRep_HUDKillCount)
 	float HUDKillCount;
+	UPROPERTY(ReplicatedUsing=OnRep_HUDDeathCount)
 	float HUDDeathCount;
+	UPROPERTY(Replicated)
 	FName HUDCharID;
 
 	//bool Initialize
@@ -128,7 +169,11 @@ private:
 	bool bInitializeDeath=false;
 	bool bInitializeCarriedAmmo=false;
 	bool bInitializeWeaponAmmo=false;
-	
+	bool bInitializeWeaponInfo=false;
+	bool bInitializeGold=false;
+
+private:
+	virtual void LeaveGame() /*override*/;	
 
 };
 

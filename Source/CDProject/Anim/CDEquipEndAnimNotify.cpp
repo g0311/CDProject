@@ -26,9 +26,7 @@ void UCDEquipEndAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 	if (!combat)
 		return;
 
-	// combat->SetFireAvail();
-	// combat->SetAimAvail();
-	//보안상 취약점
+	combat->RemoveCombatState(CombatTags::State_Combat_ChangingWeapon);
 	
 	Super::Notify(MeshComp, Animation);
 }

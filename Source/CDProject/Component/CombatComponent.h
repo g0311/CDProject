@@ -6,8 +6,9 @@
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "Components/ActorComponent.h"
+#include "GameplayTagContainer.h"
+#include "CDProject/Character/CDGameplayTag.h"
 #include "CombatComponent.generated.h"
-
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CDPROJECT_API UCombatComponent : public UActorComponent
@@ -19,23 +20,27 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void Reset(bool isDead);
-	
-	FORCEINLINE	bool IsAiming() { return _isAiming; }//오타 수정
-	FORCEINLINE void SetAimAvail() { _isCanAim = true; }
-	FORCEINLINE bool IsFireAvail() { return _isCanFire; }
-	FORCEINLINE bool IsChanging() { return _isChanging; }
-	FORCEINLINE void SetFireAvail() { _isCanFire = true; }
+	void DeadAction();
+
+	void InsertCombatState(FGameplayTag StateTag);
+	void RemoveCombatState(FGameplayTag StateTag);
+	bool IsInCombatState(FGameplayTag StateTag) const;
+	FORCEINLINE	bool IsAiming() { return IsInCombatState(CombatTags::State_Combat_Aiming); }//오타 수정
+	FORCEINLINE bool IsChanging() { return IsInCombatState(CombatTags::State_Combat_ChangingWeapon); }
+	FORCEINLINE bool IsReloading() { return IsInCombatState(CombatTags::State_Combat_Reloading); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
 	FORCEINLINE int GetCurAmmo();
 	FORCEINLINE int GetCarriedAmmo();
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
-
+	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
+	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
 	bool IsTotalAmmoEmpty();
-	uint8 GetCurWeaponType();
+	EWeaponType GetCurWeaponType();
 	void SetWeaponVisible(bool tf);
 	void SetBefWeaponVisible(bool tf);
+	class ARoundGameMode* GetRoundGameMode();
 	
 	FHUDPackage HUDPackage;
 	
@@ -43,6 +48,8 @@ public:
 	TSubclassOf<class AWeapon> _defaultSubWeapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> _defaultMeleeWeapon;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> _c4Weapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
 private:
@@ -52,36 +59,42 @@ private:
 	class ACDCharacter* _playerCharacter;
 	UPROPERTY(VisibleAnywhere)
 	class ACDHUD* HUD;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	FGameplayTagContainer _combatStateTags;
+	//State
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponID)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	int _weaponIndex = -1;
 	UPROPERTY(VisibleAnywhere)
 	int _befIndex = -1;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isAiming;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isChanging = false;
-	
+	bool _isC4Area = false;	
+
+
+	FTimerHandle _clientFireTimerHandle;
 	FTimerHandle _fireTimerHandle;
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
+	FTimerHandle _weaponVisibleTimerHandle;
+	FTimerHandle _c4TimerHandle;	
 	
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isCanFire = true;
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool _isCanAim = true;
-	//보안용 레플리케이트
+	UPROPERTY(VisibleAnywhere)
+	AActor* _aimedActor;
 	
 	void CreateDefaultWeapons();
 	float CalculateSpread();
-	FVector CreateTraceDir();
+	FVector CreateTraceDir(float spread);
 public:
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	float _curSpread = 0.f;
 
 	void RequestFire();
+	void RequestFireStart();
+	void RequestFireEnd();
+	void RequestInteractStart();
+	void RequestInteractEnd();
 	void RequestChange(int idx);
 	//ServerCall
 	UFUNCTION(Server, Reliable)
@@ -95,9 +108,24 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerAim(bool tf);
 	void GetWeapon(class AWeapon* weapon, bool isForceGet = false);
+	UFUNCTION(Server, Reliable)
+	void ServerReadyGrenade();
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+	UFUNCTION(Server, Reliable)
+	void ServerC4Plant(bool isPlanting);
+	UFUNCTION(Server, Reliable)
+	void ServerC4Defuse(bool isDefusing);
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunReload();
+	UFUNCTION(Server, Reliable)
+	void ServerCancelReload();
 		//Both Call
 		void Aim(bool tf);
 	void DropAllWeapons();
+	void ChangeToNextWeapon();
+	void CreateC4Weapon();
+
 private:
 	//Implementation
 	void Fire(FVector fireDir);
@@ -113,16 +141,18 @@ private:
 	void NetMulticastReload();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastDropWeapon(AWeapon* weapon);
-	UFUNCTION()
-	void OnRep_WeaponID();
-
-	//deprecated
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastChangeWeapon(int idx);
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastSetIsCanFire(bool tf);
-	UFUNCTION(Server, Reliable)
-	void ServerSetFireAvail();
-	UFUNCTION(Server, Reliable)
-	void ServerSetAimAvail();
+	void NetMulticastGrenadeReady();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastGrenadeThrow();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastC4Plant(bool tf, float duration = 0.f);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastC4Defuse(bool tf, float duration = 0.f);
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastCancelReload();
+	UFUNCTION()
+	void OnRep_WeaponID();
 };

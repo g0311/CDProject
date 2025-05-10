@@ -26,12 +26,16 @@ enum class EWeaponState:uint8
 UENUM(BlueprintType)
 enum class EWeaponType:uint8
 {
+	EWT_None UMETA(DisplayName = "None"),
 	EWT_Rifle UMETA(DisplayName = "Rifle"),
 	EWT_Sniper UMETA(DisplayName = "Sniper"),
 	EWT_RocketLauncher UMETA(DisplayName = "RocketLauncher"),
 	EWT_Pistol UMETA(DisplayName="Pistol"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_Speical UMETA(DisplayName = "Special"),
+	EWT_Knife UMETA(DisplayName="Knife"),
+	EWT_Hand UMETA(DisplayName="Hand"),
+	EWT_C4 UMETA(DisplayName="C4")
 };
 
 UCLASS()
@@ -49,13 +53,11 @@ public:
 	
 	//* Widget Set function
 	void SetHUDAmmo();
-	
 	void SetWeaponState(EWeaponState state);
 	void AddAmmo(int32 AmmoToAdd);
-	void Reload();
-	
+	void ResetAmmo();
+	virtual void Reload();
 	void Dropped(FVector& impactDir);
-
 	void AttachToPlayer();
 
 	//WeaponState
@@ -64,6 +66,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* WeaponImage;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_WeaponVisible)
+	bool WeaponVisible = false;
 
 	//Crosshair
 	UPROPERTY(EditAnywhere, Category=Crosshair)
@@ -115,7 +120,7 @@ public:
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
-	
+	FORCEINLINE void SetWeaponVisible(bool tf);
 protected:
 	virtual void BeginPlay() override;
 
@@ -154,13 +159,13 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_WeaponState();
-
 	
-
+	UFUNCTION()
+	void OnRep_WeaponVisible();
+	
 	void SpendAmmo();
-
-
-private:
+	
+protected:
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* WeaponMesh;
 
@@ -184,9 +189,10 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	int32 AmmoCapacity;
-
-
-
+	//Init Ammo
+	int32 InitAmmoCount;
+	int32 InitCarriedAmmoCount;
+	
 };
 
 

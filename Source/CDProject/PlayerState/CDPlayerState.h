@@ -1,36 +1,68 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "CDProject/Types/Team.h"
-#include "CDProject/Weapon/Weapon.h"
 #include "GameFramework/PlayerState.h"
 #include "CDPlayerState.generated.h"
 
-/**
- * 
- */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScoreUpdated);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdated, int32, NewGold);
+
+
 UCLASS()
 class CDPROJECT_API ACDPlayerState : public APlayerState
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+    ACDPlayerState();
 
-	
-
-	UFUNCTION()
-	void OnRep_Team();
+    virtual void BeginPlay() override;
+    
+    void AddKill();
+    void AddDeath();
+    void AddGold(int32 Amount);
+    bool SpendGold(int32 Amount);
+    
+    int32 GetKills() const { return Kills; }
+    int32 GetDeaths() const { return Deaths; }
+    FString GetPlayerName() const { return Name; }
+    int32 GetGold() const { return Gold; }
+    ETeam GetTeam() const { return Team; }
+    ETeam GetMatchTeam() const { return MatchTeam; }
+    
+    void SetTeam(ETeam NewTeam);
+    void SetMatchTeam(ETeam NewTeam);
+    void SwitchTeam();
+    
+    UPROPERTY(BlueprintAssignable, Category = "Score")
+    FOnScoreUpdated OnScoreUpdated;
+    UPROPERTY(BlueprintAssignable, Category = "Gold")
+    FOnGoldUpdated OnGoldUpdated;
 
 protected:
-	UPROPERTY(ReplicatedUsing=OnRep_Team)
-	ETeam Team=ETeam::ET_NoTeam;
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    
+    UFUNCTION()
+    void OnRep_Team();
+    UFUNCTION()
+    void OnRep_Gold();
+    UFUNCTION()
+    void OnRep_Kills();
+    UFUNCTION()
+    void OnRep_Deaths();
 
-	
-public:
-	FORCEINLINE ETeam GetTeam() const {return Team;}
-	
-	void SetTeam(ETeam TeamToSet);
+private:
+    UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, Category = "Player Stats")
+    ETeam Team = ETeam::ET_NoTeam;
+    UPROPERTY(Replicated, VisibleAnywhere)
+    ETeam MatchTeam = ETeam::ET_NoTeam;
+    UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
+    FString Name;
+    UPROPERTY(ReplicatedUsing = OnRep_Kills, VisibleAnywhere, Category = "Player Stats")
+    int32 Kills = 0;
+    UPROPERTY(ReplicatedUsing = OnRep_Deaths, VisibleAnywhere, Category = "Player Stats")
+    int32 Deaths = 0;
+    UPROPERTY(ReplicatedUsing = OnRep_Gold, EditAnywhere, Category = "Player Stats")
+    int32 Gold = 0;
 };

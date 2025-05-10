@@ -10,9 +10,12 @@
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "CDProject/Interface/IsEnemyInterface.h"
+#include "CDProject/Weapon/ProjectileC4.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "CDProject/Character/CDGameplayTag.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -37,6 +40,29 @@ void UCombatComponent::BeginPlay()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	//Need Line Trace For Distinguish Enemy and C4
+	if (_playerCharacter)
+	{
+		if (_playerCharacter->IsLocallyControlled() || _playerCharacter->HasAuthority())
+		{
+			FHitResult Hit;
+			FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
+			FVector traceEnd = traceStart + _playerCharacter->GetCamera()->GetForwardVector() * 10000.f;
+			FCollisionQueryParams Params;
+			Params.AddIgnoredActor(_playerCharacter);
+			if (GetWorld()->LineTraceSingleByChannel(Hit, traceStart, traceEnd, ECC_Visibility, Params))
+			{
+				_aimedActor = Hit.GetActor();
+				// if(IsValid(_aimedActor))
+				// 	UE_LOG(LogTemp, Log, TEXT("aimed Actor Name: %s"), *_aimedActor->GetName());
+			}
+			else
+			{
+				_aimedActor = nullptr;
+			}
+		}
+	}
 	
 	//Update Spread
 	if (_playerCharacter->HasAuthority())
@@ -45,19 +71,27 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 		_curSpread = FMath::FInterpTo(_curSpread, newSpread, DeltaTime, 50.f);
 	}
 	SetHUDCrosshairs(_curSpread);
+	
+	//If Defusing, Check the Aimed Actor
+	if (_playerCharacter && _playerCharacter->IsLocallyControlled() &&
+		IsInCombatState(CombatTags::State_Combat_DefusingC4))
+	{
+		if (!Cast<AProjectileC4>(_aimedActor))
+		{
+			ServerC4Defuse(false);
+		}
+	}
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	
-	DOREPLIFETIME(UCombatComponent, _isAiming);
 	DOREPLIFETIME(UCombatComponent, _weapons);
 	DOREPLIFETIME(UCombatComponent, _weaponIndex);
-	DOREPLIFETIME(UCombatComponent, _isCanAim);
-	DOREPLIFETIME(UCombatComponent, _isCanFire);
 	DOREPLIFETIME(UCombatComponent, _curSpread);
-	DOREPLIFETIME(UCombatComponent, _isChanging);
+	DOREPLIFETIME(UCombatComponent, _combatStateTags);
+	DOREPLIFETIME(UCombatComponent, _isC4Area);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -77,10 +111,33 @@ void UCombatComponent::Reset(bool isDead)
 		{
 			if (weapon)
 			{
-				//weapon->ResetAmmo();
+				weapon->ResetAmmo();
 			}
 		}
 	}
+}
+
+void UCombatComponent::DeadAction()
+{
+	DropAllWeapons();
+	_combatStateTags.Reset();
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+	_weaponIndex = -1;
+}
+
+void UCombatComponent::InsertCombatState(FGameplayTag StateTag)
+{
+	_combatStateTags.AddTag(StateTag);
+}
+
+void UCombatComponent::RemoveCombatState(FGameplayTag StateTag)
+{
+	_combatStateTags.RemoveTag(StateTag);
+}
+
+bool UCombatComponent::IsInCombatState(FGameplayTag StateTag) const
+{
+	return _combatStateTags.HasTagExact(StateTag);
 }
 
 int UCombatComponent::GetCurAmmo()
@@ -121,12 +178,12 @@ bool UCombatComponent::IsTotalAmmoEmpty()
 			&& _weapons[_weaponIndex]->GetAmmo() == 0);
 }
 
-uint8 UCombatComponent::GetCurWeaponType()
+EWeaponType UCombatComponent::GetCurWeaponType()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return -1;
+		return EWeaponType::EWT_None;
 
-	return static_cast<uint8>(_weapons[_weaponIndex]->GetWeaponType());
+	return GetCurWeapon()->GetWeaponType();
 }
 
 void UCombatComponent::CreateDefaultWeapons()
@@ -134,7 +191,9 @@ void UCombatComponent::CreateDefaultWeapons()
 	if (_defaultSubWeapon)
 	{
 		if (_weapons[1])
-			return;
+		{
+			_weapons[1]->Destroy();
+		}
 		
 		_weapons[1] = GetWorld()->SpawnActor<AWeapon>(_defaultSubWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
 		if (_weapons[1])
@@ -147,13 +206,17 @@ void UCombatComponent::CreateDefaultWeapons()
 	if (_defaultMeleeWeapon)
 	{
 		if (_weapons[2])
-			return;
-		
-		_weapons[0] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
-		if (_weapons[0])
 		{
-			_weapons[0]->SetOwner(_playerCharacter);
-			_weapons[0]->AttachToPlayer();
+			_weapons[2]->Destroy();
+		}
+		
+		_weapons[2] = GetWorld()->SpawnActor<AWeapon>(_defaultMeleeWeapon, FVector::ZeroVector, FRotator::ZeroRotator);
+		if (_weapons[2])
+		{
+			if (_playerCharacter->IsLocallyControlled())
+				UE_LOG(LogTemp, Log, TEXT("Combat Create"));
+			_weapons[2]->SetOwner(_playerCharacter);
+			_weapons[2]->AttachToPlayer();
 		}
 	}
 }
@@ -176,14 +239,14 @@ float UCombatComponent::CalculateSpread()
 	{
 		spread -= 0.5f;  // 앉으면 감소
 	}
-	if (_isAiming)
+	if (IsInCombatState(CombatTags::State_Combat_Aiming))
 	{
 		spread -= 0.4f;
 	}
 	return FMath::Clamp(spread, 0.1f, 5.f);
 }
 
-FVector UCombatComponent::CreateTraceDir()
+FVector UCombatComponent::CreateTraceDir(float spread)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return FVector::ZeroVector;
@@ -196,7 +259,7 @@ FVector UCombatComponent::CreateTraceDir()
 	FRotator camRotation = playerController->PlayerCameraManager->GetCameraRotation();
 	FVector baseDirection = camRotation.Vector();
 	
-	float spreadAngleRad = FMath::DegreesToRadians(_curSpread);
+	float spreadAngleRad = FMath::DegreesToRadians(spread);
 	FVector right = FVector::CrossProduct(baseDirection, FVector::UpVector).GetSafeNormal();
 	FVector up = FVector::CrossProduct(right, baseDirection).GetSafeNormal();
 
@@ -213,17 +276,128 @@ FVector UCombatComponent::CreateTraceDir()
 
 void UCombatComponent::RequestFire()
 {
+	if (IsInCombatState(CombatTags::State_Combat_Reloading) || 
+		IsInCombatState(CombatTags::State_Combat_ChangingWeapon) || 
+		IsInCombatState(CombatTags::State_Combat_DefusingC4))
+	{
+		return;
+	}
+
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
-	_isCanFire = false;
-	FVector traceDir = CreateTraceDir();
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun &&
+		IsInCombatState(CombatTags::State_Combat_Reloading) &&
+		!IsAmmoEmpty())
+	{
+		ServerCancelReload();
+	}
+	
+	if (IsAmmoEmpty())
+	{
+		Aim(false);
+		ServerReload();
+		return;
+	}
+	FVector traceDir = FVector::ZeroVector;
+	if (GetCurWeaponType() != EWeaponType::EWT_Hand ||
+		GetCurWeaponType() != EWeaponType::EWT_C4 ||
+		GetCurWeaponType() != EWeaponType::EWT_Knife)
+		traceDir = CreateTraceDir(_curSpread);
 	ServerFire(traceDir);
+}
+
+void UCombatComponent::RequestFireStart()
+{
+	if (!GetCurWeapon())
+		return;
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+		return;
+	
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand)
+	{
+		//Grenade
+		ServerReadyGrenade();
+		return;
+	}
+	
+	if (GetCurWeapon()->bAutomatic)
+	{
+		//Called in Client
+		RequestFire();
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, this, &UCombatComponent::RequestFire, 0.01f, true);
+	}
+	else
+	{
+		RequestFire();
+	}
+}
+
+void UCombatComponent::RequestFireEnd()
+{
+	if (!GetCurWeapon())
+		return;
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+		return;
+	
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand && IsInCombatState(CombatTags::State_Combat_GrenadeReady))
+	{
+		//Grenade
+		RequestFire();
+		ServerThrowGrenade();
+		return;
+	}
+	
+	if (_clientFireTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(_clientFireTimerHandle);
+	}
+}
+
+void UCombatComponent::RequestInteractStart()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+	{
+		if (_isC4Area)
+		{
+			ServerC4Plant(true);
+		}
+		return;
+	}
+	
+	if (IsValid(_aimedActor))
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s"), *_aimedActor->GetName());
+		if (AProjectileC4* c4 = Cast<AProjectileC4>(_aimedActor))
+		{
+			if (c4->IsDefused() || _playerCharacter->GetTeam() == ETeam::ET_RedTeam)
+				return;
+			ServerC4Defuse(true);
+		}
+	}
+}
+
+void UCombatComponent::RequestInteractEnd()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_C4)
+	{
+		if (IsInCombatState(CombatTags::State_Combat_PlantingC4))
+			ServerC4Plant(false);
+		return;
+	}
+	
+	if (_aimedActor)
+	{
+		AProjectileC4* plantedC4 = Cast<AProjectileC4>(_aimedActor);
+		if (plantedC4 && IsInCombatState(CombatTags::State_Combat_DefusingC4))
+		{
+			ServerC4Defuse(false);
+		}
+	}
 }
 
 void UCombatComponent::RequestChange(int idx)
 {
-	_isChanging = true;
 	ServerChangeWeapon(idx);
 }
 
@@ -231,9 +405,9 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-	
-	_weapons[_weaponIndex]->GetWeaponMesh()->SetVisibility(tf);
-	_weapons[_weaponIndex]->GetWeaponMesh3p()->SetVisibility(tf);
+
+	_weapons[_weaponIndex]->SetWeaponVisible(tf);
+	_weapons[_weaponIndex]->SetWeaponVisible(tf);
 }
 
 void UCombatComponent::SetBefWeaponVisible(bool tf)
@@ -244,23 +418,40 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 		return;
 	}
 
-	// if (_playerCharacter->IsLocallyControlled())
-	// 	UE_LOG(LogTemp,Log,TEXT("%d"), _befIndex);
-
-	_weapons[_befIndex]->GetWeaponMesh()->SetVisibility(tf);
-	_weapons[_befIndex]->GetWeaponMesh3p()->SetVisibility(tf);
+	_weapons[_befIndex]->SetWeaponVisible(tf);
+	_weapons[_befIndex]->SetWeaponVisible(tf);
 
 	_befIndex = _weaponIndex;
 }
 
+ARoundGameMode* UCombatComponent::GetRoundGameMode()
+{
+	if (GetWorld())
+	{
+		if (GetWorld()->GetAuthGameMode())
+		{
+			if (Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				return Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
+			}
+		}
+	}
+	return nullptr;
+}
+
 void UCombatComponent::ServerFire_Implementation(FVector fireDir)
 {
+	if (IsInCombatState(CombatTags::State_Combat_Reloading) ||
+		IsInCombatState(CombatTags::State_Combat_ChangingWeapon) ||
+		IsInCombatState(CombatTags::State_Combat_Firing))
+		return;
 	Fire(fireDir);
 }
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	Reload();
+	if (!IsInCombatState(CombatTags::State_Combat_Reloading))
+		Reload();
 }
 
 void UCombatComponent::ServerChangeWeapon_Implementation(int idx)
@@ -300,7 +491,6 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 			weapon->AttachToPlayer();
 			_weapons[0] = weapon;
 			ChangeWeapon(0);
-			//여기 visible true로 변경
 		}
 		break;
 	case EWeaponType::EWT_Pistol:
@@ -320,28 +510,116 @@ void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 			ChangeWeapon(1);
 		}
 		break;
+	case EWeaponType::EWT_C4:
+		if (_playerCharacter->GetTeam() == ETeam::ET_BlueTeam)
+			return;
+		if (!_weapons[5])
+		{
+			weapon->SetOwner(_playerCharacter);
+			weapon->AttachToPlayer();
+			_weapons[5] = weapon;
+			ChangeWeapon(5);
+		}
+		break;
 	}
+}
+
+void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
+{
+	if (GetWorld())
+	{
+		if (isPlanting && _isC4Area)
+		{
+			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this]
+				{
+					if (!IsValid(this))
+						return;
+					RequestFire();
+					//In C4 Fire, GameMode Set Bomb Planted
+					ServerC4Plant(false);
+					_weapons[_weaponIndex] = nullptr;
+					ChangeToNextWeapon();
+				}),
+				_fireDelay, false);
+			NetMulticastC4Plant(true, _fireDelay);
+			InsertCombatState(CombatTags::State_Combat_PlantingC4);
+		}
+		else
+		{
+			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
+			NetMulticastC4Plant(false);
+			RemoveCombatState(CombatTags::State_Combat_PlantingC4);
+		}
+	}
+}
+
+void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
+{
+	if (_playerCharacter->GetTeam() == ETeam::ET_RedTeam)
+		return;
+	//Is Aiming C4
+	if (GetWorld())
+	{
+		if (isDefusing)
+		{
+			AProjectileC4* c4Projectile = Cast<AProjectileC4>(_aimedActor);
+			if (!c4Projectile)
+				return;
+			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this, c4Projectile]
+				{
+					if (IsValid(this))
+						ServerC4Defuse(false);
+					if (IsValid(c4Projectile))
+						c4Projectile->Defused();
+				}),
+				c4Projectile->GetDefusingtime(), false);
+			NetMulticastC4Defuse(true, c4Projectile->GetDefusingtime());
+			InsertCombatState(CombatTags::State_Combat_DefusingC4);
+		}
+		else
+		{
+			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
+			NetMulticastC4Defuse(false);
+			RemoveCombatState(CombatTags::State_Combat_DefusingC4);
+		}
+	}
+}
+
+void UCombatComponent::ServerReadyGrenade_Implementation()
+{
+	NetMulticastGrenadeReady();
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	RemoveCombatState(CombatTags::State_Combat_GrenadeReady);
+	NetMulticastGrenadeThrow();
+}
+
+void UCombatComponent::ServerShotgunReload_Implementation()
+{
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun)
+	{
+		GetCurWeapon()->Reload();
+	}
+}
+
+void UCombatComponent::ServerCancelReload_Implementation()
+{
+	RemoveCombatState(CombatTags::State_Combat_Reloading);
+	NetMulticastCancelReload();
 }
 
 void UCombatComponent::Aim(bool tf)
 {
-	if (!_isCanAim)
+	if (IsInCombatState(CombatTags::State_Combat_Reloading) || IsInCombatState(CombatTags::State_Combat_ChangingWeapon))
 		return;
 	
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 	{
-		if (_isAiming)
+		if (IsInCombatState(CombatTags::State_Combat_Aiming))
 		{
-			_isAiming = false;
-			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
-			{
-				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
-				if(pc)
-				{
-					pc->ShowSniperScope();
-				}
-				SetWeaponVisible(true);
-			}
+			RemoveCombatState(CombatTags::State_Combat_Aiming);
 		}
 		return;
 	}
@@ -350,9 +628,13 @@ void UCombatComponent::Aim(bool tf)
 		_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Sniper ||
 		_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Speical)
 	{
-		if (_isAiming != tf)
+		if (IsInCombatState(CombatTags::State_Combat_Aiming) != tf)
 		{
-			_isAiming = tf;
+			if (tf)
+				InsertCombatState(CombatTags::State_Combat_Aiming);
+			else
+				RemoveCombatState(CombatTags::State_Combat_Aiming);
+				
 			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
 			{
 				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
@@ -366,19 +648,7 @@ void UCombatComponent::Aim(bool tf)
 	}
 	else
 	{
-		if (_isAiming)
-		{
-			_isAiming = false;
-			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
-			{
-				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
-				if(pc)
-				{
-					pc->ShowSniperScope();
-				}
-				SetWeaponVisible(true);
-			}
-		}
+		RemoveCombatState(CombatTags::State_Combat_Aiming);	
 	}
 }
 
@@ -390,21 +660,46 @@ void UCombatComponent::DropAllWeapons()
 	Aim(false);
 	for (int i = 0; i < _weapons.Num(); ++i)
 	{
-		if (i == 2) continue;
-
-		if (_weapons[i])
+		_weaponIndex = i;
+		if (_weapons[_weaponIndex])
 		{
-			FRotator controlRot = _playerCharacter->GetControlRotation();
-			FVector lookDirection = controlRot.Vector();
-			//Add Impulse
+			if (_weapons[_weaponIndex]->GetWeaponType() == EWeaponType::EWT_Knife)
+				continue;
 			
-			NetMulticastDropWeapon(_weapons[i]);
-			_weapons[i]->Dropped(lookDirection);
-			_weapons[i] = nullptr;
+			DropWeapon();
 		}
 	}
+	_weaponIndex = 2;
+}
 
-	_weaponIndex = -1;
+void UCombatComponent::ChangeToNextWeapon()
+{
+	for (int i = 1; i < _weapons.Num(); i++)
+	{
+		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
+		{
+			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
+			return;
+		}
+	}
+}
+
+void UCombatComponent::CreateC4Weapon()
+{
+	if (_c4Weapon)
+	{
+		if (_weapons[4])
+		{
+			_weapons[4]->Destroy();
+		}
+		
+		_weapons[4] = GetWorld()->SpawnActor<AWeapon>(_c4Weapon, FVector::ZeroVector, FRotator::ZeroRotator);
+		if (_weapons[4])
+		{
+			_weapons[4]->SetOwner(_playerCharacter);
+			_weapons[4]->AttachToPlayer();
+		}
+	}
 }
 
 void UCombatComponent::Fire(FVector fireDir)
@@ -436,20 +731,22 @@ void UCombatComponent::Fire(FVector fireDir)
 	}
 	
 	//Fire Delay
-	_isCanFire = false;
+	InsertCombatState(CombatTags::State_Combat_Firing);
 	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
-		_isCanFire = true;
+		RemoveCombatState(CombatTags::State_Combat_Firing);
 	}), _fireDelay, false);
 }
 
 void UCombatComponent::Reload()
 {
+	if (!_playerCharacter || !GetCurWeapon())
+		return;
+	if (GetCurWeaponType() == EWeaponType::EWT_Hand || GetCurWeaponType() == EWeaponType::EWT_Knife)
+		return;
 	if (_weapons[_weaponIndex]->GetAmmo() == _weapons[_weaponIndex]->GetAmmoCapacity())
 		return;
 	if (_weapons[_weaponIndex]->GetCarriedAmmo() == 0)
-		return;
-	if (!_playerCharacter)	
 		return;
 	
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
@@ -457,16 +754,16 @@ void UCombatComponent::Reload()
 		return;
 	
 	NetMulticastReload();
-	_isCanFire = false;
-	_isCanAim = false;
+	InsertCombatState(CombatTags::State_Combat_Reloading);
 	Aim(false);
-
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	if (GetCurWeaponType() != EWeaponType::EWT_Shotgun)
 	{
-		_isCanFire = true;
-		_isCanAim = true;
-		_weapons[_weaponIndex]->Reload();
-	}), armAnim->GetReloadTime(),false);
+		GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+	   {
+		   RemoveCombatState(CombatTags::State_Combat_Reloading);
+		   _weapons[_weaponIndex]->Reload();
+	   }), armAnim->GetReloadTime(),false);
+	}
 }
 
 void UCombatComponent::ChangeWeapon(int idx)
@@ -478,24 +775,41 @@ void UCombatComponent::ChangeWeapon(int idx)
 	Aim(false);
 	_befIndex = _weaponIndex;
 	_weaponIndex = idx;
-		
+	
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	if (!armAnim)
 		return;
 	
-	_isCanFire = false;
-	_isCanAim = false;
-	_isChanging = true;
+	RemoveCombatState(CombatTags::State_Combat_Firing);
+	RemoveCombatState(CombatTags::State_Combat_GrenadeReady);
+	RemoveCombatState(CombatTags::State_Combat_Reloading);
+	if (IsInCombatState(CombatTags::State_Combat_PlantingC4))
+	{
+		ServerC4Plant(false);
+	}
+	if (IsInCombatState(CombatTags::State_Combat_DefusingC4))
+	{
+		ServerC4Defuse(false);
+	}
+	
+	InsertCombatState(CombatTags::State_Combat_ChangingWeapon);
+	GetWorld()->GetTimerManager().SetTimer(_weaponVisibleTimerHandle, FTimerDelegate::CreateLambda([this]
+	{
+		UE_LOG(LogGameplayTags, Warning, TEXT("Visible called"));
+		SetBefWeaponVisible(false);
+		SetWeaponVisible(true);
+	}),
+	0.5f, false);
 	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
-		_isCanFire = true;
-		_isCanAim = true;
-		_isChanging = false;
+		RemoveCombatState(CombatTags::State_Combat_ChangingWeapon);
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
-	OnRep_WeaponID();
-	//리슨 서버용
+	NetMulticastChangeWeapon(idx);
+	// if (_playerCharacter->HasAuthority())
+	// 	OnRep_WeaponID();
+	// //리슨 서버용
 }
 
 void UCombatComponent::DropWeapon()
@@ -511,16 +825,12 @@ void UCombatComponent::DropWeapon()
 
 	NetMulticastDropWeapon(_weapons[_weaponIndex]);
 	_weapons[_weaponIndex]->Dropped(lookDirection);
-	_weapons[_weaponIndex] = nullptr;
-
-	for (int i = 0; i < _weapons.Num(); i++)
+	if (ARoundGameMode* gameMode = GetRoundGameMode())
 	{
-		if (_weapons[(_weaponIndex + i) % _weapons.Num()])
-		{
-			ChangeWeapon((_weaponIndex + i) % _weapons.Num());
-			return;
-		}
+		gameMode->AddDestroyableActor(_weapons[_weaponIndex]);
 	}
+	_weapons[_weaponIndex] = nullptr;
+	ChangeToNextWeapon();
 }
 
 void UCombatComponent::SetHUDCrosshairs(float spread)
@@ -528,7 +838,7 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
-	ACharacter* character = Cast<ACharacter>(GetOwner());
+	ACDCharacter* character = Cast<ACDCharacter>(GetOwner());
 	if (!character || !character->Controller || _weaponIndex == -1) return;
 
 	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
@@ -553,7 +863,24 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 				HUDPackage.CrosshairBottom = nullptr;
 				HUDPackage.CrosshairTop = nullptr;
 			}
-			HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+			if (_aimedActor)
+			{
+				if (ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor))
+				{
+					if (character->GetTeam() == ETeam::ET_NoTeam || aimedCharacter->GetTeam() != character->GetTeam())
+					{
+						HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
+					}
+				}
+				else
+				{
+					HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+				}
+			}
+			else
+			{
+				HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+			}
 			HUDPackage.CrosshairSpread=spread;
 			HUD->SetHUDPackage(HUDPackage);
 		}
@@ -579,7 +906,7 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 		armAnim->PlayFireMontage(_fireDelay);
 	
 	APlayerController* playerController = Cast<APlayerController>(_playerCharacter->GetController());
-	if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass)
+	if (playerController && playerController->PlayerCameraManager && _fireCameraShakeClass && GetCurWeaponType() != EWeaponType::EWT_C4)
 	{
 		playerController->PlayerCameraManager->StartCameraShake(_fireCameraShakeClass);
 	}
@@ -608,12 +935,140 @@ void UCombatComponent::NetMulticastReload_Implementation()
 
 void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 {
+	if (!IsValid(weapon))
+		return;
 	weapon->GetWeaponMesh()->SetVisibility(true);
 	weapon->GetWeaponMesh3p()->SetVisibility(false);
 }
 
+void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
+{
+	if (_weaponIndex == -1)
+		return;
+	
+	if (!_weapons[_weaponIndex])
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, idx]()
+		{
+			NetMulticastChangeWeapon_Implementation(idx);
+		});
+		return;
+	} //Wait Until Weapon Replicated
+	
+	_weapons[_weaponIndex]->SetHUDAmmo();
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	
+	if (bodyAnim)
+	{
+		bodyAnim->PlayEquipMontage(_weapons[_weaponIndex]);
+	}
+	if (armAnim)
+	{
+		armAnim->PlayEquipMontage(_weapons[_weaponIndex]);
+	}
+	
+	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
+}
+
+void UCombatComponent::NetMulticastGrenadeReady_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+		bodyAnim->PlayGrenadeReadyMontage();
+	if (armAnim)
+		armAnim->PlayGrenadeReadyMontage();
+
+	if (_playerCharacter && _playerCharacter->HasAuthority())
+	{
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([this]
+		   {
+				InsertCombatState(CombatTags::State_Combat_GrenadeReady);
+		   }), armAnim->GetGrenadeReadyTime(), false);
+	}
+}
+
+void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
+{
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
+		return;
+	
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+		bodyAnim->PlayFireMontage(_fireDelay);
+	if (armAnim)
+		armAnim->PlayFireMontage(_fireDelay);
+
+	if (_playerCharacter && _playerCharacter->HasAuthority())
+	{
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([this]
+		   {
+			   _weapons[_weaponIndex] = nullptr;
+			   ChangeToNextWeapon();
+		   }), armAnim->GetGrenadeThrowTime() / 2, false);
+	}
+}
+
+void UCombatComponent::NetMulticastCancelReload_Implementation()
+{
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
+
+	if (armAnim && armAnim->Montage_IsPlaying(armAnim->_shotgunReloadMontage))
+		armAnim->Montage_Stop(0.1f);
+
+	if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
+		bodyAnim->Montage_Stop(0.1f);
+}
+
+void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf, float duration)
+{
+	if (!_playerCharacter)
+		return;
+	
+	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+	if(!IsValid(pc))
+		return;
+	if (tf)
+	{
+		//show hud
+		pc->ShowC4PlantingProgress(true, duration);
+	}
+	else
+	{
+		//hide hud
+		pc->ShowC4PlantingProgress(false);
+	}
+}
+
+void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf, float duration)
+{
+	if (!_playerCharacter || !_playerCharacter->IsLocallyControlled())
+		return;
+
+	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
+	if(!IsValid(pc))
+		return;
+	if (tf)
+	{
+		pc->ShowC4DefusingProgress(true, duration);
+	}
+	else
+	{
+		pc->ShowC4DefusingProgress(false);
+	}
+}
+
 void UCombatComponent::OnRep_WeaponID()
 { //Change Weapon
+	if (_playerCharacter && _playerCharacter->IsLocallyControlled() && !_playerCharacter->HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ONREP WEAPON IND // ID: %d"), _weaponIndex);
+	}
+	
 	if (_weaponIndex == -1)
 		return;
 	
@@ -627,12 +1082,13 @@ void UCombatComponent::OnRep_WeaponID()
 	} //Wait Until Weapon Replicated
 	if (!_playerCharacter)
 		return;
-	
+
+	RemoveCombatState(CombatTags::State_Combat_GrenadeReady);
 	_weapons[_weaponIndex]->SetHUDAmmo();
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-
+	
 	if (bodyAnim)
 	{
 		bodyAnim->PlayEquipMontage(_weapons[_weaponIndex]);
@@ -643,44 +1099,4 @@ void UCombatComponent::OnRep_WeaponID()
 	}
 	
 	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
-}
-
-
-//deprecated
-void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
-{
-	if (!_playerCharacter || !_weapons[idx])
-		return;
-	
-	_isCanFire = false;
-	_isCanAim = false;
-	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-
-	_weapons[idx]->SetHUDAmmo();
-	if (bodyAnim)
-	{
-		bodyAnim->PlayEquipMontage(_weapons[idx]);
-	}
-	if (armAnim)
-	{
-		armAnim->PlayEquipMontage(_weapons[idx]);
-	}
-	_fireDelay = (_weapons[idx]->FireDelay);
-}
-
-void UCombatComponent::NetMulticastSetIsCanFire_Implementation(bool tf)
-{
-	_isCanFire = tf;
-}
-
-void UCombatComponent::ServerSetFireAvail_Implementation()
-{
-	_isCanFire = true;
-}
-
-void UCombatComponent::ServerSetAimAvail_Implementation()
-{
-	_isCanAim = true;
 }

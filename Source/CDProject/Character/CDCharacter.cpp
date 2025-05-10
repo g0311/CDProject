@@ -12,6 +12,7 @@
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -71,13 +72,15 @@ ACDCharacter::ACDCharacter()
 	SceneCapture2D->ProjectionType = ECameraProjectionMode::Orthographic;
 	SceneCapture2D->OrthoWidth = 2048.f; 
 	SceneCapture2D->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+	SceneCapture2D->bCaptureEveryFrame = false;
+	SceneCapture2D->bCaptureOnMovement = true;
 }
 
 // Called when the game starts or when spawned
 void ACDCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (!MiniMapRenderTarget)
 	{
 		MiniMapRenderTarget = NewObject<UTextureRenderTarget2D>(this, UTextureRenderTarget2D::StaticClass(), TEXT("MiniMapRenderTarget"));
@@ -86,9 +89,11 @@ void ACDCharacter::BeginPlay()
 			MiniMapRenderTarget->RenderTargetFormat = RTF_RGBA8;
 			MiniMapRenderTarget->InitAutoFormat(256, 256);
 			MiniMapRenderTarget->ClearColor = FLinearColor::Transparent;
-			SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
+			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
+	if (HasAuthority())
+		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
 
 // Called every frame
@@ -122,28 +127,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	}
 	
 	//Update Arm Mesh Location
-	if (_combat->IsAiming())
-	{
-		float InterpSpeed = 10.0f;
-		
-		FTransform _currentArmTransform =
-			UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), _aimArmTransform, DeltaTime, InterpSpeed);
-		_armMesh->SetRelativeTransform(_currentArmTransform);
-		
-		float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _combat->GetCurWeapon()->GetZoomedFOV(), DeltaTime, InterpSpeed);
-		_camera->SetFieldOfView(NewFOV);
-	}
-	else
-	{
-		float InterpSpeed = 10.0f;
-		
-		FTransform _currentArmTransform =
-			UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), _defaultArmTransform, DeltaTime, InterpSpeed);
-		_armMesh->SetRelativeTransform(_currentArmTransform);
-		
-		float NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
-		_camera->SetFieldOfView(NewFOV);
-	}
+	UpdateArmMeshLocation(DeltaTime);
 }
 
 void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -164,7 +148,9 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_walkAction, ETriggerEvent::Completed, this, &ACDCharacter::UnWalk);
 
 		//Need Server Request
-		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::RequestFire);
+		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Started, this, &ACDCharacter::RequestFireStart);
+		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestFireEnd);
+		//enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::RequestFire);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestAim);
 		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestReload);
 		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 0);
@@ -173,6 +159,10 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		enhancedInputComponent->BindAction(_changeWeaponActions[3], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 3);
 		enhancedInputComponent->BindAction(_changeWeaponActions[4], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 4);
 		enhancedInputComponent->BindAction(_dropWeaponAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestDropWeapon);
+		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Started, this, &ACDCharacter::RequestInteractStart);
+		enhancedInputComponent->BindAction(_interactAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestInteractEnd);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDCharacter::TabStart);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDCharacter::TabEnd);
 	}
 }
 
@@ -180,6 +170,9 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	//Team Check
+	if (!EventInstigator)
+		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
 	ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
 	ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
 	if (!playerState || !causerPlayerState)
@@ -232,7 +225,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		}
 	}
 	//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
-	HandleDamage(finalDamage);
+	HandleDamage(finalDamage, EventInstigator);
 	
 	//for listen server
 	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
@@ -263,50 +256,23 @@ void ACDCharacter::PossessedBy(AController* NewController)
 	}
 }
 
-//Should Be MultiCast
-void ACDCharacter::RespawnPlayer()
+void ACDCharacter::Reset()
 {
+	//ServerCall
+	//Super::Reset();
 	if (_attributeSet->GetHealth() > 0)
-	{
-		if (HasAuthority())
-		{
-			_combat->Reset(false);
-			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-			GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			//Move To Spawn Point	
-			
-		}
+	{ //Alive
+		_combat->Reset(false);
+		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		Multicast_Reset(true);
+		//ServerPart
 	}
 	else
 	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
-		if (HasAuthority())
-		{
-			_combat->Reset(true);
-			_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
-			
-			//Move to Spawn Point
-			
-		}
-		else if (IsLocallyControlled())
-		{
-			_armMesh->SetVisibility(true);
-			//Enable Input
-			APlayerController* PC = Cast<APlayerController>(GetController());
-			if (PC)
-			{
-				ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-				if (LocalPlayer)
-				{
-					UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-					if (Subsystem)
-					{
-						Subsystem->AddMappingContext(_inputMappingContext, 0);
-					}
-				}
-			}
-		}
+		//Dead
+		_combat->Reset(true);
+		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		Multicast_Reset(false);
 	}
 }
 
@@ -328,13 +294,15 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 	}
 }
 
-void ACDCharacter::SetTeamColor(ETeam team)
+void ACDCharacter::SetTeam(ETeam team)
 {
+	UE_LOG(LogGameMode, Log, TEXT("Char Set Team Called"));
+	_team = team;
 	if (!GetMesh())
 		return;
 	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
-	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_BLUE"));
-	switch (team)
+	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_BLUE.M_UE4Man_Body_BLUE"));
+	switch (_team)
 	{
 	case ETeam::ET_RedTeam:
 		GetMesh()->SetMaterial(0, RedMaterial);
@@ -360,9 +328,167 @@ void ACDCharacter::ServerPlayFootStepSound_Implementation()
 	PlayFootStepSound();	
 }
 
+void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorController)
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
+
+	if (IsLocallyControlled())
+	{
+		APlayerController* controller = Cast<APlayerController>(GetController());
+		if (IsValid(controller))
+			DisableInput(controller);
+		//UnVisible Arm Mesh
+		GetArmMesh()->SetVisibility(false);
+	}
+	if (HasAuthority())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Die Called In Server"));
+		//Drop All Weapon & Reset Tag & Clear Timer
+		_combat->DeadAction();
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		//Update Mode
+		if(GetWorld() && GetWorld()->GetAuthGameMode())
+		{
+			ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
+			if (GameMode)
+			{
+				if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
+				{
+					if (ACDPlayerController* attackerPlayerController = Cast<ACDPlayerController>(instigatorController))
+					{
+						GameMode->PlayerEliminated(victimPlayerController, attackerPlayerController);
+					}
+				}
+			}
+		}
+	}
+		
+	if (bodyAnim)
+		bodyAnim->PlayDeadMontage();
+	if (armAnim)
+		armAnim->PlayDeadMontage();
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+}
+
+void ACDCharacter::Multicast_Hit_Implementation()
+{
+	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
+	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
+	if (bodyAnim)
+	{
+		bodyAnim->PlayHitMontage();
+	}
+	if (armAnim)
+	{
+		armAnim->PlayHitMontage();
+	}
+}
+
+void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
+{
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
+	_armMesh->SetVisibility(true);
+	if (IsLocallyControlled())
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (IsValid(PC))
+			EnableInput(PC);
+	}
+}
+
+void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController)
+{
+	if (_attributeSet == nullptr) return;
+
+	float CurShield = _attributeSet->GetShield();
+	float CurHealth = _attributeSet->GetHealth();
+
+	if (CurShield > 0.f)
+	{
+		CurShield = FMath::Clamp(CurShield - FinalDamage, 0.f, 100.f);
+		_attributeSet->SetShield(CurShield);
+	}
+	else
+	{
+		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
+		_attributeSet->SetHealth(CurHealth);
+	}
+	
+	if (CurHealth == 0.f)
+	{
+		Multicast_Dead(instigatorController);
+	}
+	else
+	{
+		Multicast_Hit();
+	}
+}
+
+void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
+{
+	if (!_combat || !_combat->GetCurWeapon())
+		return;
+	
+	FTransform nextTransform = FTransform::Identity;
+	switch (_combat->GetCurWeaponType())
+	{
+	case EWeaponType::EWT_Rifle:
+	case EWeaponType::EWT_Shotgun:
+	case EWeaponType::EWT_Sniper:
+	case EWeaponType::EWT_Pistol:
+		if (_combat->IsAiming())
+			nextTransform = _weaponAimArmTransform;
+		else
+			nextTransform = _weaponDefaultArmTransform;
+		break;
+	case EWeaponType::EWT_Hand:
+	case EWeaponType::EWT_C4:
+		nextTransform = _handWeaponArmTransform;
+		break;
+	case EWeaponType::EWT_Knife:
+		nextTransform = _knifeArmTransform;
+		break;
+	case EWeaponType::EWT_Speical:
+		nextTransform = _specialWeaponArmTransform;
+		break;
+	}
+	float InterpSpeed = 10.0f;
+		
+	FTransform _currentArmTransform =
+		UKismetMathLibrary::TInterpTo(_armMesh->GetRelativeTransform(), nextTransform, DeltaTime, InterpSpeed);
+	_armMesh->SetRelativeTransform(_currentArmTransform);
+
+	float NewFOV;
+	if (_combat->IsAiming())
+		NewFOV = FMath::FInterpTo(_camera->FieldOfView, _combat->GetCurWeapon()->GetZoomedFOV(), DeltaTime, InterpSpeed);
+	else
+		NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
+	_camera->SetFieldOfView(NewFOV);
+}
+
+void ACDCharacter::Kill()
+{
+	GetAttributeSet()->SetHealth(0.f);
+	if (_combat)
+		_combat->DeadAction();
+}
+
+void ACDCharacter::GiveC4()
+{
+	if (_combat)
+		_combat->CreateC4Weapon();
+}
+
 void ACDCharacter::Move(const FInputActionValue& value)
 {
-	if (!Controller)
+	if (!Controller ||
+		!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4)
+	)
 		return;
 	
 	FVector inputVal = value.Get<FVector>();
@@ -395,6 +521,16 @@ void ACDCharacter::Look(const FInputActionValue& value)
 	}
 }
 
+void ACDCharacter::Jump()
+{
+	if (!_combat ||
+		_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4) ||
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4))
+		return;
+	
+	Super::Jump();
+}
+
 void ACDCharacter::Crouch(bool bClientSimulation)
 {
 	if (GetCharacterMovement()->IsFalling())
@@ -417,21 +553,18 @@ void ACDCharacter::UnWalk()
 		CDCMC->bWantsToWalk = false;
 }
 
-void ACDCharacter::RequestFire()
+void ACDCharacter::RequestFireStart()
 {
 	if (!_combat) return;
 	
-	if (_combat->IsFireAvail())
-	{
-		if (_combat->IsAmmoEmpty())
-		{
-			RequestReload();
-		}
-		else
-		{
-			_combat->RequestFire();
-		}
-	}
+	_combat->RequestFireStart();
+}
+
+void ACDCharacter::RequestFireEnd()
+{
+	if (!_combat) return;
+	
+	_combat->RequestFireEnd();
 }
 
 void ACDCharacter::RequestAim()
@@ -470,13 +603,43 @@ void ACDCharacter::RequestDropWeapon()
 	_combat->ServerDropWeapon();
 }
 
+void ACDCharacter::RequestInteractStart()
+{
+	if (!_combat)
+		return;
+	_combat->RequestInteractStart();
+}
+
+void ACDCharacter::RequestInteractEnd()
+{
+	if (!_combat)
+		return;
+	_combat->RequestInteractEnd();
+}
+
+void ACDCharacter::TabStart()
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(GetController());	
+	if(!IsValid(pc))
+		return;
+	pc->ShowKDOverlay(true);
+}
+
+void ACDCharacter::TabEnd()
+{
+	ACDPlayerController* pc = Cast<ACDPlayerController>(GetController());	
+	if(!IsValid(pc))
+		return;
+	pc->ShowKDOverlay(false);
+}
+
 //Always Called By Server
-void ACDCharacter::GetWeapon(AWeapon* weapon)
+void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 {
 	if (!_combat)
 		return;
 	_combat->Aim(false);
-	_combat->GetWeapon(weapon);
+	_combat->GetWeapon(weapon, isForce);
 }
 
 void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator control, FRotator camera)
@@ -505,85 +668,5 @@ void ACDCharacter::InitializeAttributes()
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
 			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
-	}
-}
-
-void ACDCharacter::Multicast_Dead_Implementation()
-{
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-
-	if (IsLocallyControlled())
-	{
-		//Disable Input
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		if (PC)
-		{
-			ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
-			if (LocalPlayer)
-			{
-				UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
-				if (Subsystem)
-				{
-					Subsystem->RemoveMappingContext(_inputMappingContext);
-				}
-			}
-		}
-		//UnVisible Arm Mesh
-		GetArmMesh()->SetVisibility(false);
-	}
-	if (HasAuthority())
-	{
-		//Drop All Weapon
-		_combat->DropAllWeapons();
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-		
-	if (bodyAnim)
-		bodyAnim->PlayDeadMontage();
-	if (armAnim)
-		armAnim->PlayDeadMontage();
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-}
-
-void ACDCharacter::Multicast_Hit_Implementation()
-{
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-	if (bodyAnim)
-	{
-		bodyAnim->PlayHitMontage();
-	}
-	if (armAnim)
-	{
-		armAnim->PlayHitMontage();
-	}
-}
-
-void ACDCharacter::HandleDamage(float FinalDamage)
-{
-	if (_attributeSet == nullptr) return;
-
-	float CurShield = _attributeSet->GetShield();
-	float CurHealth = _attributeSet->GetHealth();
-
-	if (CurShield > 0.f)
-	{
-		CurShield = FMath::Clamp(CurShield - FinalDamage, 0.f, 100.f);
-		_attributeSet->SetShield(CurShield);
-	}
-	else
-	{
-		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
-		_attributeSet->SetHealth(CurHealth);
-	}
-	
-	if (CurHealth == 0.f)
-	{
-		Multicast_Dead();
-	}
-	else
-	{
-		Multicast_Hit();
 	}
 }

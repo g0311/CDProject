@@ -6,8 +6,12 @@
 #include "CDProject/Widget/KDOverlay.h"
 #include "Blueprint/UserWidget.h"
 #include "CDProject/Widget/Announcement.h"
+#include "CDProject/Widget/C4InteractProgressWidget.h"
 #include "CDProject/Widget/CharacterOverlay.h"
+#include "CDProject/Widget/ModeSelect.h"
+#include "CDProject/Widget/ShopOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
+#include "CDProject/WidgetPlus/Compass.h"
 
 void ACDHUD::DrawHUD()
 {
@@ -96,10 +100,104 @@ void ACDHUD::AddGameStateOverlay()
 
 void ACDHUD::AddAnnouncement()
 {
+	if (IsValid(Announcement))
+		return;
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
 		Announcement=CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);
 		Announcement->AddToViewport();
+	}
+}
+
+void ACDHUD::AddCompass()
+{
+	if (APlayerController* PlayerController=GetOwningPlayerController())
+	{
+		if (CompassWidgetClass)
+		{
+			Compass=CreateWidget<UCompass>(PlayerController,CompassWidgetClass);
+			if (Compass)
+			{
+				Compass->AddToViewport();
+			}
+		}
+	}
+}
+
+void ACDHUD::AddStore(bool IsActivate)
+{
+	if (APlayerController* PlayerController = GetOwningPlayerController())
+	{
+		if (IsActivate)
+		{
+			if (!ShopOverlay)
+			{
+				ShopOverlay = CreateWidget<UShopOverlay>(PlayerController, StoreWidgetClass);
+			}
+			if (ShopOverlay && !ShopOverlay->IsInViewport())
+			{
+				ShopOverlay->AddToViewport();
+			}
+		}
+		else
+		{
+			if (ShopOverlay && ShopOverlay->IsInViewport())
+			{
+				ShopOverlay->RemoveFromParent();
+				ShopOverlay = nullptr;
+			}
+		}
+	}
+}
+
+void ACDHUD::AddKDOverlay(bool IsActivate)
+{
+	if (APlayerController* PlayerController = GetOwningPlayerController())
+	{
+		if (IsActivate)
+		{
+			if (!KDOverlay)
+			{
+				KDOverlay = CreateWidget<UKDOverlay>(PlayerController, KDOverlayClass);
+				KDOverlay->SetupScoreboard();
+			}
+			if (KDOverlay && !KDOverlay->IsInViewport())
+			{
+				KDOverlay->AddToViewport();
+			}
+		}
+		else
+		{
+			if (KDOverlay && KDOverlay->IsInViewport())
+			{
+				KDOverlay->RemoveFromParent();
+			}
+		}
+	}
+}
+
+void ACDHUD::AddModeSelect()
+{
+	if (HasAuthority())
+	{
+		if (ModeSelectClass)
+		{
+			ModeSelect=CreateWidget<UModeSelect>(GetOwningPlayerController(), ModeSelectClass);
+			if (ModeSelect) ModeSelect->AddToViewport();
+		}
+	}
+}
+
+void ACDHUD::AddC4Progress()
+{
+	if (C4InteractProgressClass)
+	{
+		C4InteractProgress = CreateWidget<UC4InteractProgressWidget>(GetWorld(), C4InteractProgressClass);
+		if (C4InteractProgress)
+		{
+			C4InteractProgress->AddToViewport();
+			C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
 

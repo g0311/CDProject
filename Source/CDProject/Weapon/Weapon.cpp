@@ -84,6 +84,15 @@ void AWeapon::SpendCarriedAmmo(int32 ReloadAmount)
 	CarriedAmmo = FMath::Max(CarriedAmmo - ReloadAmount, 0);
 }
 
+void AWeapon::SetWeaponVisible(bool tf)
+{
+	WeaponVisible = tf;
+	if (HasAuthority())
+	{
+		OnRep_WeaponVisible();
+	}
+}
+
 // Called when the game starts or when spawned
 void AWeapon::BeginPlay()
 {
@@ -95,6 +104,8 @@ void AWeapon::BeginPlay()
 		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 	}
 	EnableCustomDepth(false);
+	InitAmmoCount=Ammo;
+	InitCarriedAmmoCount=CarriedAmmo;
 }
 
 void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -146,12 +157,23 @@ void AWeapon::OnRep_WeaponState()
 	}
 }
 
+void AWeapon::OnRep_WeaponVisible()
+{
+	GetWeaponMesh()->SetVisibility(WeaponVisible);
+	GetWeaponMesh3p()->SetVisibility(WeaponVisible);
+}
+
 void AWeapon::SpendAmmo()
 {
 	Ammo=FMath::Clamp(Ammo-1,0,AmmoCapacity);
 	SetHUDAmmo();
 }
 
+void AWeapon::ResetAmmo()
+{
+	Ammo=InitAmmoCount;
+	CarriedAmmo=InitCarriedAmmoCount;
+}
 
 void AWeapon::Fire(const FVector& HitTarget)
 {
@@ -178,17 +200,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 						AmmoEjectTransform.GetLocation(),
 						AmmoEjectTransform.GetRotation().Rotator()
 					);
-					// if (Cartridge)
-					// {
-					// 	UPrimitiveComponent* PrimitiveComp = Cast<UPrimitiveComponent>(Cartridge->GetRootComponent());
-					// 	if (PrimitiveComp && PrimitiveComp->IsSimulatingPhysics())
-					// 	{
-					// 		FVector Impulse = FVector(-150.f, 100.f, 150.f);
-					// 		PrimitiveComp->AddImpulse(Impulse, NAME_None, true);
-					// 	}
-					// }
 				}
-				//Edit Need
 			}
 		}
 		else
@@ -215,7 +227,6 @@ void AWeapon::Fire(const FVector& HitTarget)
 						}
 					}
 				}
-				//Edit Need
 			}
 		}
 	}
@@ -225,6 +236,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 void AWeapon::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AWeapon, WeaponVisible);
 	DOREPLIFETIME(AWeapon, Ammo);
 	DOREPLIFETIME(AWeapon, CarriedAmmo);
 	DOREPLIFETIME(AWeapon, WeaponState);
@@ -284,7 +296,7 @@ void AWeapon::AttachToPlayer()
 	OwnerController = Cast<ACDPlayerController>(OwnerCharacter->Controller);
 	
 	SetWeaponState(EWeaponState::EWS_Equipped);
-
+	
 	AttachToComponent(
 		OwnerCharacter->GetArmMesh(),
 		FAttachmentTransformRules::SnapToTargetIncludingScale,
