@@ -32,7 +32,7 @@ protected:
 
 	FTimerHandle SetupTimer;
 	
-	TSet<APlayerStart*> UsedStartPoints;
+	TSet<class APlayerStart*> UsedStartPoints;
 
 	//C4 Access
 	UPROPERTY(VisibleAnywhere)

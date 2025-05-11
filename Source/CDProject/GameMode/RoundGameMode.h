@@ -67,7 +67,7 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> _createdActors;
 private:
-	TMap<FString, TArray<APlayerStart*>> AvailStartPoints;
+	TMap<FString, TArray<class APlayerStart*>> AvailStartPoints;
 
 	UPROPERTY(visibleAnywhere)
 	ECurMatchState _curMatchState = ECurMatchState::EMS_None;

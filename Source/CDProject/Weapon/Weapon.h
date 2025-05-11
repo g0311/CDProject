@@ -120,7 +120,7 @@ public:
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
-	FORCEINLINE void SetWeaponVisible(bool tf);
+	void SetWeaponVisible(bool tf);
 protected:
 	virtual void BeginPlay() override;
 
