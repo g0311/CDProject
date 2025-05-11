@@ -113,6 +113,7 @@ void ARoundGameMode::PlayerEliminated(class ACDPlayerController* VictimControlle
 	if (VictimPlayerState)
 	{
 		VictimPlayerState->AddDeath();
+		VictimController->ClientSetPlayerAlive(false);
 	}
 	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	// {
@@ -147,19 +148,21 @@ void ARoundGameMode::RestartMatch(bool isForce)
 		AController* Controller = Cast<AController>(*PCIter);
 		if (Controller)
 		{
-			ACDPlayerController* playerController=Cast<ACDPlayerController>(Controller);
-			ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter());
-			if (Character && playerController)
+			if (ACDPlayerController* playerController=Cast<ACDPlayerController>(Controller))
 			{
-				if (isForce)
-					Character->Kill();
-				Character->Reset();
-				AActor* playerStart = FindPlayerStart(playerController);
-				if (playerStart)
+				playerController->ClientSetPlayerAlive(true);
+				if (ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter()))
 				{
-					Character->SetActorLocation(playerStart->GetActorLocation());
-					Character->SetActorRotation(playerStart->GetActorRotation());
-					Controller->SetControlRotation(playerStart->GetActorRotation());
+					if (isForce)
+						Character->Kill();
+					Character->Reset();
+					AActor* playerStart = FindPlayerStart(playerController);
+					if (playerStart)
+					{
+						Character->SetActorLocation(playerStart->GetActorLocation());
+						Character->SetActorRotation(playerStart->GetActorRotation());
+						Controller->SetControlRotation(playerStart->GetActorRotation());
+					}
 				}
 			}
 		}

@@ -83,6 +83,7 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchState(ECurMatchState state, float curTime);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -175,5 +176,23 @@ private:
 private:
 	virtual void LeaveGame() /*override*/;	
 
+public:
+	virtual void SetupInputComponent() override;
+	UFUNCTION(Client, Reliable)
+	void ClientSetPlayerAlive(bool isAlive);
+	
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Input")
+	class ACDCharacter* OwnedCharacter = nullptr;
+	UPROPERTY(VisibleAnywhere, Category = "Input")
+	TArray<TObjectPtr<ACDCharacter>> TeamCharacters;
+	
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputMappingContext> DeadInputMappingContext;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> LeftClickAction;
+	int32 CurPlayerIndex = 0;
+	void LMouseDown();
+	
 };
 

@@ -6,9 +6,11 @@
 #include <filesystem>
 
 #include "AbilitySystemComponent.h"
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
+#include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/GameState/CDGameState.h"
@@ -27,6 +29,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameMode.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -605,7 +608,6 @@ void ACDPlayerController::ShowAnnounceText(bool bShow)
 void ACDPlayerController::AcknowledgePossession(class APawn* P)
 {
 	Super::AcknowledgePossession(P);
-
 	if (IsLocalController()) 
 	{
 		ServerSendClientJoined();
@@ -621,9 +623,13 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 		{
 			acdCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
 		}
+
+		acdCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
 		
 		SetHUDHealth(acdCharacter->GetAttributeSet()->GetHealth());
 		SetHUDShield(acdCharacter->GetAttributeSet()->GetShield());
+
+		OwnedCharacter = acdCharacter;
 	}
 }
 
@@ -701,6 +707,78 @@ void ACDPlayerController::LeaveGame()
 	//temp
 	UGameplayStatics::OpenLevel(this, FName("Menu"));
 	//Super::LeaveGame();
+}
+
+void ACDPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	
+	UEnhancedInputComponent* enhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+	if (enhancedInputComponent)
+	{
+		enhancedInputComponent->BindAction(LeftClickAction, ETriggerEvent::Started, this, &ACDPlayerController::LMouseDown);
+	}
+}
+
+void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
+{
+	if (!isAlive)
+	{
+		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
+		if (subSystem)
+		{
+			subSystem->AddMappingContext(DeadInputMappingContext, 1);
+		}
+		if(ACDGameState* GameState = Cast<ACDGameState>(GetWorld()->GetGameState()))
+		{
+			for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+			{
+				if (ACDCharacter* character = Cast<ACDCharacter>(GameState->PlayerArray[i]->GetPawn()))
+				{
+					OwnedCharacter = OwnedCharacter==nullptr ? Cast<ACDCharacter>(GetCharacter()) : OwnedCharacter;
+					if (OwnedCharacter && character->GetTeam() == OwnedCharacter->GetTeam())
+					{
+						TeamCharacters.Push(character);
+						if (character == OwnedCharacter)
+						{
+							CurPlayerIndex = i;
+						}
+					}
+				}
+			}	
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RESET RESET CALLBACK"));
+		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
+		if (subSystem)
+		{
+			subSystem->RemoveMappingContext(DeadInputMappingContext);
+		}
+		TeamCharacters.Empty();
+		CurPlayerIndex = 0;
+		if (OwnedCharacter)
+			SetViewTarget(OwnedCharacter);
+	}
+}
+
+void ACDPlayerController::LMouseDown()
+{
+	if (TeamCharacters.Num() == 0) return;
+
+	int32 StartIndex = CurPlayerIndex;
+	do
+	{
+		CurPlayerIndex = (CurPlayerIndex + 1) % TeamCharacters.Num();
+
+		if (TeamCharacters[CurPlayerIndex] && !TeamCharacters[CurPlayerIndex]->_isDead)
+		{
+			SetViewTarget(TeamCharacters[CurPlayerIndex]);
+			return;
+		}
+	} 
+	while (CurPlayerIndex != StartIndex);
 }
 
 void ACDPlayerController::ShowSniperScope()

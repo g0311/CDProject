@@ -36,6 +36,7 @@ public:
 	void PlayFootStepSound();
 	UFUNCTION(Server, Reliable)
 	void ServerPlayFootStepSound();
+	class UCDSpringArmComponent* GetSpringArmComponent();
 
 	void Kill();
 	void GiveC4();
@@ -64,7 +65,7 @@ public:
 private:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	TObjectPtr<class USpringArmComponent> _springArm;
+	TObjectPtr<class UCDSpringArmComponent> _springArm;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UCameraComponent> _camera;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -76,7 +77,7 @@ private:
 
 	//MinimapComponent
 	UPROPERTY(VisibleAnywhere, Category = "Minimap")
-	USpringArmComponent* MiniMapSpringArm;
+	class USpringArmComponent* MiniMapSpringArm;
 	UPROPERTY(VisibleAnywhere, Category = "Minimap")
 	class USceneCaptureComponent2D* SceneCapture2D;
 
