@@ -11,7 +11,8 @@ ACDPlayerState::ACDPlayerState()
 void ACDPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-	SetTeam(Team);
+	if (Team != ETeam::ET_NoTeam)
+		SetTeam(Team);
 }
 
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -19,6 +20,7 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACDPlayerState, Team);
+	DOREPLIFETIME(ACDPlayerState, MatchTeam);
 	DOREPLIFETIME(ACDPlayerState, Gold);
 	DOREPLIFETIME(ACDPlayerState, Kills);
 	DOREPLIFETIME(ACDPlayerState, Deaths);
@@ -43,6 +45,12 @@ void ACDPlayerState::AddGold(int32 Amount)
 	OnRep_Gold();
 }
 
+void ACDPlayerState::SetGold(int32 Amount)
+{
+	Gold = Amount;
+	OnRep_Gold();
+}
+
 bool ACDPlayerState::SpendGold(int32 Amount)
 {
 	if (Gold >= Amount)
@@ -60,6 +68,23 @@ void ACDPlayerState::SetTeam(ETeam NewTeam)
 	OnRep_Team();
 }
 
+void ACDPlayerState::SetMatchTeam(ETeam NewTeam)
+{
+	MatchTeam = NewTeam;
+}
+
+void ACDPlayerState::SwitchTeam()
+{
+	if (Team == ETeam::ET_BlueTeam)
+	{
+		SetTeam(ETeam::ET_RedTeam);
+	}
+	else if (Team == ETeam::ET_RedTeam)
+	{
+		SetTeam(ETeam::ET_BlueTeam);
+	}
+}
+
 void ACDPlayerState::OnRep_Team()
 {
 	ACDCharacter* Character = Cast<ACDCharacter>(GetPawn());
@@ -67,12 +92,26 @@ void ACDPlayerState::OnRep_Team()
 	{
 		Character->SetTeam(Team);
 	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this]()
+		{
+			if (IsValid(this))
+				OnRep_Team();
+		}));
+	}
 }
 
 void ACDPlayerState::OnRep_Gold()
 {
 	//UE_LOG(LogTemp, Display, TEXT("Gold Updated: %d"), Gold);
 	OnGoldUpdated.Broadcast(Gold);
+
+	//델리게이트 방식으로 리팩토링 필요
+	if(ACDPlayerController* ACDPC = Cast<ACDPlayerController>(GetPlayerController()))
+	{
+		ACDPC->SetGold();
+	}
 }
 
 void ACDPlayerState::OnRep_Kills()

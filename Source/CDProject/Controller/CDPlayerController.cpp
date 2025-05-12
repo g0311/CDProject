@@ -6,11 +6,14 @@
 #include <filesystem>
 
 #include "AbilitySystemComponent.h"
+#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
+#include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/RoundGameMode.h"
+#include "CDProject/GameState/CDGameState.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Weapon/Weapon.h"
@@ -26,6 +29,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/GameMode.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
@@ -117,6 +121,11 @@ void ACDPlayerController::BeginPlay()
 		}
 	}
 	ServerCheckMatchState();
+	if (IsLocalController())
+	{
+		UpdateCharacterOverlay();
+		CDHUD->AddAnnouncement();
+	}
 }
 
 float ACDPlayerController::GetServerTime()
@@ -189,17 +198,15 @@ void ACDPlayerController::HandleWaiting()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		if (CDHUD->CharacterOverlay)
-		{
-			CDHUD->CharacterOverlay->RemoveFromParent();
-		}
+		ShowStoreWidget(true);
+
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
-			FString AnnouncementText("The Game Is Starting:");
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			FString AnnouncementText("");
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 		}
-	}	
+	}
 }
 
 void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
@@ -215,8 +222,8 @@ void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		CDHUD->AddCharacterOverlay();
-		SetMinimap();
+		ShowStoreWidget(false);
+
 		if (CDHUD->Announcement)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
@@ -231,16 +238,11 @@ void ACDPlayerController::HandleCooldown()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		if (CDHUD->CharacterOverlay)
-		{
-			CDHUD->CharacterOverlay->RemoveFromParent();
-		}
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
-			FString AnnouncementText("New Match Starts In:");
+			FString AnnouncementText("");
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 		}
 	}
 }
@@ -279,8 +281,8 @@ void ACDPlayerController::SetHUDShield(float Shield)
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
-		// const float ShieldPercent = Shield/MaxShield;
-		// //CDHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+		const float ShieldPercent = Shield/100.f;
+		CDHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
 		// FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		// CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
@@ -331,7 +333,7 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 }
 
 
-void ACDPlayerController::SetHUDCarriedAmmo(int32 CarriedAmmo)
+void ACDPlayerController::SetHUDWeaponCarriedAmmo(int32 CarriedAmmo)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->CarriedAmmoAmount)
 	{
@@ -376,22 +378,37 @@ void ACDPlayerController::SetHUDTime()
 	{
 		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
 	}
+	else if (MatchState == ECurMatchState::EMS_None || MatchState == ECurMatchState::EMS_GameEnd)
+	{
+		TimeLeft = 0.f;
+	}
 	
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	
 	if (CountdownInt!=SecondsLeft)
 	{
-		if (MatchState == ECurMatchState::EMS_Waiting || MatchState==ECurMatchState::EMS_CoolDown)
-		{
-			SetHUDAnnouncementCountdown(TimeLeft);
-			
-		}
-		if (MatchState == ECurMatchState::EMS_InGame)
-		{
-			SetHUDMatchCount(TimeLeft);
-		}
+		SetHUDMatchCount(TimeLeft);
 	}
 	CountdownInt=SecondsLeft;
+}
+
+void ACDPlayerController::UpdateCharacterOverlay()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (!CDHUD)
+		return;
+	
+	CDHUD->AddCharacterOverlay();
+	SetGold();
+	if (OwnedCharacter)
+	{
+		SetHUDWeaponAmmo(OwnedCharacter->GetCombatComponent()->GetCurAmmo());
+		SetHUDWeaponCarriedAmmo(OwnedCharacter->GetCombatComponent()->GetCarriedAmmo());
+		SetHUDWeaponInfo(OwnedCharacter->GetCombatComponent()->GetCurWeapon());
+		SetHUDHealth(OwnedCharacter->GetAttributeSet()->GetHealth());
+		SetHUDShield(OwnedCharacter->GetAttributeSet()->GetShield());
+	}
+	SetMinimap();
 }
 
 void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
@@ -531,26 +548,49 @@ void ACDPlayerController::HideRoundScore(bool IsHide)
 	}
 }
 
-void ACDPlayerController::SetHUDRedTeam(int32 RedScore)
+void ACDPlayerController::SetHUDATeam(int32 RedScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore&&CDHUD->KDOverlay)
+	if (CDHUD && CDHUD->KDOverlay)
 	{
 		FString ScoreText=FString::Printf(TEXT("%d"), RedScore);
-		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
-		CDHUD->KDOverlay->RedRound->SetText(FText::FromString(ScoreText));
+		//CDHUD->KDOverlay->SetupScoreboard();
+		CDHUD->KDOverlay->ARound->SetText(FText::FromString(ScoreText));
 	}
 	
+	// if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->RedTeamScore&&CDHUD->KDOverlay)
+	// {
+	// 	FString ScoreText=FString::Printf(TEXT("%d"), RedScore);
+	// 	CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	// 	CDHUD->KDOverlay->ARound->SetText(FText::FromString(ScoreText));
+	// }
 }
 
-void ACDPlayerController::SetHUDBlueTeam(int32 BlueScore)
+void ACDPlayerController::SetHUDBTeam(int32 BlueScore)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->BlueTeamScore&&CDHUD->KDOverlay)
+	if (CDHUD && CDHUD->KDOverlay)
 	{
 		FString ScoreText=FString::Printf(TEXT("%d"), BlueScore);
-		CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
-		CDHUD->KDOverlay->BlueRound->SetText(FText::FromString(ScoreText));
+		//CDHUD->KDOverlay->SetupScoreboard();
+		CDHUD->KDOverlay->BRound->SetText(FText::FromString(ScoreText));
+	}
+	
+	// CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	// if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->BlueTeamScore&&CDHUD->KDOverlay)
+	// {
+	// 	FString ScoreText=FString::Printf(TEXT("%d"), BlueScore);
+	//CDHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	// 	CDHUD->KDOverlay->BRound->SetText(FText::FromString(ScoreText));
+	// }
+}
+
+void ACDPlayerController::SetTeamUIColor()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD && CDHUD->KDOverlay)
+	{
+		CDHUD->KDOverlay->UpdateTeamColor();
 	}
 }
 
@@ -579,7 +619,6 @@ void ACDPlayerController::ShowAnnounceText(bool bShow)
 void ACDPlayerController::AcknowledgePossession(class APawn* P)
 {
 	Super::AcknowledgePossession(P);
-
 	if (IsLocalController()) 
 	{
 		ServerSendClientJoined();
@@ -595,9 +634,10 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 		{
 			acdCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
 		}
-		
-		SetHUDHealth(acdCharacter->GetAttributeSet()->GetHealth());
-		SetHUDShield(acdCharacter->GetAttributeSet()->GetShield());
+
+		acdCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
+
+		OwnedCharacter = acdCharacter;
 	}
 }
 
@@ -617,6 +657,10 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
 		CooldownStartTime = time;
+	}
+	else if (MatchState==ECurMatchState::EMS_GameEnd)
+	{
+		//?
 	}
 	
 	if (IsLocalController() && HasAuthority()) //for Listen Server
@@ -639,6 +683,16 @@ void ACDPlayerController::OnRep_MatchState()
 	{
 		HandleCooldown();
 	}
+	else if (MatchState == ECurMatchState::EMS_GameEnd)
+	{
+		//Show Game End UI
+		
+		
+		// if (IsLocalController())
+		// {
+		// 	UGameplayStatics::OpenLevel(this, FName("Menu"));
+		// }
+	}
 }
 
 void ACDPlayerController::OnRep_HUDGoldCount()
@@ -654,6 +708,85 @@ void ACDPlayerController::OnRep_HUDKillCount()
 void ACDPlayerController::OnRep_HUDDeathCount()
 {
 	
+}
+
+void ACDPlayerController::LeaveGame()
+{
+	//temp
+	UGameplayStatics::OpenLevel(this, FName("Menu"));
+	//Super::LeaveGame();
+}
+
+void ACDPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	
+	UEnhancedInputComponent* enhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+	if (enhancedInputComponent)
+	{
+		enhancedInputComponent->BindAction(LeftClickAction, ETriggerEvent::Started, this, &ACDPlayerController::LMouseDown);
+	}
+}
+
+void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
+{
+	if (!isAlive)
+	{
+		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
+		if (subSystem)
+		{
+			subSystem->AddMappingContext(DeadInputMappingContext, 1);
+		}
+		if(ACDGameState* GameState = Cast<ACDGameState>(GetWorld()->GetGameState()))
+		{
+			for (int i = 0; i < GameState->PlayerArray.Num(); i++)
+			{
+				if (ACDCharacter* character = Cast<ACDCharacter>(GameState->PlayerArray[i]->GetPawn()))
+				{
+					OwnedCharacter = OwnedCharacter==nullptr ? Cast<ACDCharacter>(GetCharacter()) : OwnedCharacter;
+					if (OwnedCharacter && character->GetTeam() == OwnedCharacter->GetTeam())
+					{
+						TeamCharacters.Push(character);
+						if (character == OwnedCharacter)
+						{
+							CurPlayerIndex = i;
+						}
+					}
+				}
+			}	
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RESET RESET CALLBACK"));
+		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
+		if (subSystem)
+		{
+			subSystem->RemoveMappingContext(DeadInputMappingContext);
+		}
+		TeamCharacters.Empty();
+		CurPlayerIndex = 0;
+		if (OwnedCharacter)
+			SetViewTarget(OwnedCharacter);
+	}
+}
+
+void ACDPlayerController::LMouseDown()
+{
+	if (TeamCharacters.Num() == 0) return;
+
+	int32 StartIndex = CurPlayerIndex;
+	do
+	{
+		CurPlayerIndex = (CurPlayerIndex + 1) % TeamCharacters.Num();
+
+		if (TeamCharacters[CurPlayerIndex] && !TeamCharacters[CurPlayerIndex]->_isDead)
+		{
+			SetViewTarget(TeamCharacters[CurPlayerIndex]);
+			return;
+		}
+	} 
+	while (CurPlayerIndex != StartIndex);
 }
 
 void ACDPlayerController::ShowSniperScope()

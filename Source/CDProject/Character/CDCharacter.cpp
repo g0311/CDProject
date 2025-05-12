@@ -10,6 +10,7 @@
 #include "CDCharacterMovementComponent.h"
 #include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Component//FootIKComponent.h"
+#include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameMode/RoundGameMode.h"
@@ -20,7 +21,6 @@
 #include "Components/CapsuleComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/TextureRenderTarget2D.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
@@ -31,11 +31,11 @@ ACDCharacter::ACDCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
 	bReplicates = true;
 	
-	_springArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Spring Arm"));
+	_springArm = CreateDefaultSubobject<UCDSpringArmComponent>(TEXT("Spring Arm"));
 	_springArm->SetupAttachment(RootComponent);
+	_springArm->bUsePawnControlRotation = false;
 	
 	_camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	_camera->SetupAttachment(_springArm);
@@ -92,15 +92,13 @@ void ACDCharacter::BeginPlay()
 			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
-	if (HasAuthority() && !IsLocallyControlled())
-		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
 
 // Called every frame
 void ACDCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	if (IsLocallyControlled())
 	{
 		if (Controller != nullptr)
@@ -108,24 +106,33 @@ void ACDCharacter::Tick(float DeltaTime)
 		_cameraRotation = _camera->GetRelativeRotation();
 		ServerSetControlCameraRotation(_controlRotation, _cameraRotation);
 	}
-	if (!IsLocallyControlled())
+	if (!this->IsLocallyControlled())
 	{
 		//for Spector Update?
-		_camera->SetRelativeRotation(_cameraRotation);
+		//Controller->SetControlRotation(_controlRotation); => 이게 안되서 직접 수정을 해야함..
+		FRotator CurrentRotation = _springArm->GetFakeRotation();
+		FRotator TargetRotation = _controlRotation;
+		FQuat CurrentQuat = CurrentRotation.Quaternion();
+		FQuat TargetQuat = TargetRotation.Quaternion();
+		FQuat SmoothedQuat = FQuat::Slerp(CurrentQuat, TargetQuat, FMath::Clamp(DeltaTime * 10, 0.f, 1.f));
+		FRotator SmoothedRotation = SmoothedQuat.Rotator();
+		_springArm->SetFakeRotation(SmoothedRotation);
 	}
-	
-	//if >= 90 degree character rotate
-	FRotator ControlRot = _controlRotation;
-	FRotator ActorRot = GetActorRotation();
-	float AimYaw = FMath::UnwindDegrees(ControlRot.Yaw - ActorRot.Yaw);
-	
-	if (AimYaw <= -45.f || AimYaw >= 45.f)
+
+	if (HasAuthority())
 	{
-		FRotator TargetRotation = FRotator(0.f, ControlRot.Yaw, 0.f);
-		FRotator SmoothRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), 2.5f); // 회전 속도 조절
-		SetActorRotation(SmoothRotation);
-	}
+		//if >= 90 degree character rotate
+		FRotator ControlRot = _controlRotation;
+		FRotator ActorRot = GetActorRotation();
+		float AimYaw = FMath::UnwindDegrees(ControlRot.Yaw - ActorRot.Yaw);
 	
+		if (AimYaw <= -45.f || AimYaw >= 45.f)
+		{
+			FRotator TargetRotation = FRotator(0.f, ControlRot.Yaw, 0.f);
+			FRotator SmoothRotation = FMath::RInterpTo(GetActorRotation(), TargetRotation, GetWorld()->GetDeltaSeconds(), 2.5f); // 회전 속도 조절
+			SetActorRotation(SmoothRotation);
+		}
+	}
 	//Update Arm Mesh Location
 	UpdateArmMeshLocation(DeltaTime);
 }
@@ -276,12 +283,6 @@ void ACDCharacter::Reset()
 	}
 }
 
-void ACDCharacter::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
-
-}
-
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 {
 	if (isWatching)
@@ -302,6 +303,7 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 
 void ACDCharacter::SetTeam(ETeam team)
 {
+	UE_LOG(LogGameMode, Log, TEXT("Char Set Team Called"));
 	_team = team;
 	if (!GetMesh())
 		return;
@@ -374,6 +376,8 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 	if (armAnim)
 		armAnim->PlayDeadMontage();
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+
+	_isDead = true;
 }
 
 void ACDCharacter::Multicast_Hit_Implementation()
@@ -392,22 +396,17 @@ void ACDCharacter::Multicast_Hit_Implementation()
 
 void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 {
-	if (isAlive)
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
+	_armMesh->SetVisibility(true);
+	if (IsLocallyControlled())
 	{
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (IsValid(PC))
+			EnableInput(PC);
 	}
-	else
-	{
-		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
-		GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
-		_armMesh->SetVisibility(true);
-		if (IsLocallyControlled())
-		{
-			APlayerController* PC = Cast<APlayerController>(GetController());
-			if (IsValid(PC))
-				EnableInput(PC);
-		}
-	}
+	_isDead = false;
 }
 
 void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController)
@@ -478,6 +477,11 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 	else
 		NewFOV = FMath::FInterpTo(_camera->FieldOfView, _defaultFOV, DeltaTime, InterpSpeed);
 	_camera->SetFieldOfView(NewFOV);
+}
+
+UCDSpringArmComponent* ACDCharacter::GetSpringArmComponent()
+{
+	return _springArm;
 }
 
 void ACDCharacter::Kill()

@@ -21,11 +21,14 @@ class CDPROJECT_API ARoundGameMode : public AGameMode
 public:
 	ARoundGameMode();
 	virtual void Tick(float DeltaSeconds) override;
-	virtual void RestartMatch(bool isForce = false); //Custom
+	// virtual void PostLogin(APlayerController* NewPlayer) override;
+	// virtual void Logout(AController* Exiting) override;
+	
+	virtual void RestartMatch(bool isInit = false); //Custom
 	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = L"") override;
 	//virtual bool ShouldSpawnAtStartSpot(AController* Player) override;
 	void SendPlayerJoined();
-	virtual void SetCurMatchState(ECurMatchState NewState);
+	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false);
 	virtual void PlayerEliminated(
 		class ACDPlayerController* VictimController,
 		ACDPlayerController* AttackerController
@@ -47,7 +50,8 @@ public:
 	float Countdown=10.f;
 	bool bNotifiedCooldown=false;
 	
-	int32 MaxRound=8;
+	int32 MaxRound=4;
+	int32 CurRound=0;
 	bool bTeamsMatch=false;
 
 	float WaitingStartTime = 0.f;
@@ -55,15 +59,15 @@ public:
 	float CooldownStartTime = 0.f;
 
 	int _joinedClinetCount = 0;
-	int _maxClientCount = 2;
+	int _maxClientCount = 2; //6
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnCurMatchStateSet();
-private:
+	
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> _createdActors;
-
-	TMap<FString, TArray<APlayerStart*>> AvailStartPoints;
+private:
+	TMap<FString, TArray<class APlayerStart*>> AvailStartPoints;
 
 	UPROPERTY(visibleAnywhere)
 	ECurMatchState _curMatchState = ECurMatchState::EMS_None;

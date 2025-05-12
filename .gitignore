@@ -88,3 +88,5 @@ Content/Asset/PrivateAsset
 /Content/GrenadeKit
 /Content/UltimateFPSAnimationsKIT
 /Content/Asset/PublicAsset/GrenadeKit
+
+/Plugins/GameLiftPlugin/*
