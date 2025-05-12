@@ -121,6 +121,11 @@ void ACDPlayerController::BeginPlay()
 		}
 	}
 	ServerCheckMatchState();
+	if (IsLocalController())
+	{
+		SetCharacterOverlay();
+		CDHUD->AddAnnouncement();
+	}
 }
 
 float ACDPlayerController::GetServerTime()
@@ -194,15 +199,12 @@ void ACDPlayerController::HandleWaiting()
 	if (CDHUD)
 	{
 		ShowStoreWidget(true);
-		if (CDHUD->CharacterOverlay)
-		{
-			CDHUD->CharacterOverlay->RemoveFromParent();
-		}
+
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
-			FString AnnouncementText("The Game Is Starting:");
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			FString AnnouncementText("");
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 		}
 	}
 }
@@ -221,8 +223,7 @@ void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 	if (CDHUD)
 	{
 		ShowStoreWidget(false);
-		CDHUD->AddCharacterOverlay();
-		SetMinimap();
+
 		if (CDHUD->Announcement)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
@@ -237,16 +238,11 @@ void ACDPlayerController::HandleCooldown()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		if (CDHUD->CharacterOverlay)
-		{
-			CDHUD->CharacterOverlay->RemoveFromParent();
-		}
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
-			FString AnnouncementText("New Match Starts In:");
+			FString AnnouncementText("");
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 		}
 	}
 }
@@ -285,8 +281,8 @@ void ACDPlayerController::SetHUDShield(float Shield)
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD&&CDHUD->CharacterOverlay)
 	{
-		// const float ShieldPercent = Shield/MaxShield;
-		// //CDHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+		const float ShieldPercent = Shield/100.f;
+		CDHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
 		// FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		// CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
@@ -337,7 +333,7 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 }
 
 
-void ACDPlayerController::SetHUDCarriedAmmo(int32 CarriedAmmo)
+void ACDPlayerController::SetHUDWeaponCarriedAmmo(int32 CarriedAmmo)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->CarriedAmmoAmount)
 	{
@@ -382,22 +378,37 @@ void ACDPlayerController::SetHUDTime()
 	{
 		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
 	}
+	else if (MatchState == ECurMatchState::EMS_None || MatchState == ECurMatchState::EMS_GameEnd)
+	{
+		TimeLeft = 0.f;
+	}
 	
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	
 	if (CountdownInt!=SecondsLeft)
 	{
-		if (MatchState == ECurMatchState::EMS_Waiting || MatchState==ECurMatchState::EMS_CoolDown)
-		{
-			SetHUDAnnouncementCountdown(TimeLeft);
-			
-		}
-		if (MatchState == ECurMatchState::EMS_InGame)
-		{
-			SetHUDMatchCount(TimeLeft);
-		}
+		SetHUDMatchCount(TimeLeft);
 	}
 	CountdownInt=SecondsLeft;
+}
+
+void ACDPlayerController::SetCharacterOverlay()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (!CDHUD)
+		return;
+	
+	CDHUD->AddCharacterOverlay();
+	SetGold();
+	if (OwnedCharacter)
+	{
+		SetHUDWeaponAmmo(OwnedCharacter->GetCombatComponent()->GetCurAmmo());
+		SetHUDWeaponCarriedAmmo(OwnedCharacter->GetCombatComponent()->GetCarriedAmmo());
+		SetHUDWeaponInfo(OwnedCharacter->GetCombatComponent()->GetCurWeapon());
+		SetHUDHealth(OwnedCharacter->GetAttributeSet()->GetHealth());
+		SetHUDShield(OwnedCharacter->GetAttributeSet()->GetShield());
+	}
+	SetMinimap();
 }
 
 void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
@@ -625,9 +636,6 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 		}
 
 		acdCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
-		
-		SetHUDHealth(acdCharacter->GetAttributeSet()->GetHealth());
-		SetHUDShield(acdCharacter->GetAttributeSet()->GetShield());
 
 		OwnedCharacter = acdCharacter;
 	}

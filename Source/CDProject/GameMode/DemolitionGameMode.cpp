@@ -195,7 +195,7 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 	}
 }
 
-void ADemolitionGameMode::RestartMatch(bool isForce)
+void ADemolitionGameMode::RestartMatch(bool isInit)
 {
 	TArray<AController*> PlayerControllers;
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
@@ -221,11 +221,15 @@ void ADemolitionGameMode::RestartMatch(bool isForce)
 					break;
 				}
 			}
+			if (isInit && controller->GetPlayerState<ACDPlayerState>())
+			{
+				controller->GetPlayerState<ACDPlayerState>()->SetGold(1000);
+			}
 		}
 	}
 	InitializeTeamCount();
 
-	Super::RestartMatch(isForce);
+	Super::RestartMatch(isInit);
 }
 
 void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimController,

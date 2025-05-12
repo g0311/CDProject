@@ -76,6 +76,9 @@ void ACDHUD::AddSniperScope()
 
 void ACDHUD::AddCharacterOverlay()
 {
+	if (IsValid(CharacterOverlay))
+		return;
+	
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
 		if (CharacterOverlayClass)

@@ -24,7 +24,7 @@ public:
 
 protected:
 	virtual void HandleMatchHasStarted() override;
-	virtual void RestartMatch(bool isForce = false) override;
+	virtual void RestartMatch(bool isInit = false) override;
 	virtual void PlayerEliminated(class ACDPlayerController* VictimController, ACDPlayerController* AttackerController) override;
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController) override;
 	

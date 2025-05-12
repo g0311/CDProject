@@ -47,8 +47,8 @@ private:
 	class USoundCue* _footstepSound;
 	UPROPERTY(VisibleAnywhere)
 	ETeam _team = ETeam::ET_NoTeam;
-	
-	
+
+
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Dead(class AController* instigatorController);
 	UFUNCTION(NetMulticast, Reliable)
@@ -60,6 +60,7 @@ private:
 
 public:
 	bool _isDead = false;
+	bool bCanMove = true;;
 	//State로 리팩터링 필요..
 	
 private:

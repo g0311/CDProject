@@ -347,8 +347,6 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 			DisableInput(controller);
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
-
-		
 	}
 	if (HasAuthority())
 	{

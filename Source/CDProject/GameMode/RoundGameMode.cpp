@@ -38,7 +38,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	{
 		Countdown=FMath::CeilToInt(WaitingStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
 		//UE_LOG(LogGameMode, Log, TEXT("Countdown %f"), Countdown);
-		if (Countdown==-1)
+		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_InGame);
 		}
@@ -46,7 +46,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	else if (_curMatchState==ECurMatchState::EMS_InGame)
 	{
 		Countdown=MatchStartTime + MatchTime-GetWorld()->GetTimeSeconds();
-		if (Countdown<=0.f)
+		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_CoolDown);
 		}
@@ -55,7 +55,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	{
 		Countdown=CooldownStartTime + CooldownTime-GetWorld()->GetTimeSeconds();
 		//UE_LOG(LogGameMode, Log, TEXT("%f %f %f"), CooldownTime, CooldownStartTime, GetWorld()->GetTimeSeconds());
-		if (Countdown<=0.f)
+		if (Countdown<=0.1f)
 		{
 			//UE_LOG(LogGameMode, Log, TEXT("Restart Called"));
 			SetCurMatchState(ECurMatchState::EMS_Waiting);
@@ -141,7 +141,7 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 	}
 }
 
-void ARoundGameMode::RestartMatch(bool isForce)
+void ARoundGameMode::RestartMatch(bool isInit)
 {
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
@@ -153,7 +153,7 @@ void ARoundGameMode::RestartMatch(bool isForce)
 				playerController->ClientSetPlayerAlive(true);
 				if (ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter()))
 				{
-					if (isForce)
+					if (isInit)
 						Character->Kill();
 					Character->Reset();
 					AActor* playerStart = FindPlayerStart(playerController);

@@ -20,13 +20,14 @@ public:
 	//HUD
 
 	void SetHUDTime();
+	void SetCharacterOverlay();
 	void SetHUDHealth(float Health);
 	void SetHUDShield(float Shield);
 	void SetHUDKill(float killcount);
 	void SetHUDDeath(float deathcount);
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDWeaponInfo(class AWeapon* weapon);
-	void SetHUDCarriedAmmo(int32 Ammo);
+	void SetHUDWeaponCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCount(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();

@@ -45,6 +45,12 @@ void ACDPlayerState::AddGold(int32 Amount)
 	OnRep_Gold();
 }
 
+void ACDPlayerState::SetGold(int32 Amount)
+{
+	Gold = Amount;
+	OnRep_Gold();
+}
+
 bool ACDPlayerState::SpendGold(int32 Amount)
 {
 	if (Gold >= Amount)
