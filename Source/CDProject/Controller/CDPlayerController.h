@@ -20,7 +20,7 @@ public:
 	//HUD
 
 	void SetHUDTime();
-	void SetCharacterOverlay();
+	void UpdateCharacterOverlay();
 	void SetHUDHealth(float Health);
 	void SetHUDShield(float Shield);
 	void SetHUDKill(float killcount);

@@ -123,7 +123,7 @@ void ACDPlayerController::BeginPlay()
 	ServerCheckMatchState();
 	if (IsLocalController())
 	{
-		SetCharacterOverlay();
+		UpdateCharacterOverlay();
 		CDHUD->AddAnnouncement();
 	}
 }
@@ -392,7 +392,7 @@ void ACDPlayerController::SetHUDTime()
 	CountdownInt=SecondsLeft;
 }
 
-void ACDPlayerController::SetCharacterOverlay()
+void ACDPlayerController::UpdateCharacterOverlay()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (!CDHUD)

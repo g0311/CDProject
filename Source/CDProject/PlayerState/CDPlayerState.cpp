@@ -106,6 +106,12 @@ void ACDPlayerState::OnRep_Gold()
 {
 	//UE_LOG(LogTemp, Display, TEXT("Gold Updated: %d"), Gold);
 	OnGoldUpdated.Broadcast(Gold);
+
+	//델리게이트 방식으로 리팩토링 필요
+	if(ACDPlayerController* ACDPC = Cast<ACDPlayerController>(GetPlayerController()))
+	{
+		ACDPC->SetGold();
+	}
 }
 
 void ACDPlayerState::OnRep_Kills()

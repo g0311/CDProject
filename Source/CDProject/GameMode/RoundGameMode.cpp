@@ -164,6 +164,7 @@ void ARoundGameMode::RestartMatch(bool isInit)
 						Controller->SetControlRotation(playerStart->GetActorRotation());
 					}
 				}
+				playerController->UpdateCharacterOverlay();
 			}
 		}
 	}

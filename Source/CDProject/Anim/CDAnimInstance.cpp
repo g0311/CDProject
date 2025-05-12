@@ -45,6 +45,11 @@ void UCDAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UCDAnimInstance::PlayFireMontage(float fireRate)
 {
+	if (!_playerCharacter)
+		return;
+	if (_playerCharacter->_isDead)
+		return;
+	
 	if (_isFullBody)
 	{
 		if (_weaponType == EWeaponType::EWT_Pistol)
@@ -139,6 +144,10 @@ void UCDAnimInstance::PlayFireMontage(float fireRate)
 
 void UCDAnimInstance::PlayGrenadeReadyMontage()
 {
+	if (!_playerCharacter)
+		return;
+	if (_playerCharacter->_isDead)
+		return;
 	if (_grenadeReadyMontage)
 	{
 		Montage_Play(_grenadeReadyMontage);
@@ -147,6 +156,10 @@ void UCDAnimInstance::PlayGrenadeReadyMontage()
 
 void UCDAnimInstance::PlayReloadMontage()
 {
+	if (!_playerCharacter)
+		return;
+	if (_playerCharacter->_isDead)
+		return;
 	if (_isFullBody)
 	{
 		switch (_weaponType)
@@ -191,6 +204,10 @@ void UCDAnimInstance::PlayReloadMontage()
 
 void UCDAnimInstance::PlayEquipMontage(class AWeapon* nextWeapon)
 {
+	if (!_playerCharacter)
+		return;
+	if (_playerCharacter->_isDead)
+		return;
 	switch (nextWeapon->GetWeaponType())
 	{
 	case EWeaponType::EWT_Rifle:
@@ -230,6 +247,11 @@ void UCDAnimInstance::PlayDeadMontage()
 
 void UCDAnimInstance::PlayHitMontage()
 {
+	if (!_playerCharacter)
+		return;
+	if (_playerCharacter->_isDead)
+		return;
+	
 	if (_hitMontage.Num() == 0) return;
 
 	int32 RandomIndex = FMath::RandRange(0, _hitMontage.Num() - 1);
