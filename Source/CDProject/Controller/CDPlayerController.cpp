@@ -116,6 +116,11 @@ void ACDPlayerController::BeginPlay()
 			SetHUDShield(_character->GetAttributeSet()->GetShield());
 		}
 	}
+	PS = Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>());
+	if (PS)
+	{
+		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
+	}
 	ServerCheckMatchState();
 }
 
@@ -439,14 +444,20 @@ void ACDPlayerController::SetMinimap()
 	}
 }
 
-void ACDPlayerController::SetGold()
+void ACDPlayerController::SetGold(int32 NewGold)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	PS=PS==nullptr?Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>()):PS;
 	
+	// if (CDHUD && CDHUD->CharacterOverlay && PS)
+	// {
+	// 	HUDGoldCount = PS->GetGold();
+	// 	FText GoldText = FText::AsNumber(HUDGoldCount); 
+	// 	CDHUD->CharacterOverlay->Gold->SetText(GoldText);
+	// }
 	if (CDHUD && CDHUD->CharacterOverlay && PS)
 	{
-		HUDGoldCount = PS->GetGold();
+		HUDGoldCount = NewGold;
 		FText GoldText = FText::AsNumber(HUDGoldCount); 
 		CDHUD->CharacterOverlay->Gold->SetText(GoldText);
 	}
@@ -643,7 +654,8 @@ void ACDPlayerController::OnRep_MatchState()
 
 void ACDPlayerController::OnRep_HUDGoldCount()
 {
-	SetGold();
+	int32 NewGold=0;
+	SetGold(NewGold);
 }
 
 void ACDPlayerController::OnRep_HUDKillCount()

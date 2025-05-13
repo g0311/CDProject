@@ -31,7 +31,8 @@ public:
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
 	void SetMinimap();
-	void SetGold();
+	UFUNCTION()
+	void SetGold(int32 NewGold);
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
 

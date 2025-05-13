@@ -17,7 +17,7 @@
 	],
 	"Plugins": [
 		{
-			"Name": "ModelingToolsEditorMode", 
+			"Name": "ModelingToolsEditorMode",
 			"Enabled": true,
 			"TargetAllowList": [
 				"Editor"
@@ -30,6 +30,14 @@
 		{
 			"Name": "OnlineSubsystemSteam",
 			"Enabled": true
- 		 }
+		},
+		{
+			"Name": "SmartObjects",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayBehaviorSmartObjects",
+			"Enabled": true
+		}
 	]
 }
