@@ -22,11 +22,15 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* HealthText;
+	
+	UPROPERTY(meta=(BindWidget))
+	class UProgressBar* ShieldBar;
 
 	//Gold
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* Gold;
-//Team Round Score
+
+	//Team Round Score
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* RedTeamScore;
 	

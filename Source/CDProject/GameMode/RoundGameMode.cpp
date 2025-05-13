@@ -12,6 +12,7 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "CDProject/Weapon/Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Runtime/Core/Tests/Containers/TestUtils.h"
@@ -37,7 +38,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	{
 		Countdown=FMath::CeilToInt(WaitingStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
 		//UE_LOG(LogGameMode, Log, TEXT("Countdown %f"), Countdown);
-		if (Countdown==-1)
+		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_InGame);
 		}
@@ -45,7 +46,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	else if (_curMatchState==ECurMatchState::EMS_InGame)
 	{
 		Countdown=MatchStartTime + MatchTime-GetWorld()->GetTimeSeconds();
-		if (Countdown<=0.f)
+		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_CoolDown);
 		}
@@ -54,10 +55,10 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	{
 		Countdown=CooldownStartTime + CooldownTime-GetWorld()->GetTimeSeconds();
 		//UE_LOG(LogGameMode, Log, TEXT("%f %f %f"), CooldownTime, CooldownStartTime, GetWorld()->GetTimeSeconds());
-		if (Countdown<=0.f)
+		if (Countdown<=0.1f)
 		{
 			//UE_LOG(LogGameMode, Log, TEXT("Restart Called"));
-			RestartMatch();
+			SetCurMatchState(ECurMatchState::EMS_Waiting);
 		}
 	}
 }
@@ -89,6 +90,10 @@ void ARoundGameMode::OnCurMatchStateSet()
 			{
 				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, CooldownStartTime);
 			}
+			else if (_curMatchState==ECurMatchState::EMS_GameEnd)
+			{
+				PlayerController->OnMatchStateSet(_curMatchState);
+			}
 		}
 	}
 }
@@ -104,20 +109,20 @@ void ARoundGameMode::PlayerEliminated(class ACDPlayerController* VictimControlle
 	if (AttackerPlayerState)
 	{
 		AttackerPlayerState->AddKill();
-		AttackerPlayerState->AddGold(200);
 	}
 	if (VictimPlayerState)
 	{
 		VictimPlayerState->AddDeath();
+		VictimController->ClientSetPlayerAlive(false);
 	}
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	{
-		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-		if (CDPC)
-		{//Need to Set Client RPC
-			CDPC->UpdateKDOverlayData();
-		}
-	}
+	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	// {
+	// 	ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
+	// 	if (CDPC)
+	// 	{//Need to Set Client RPC
+	// 		CDPC->UpdateKDOverlayData();
+	// 	}
+	// }
 }
 
 void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
@@ -136,42 +141,30 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 	}
 }
 
-void ARoundGameMode::RestartMatch(bool isForce)
+void ARoundGameMode::RestartMatch(bool isInit)
 {
-	TArray<AController*> PlayerControllers;
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
-		if (AController* Controller = Cast<AController>(*PCIter))
+		AController* Controller = Cast<AController>(*PCIter);
+		if (Controller)
 		{
-			PlayerControllers.Add(Controller);
-		}
-	}
-	Test::Shuffle(PlayerControllers);
-
-	bool isC4Given = false;
-	for (AController* controller : PlayerControllers)
-	{
-		if (controller)
-		{
-			ACDPlayerController* playerController=Cast<ACDPlayerController>(controller);
-			ACDCharacter* Character = Cast<ACDCharacter>(controller->GetCharacter());
-			if (Character && playerController)
+			if (ACDPlayerController* playerController=Cast<ACDPlayerController>(Controller))
 			{
-				if (isForce)
-					Character->Kill();
-				Character->Reset();
-				AActor* playerStart = FindPlayerStart(playerController);
-				if (playerStart)
+				playerController->ClientSetPlayerAlive(true);
+				if (ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter()))
 				{
-					Character->SetActorLocation(playerStart->GetActorLocation());
-					Character->SetActorRotation(playerStart->GetActorRotation());
-					controller->SetControlRotation(playerStart->GetActorRotation());
+					if (isInit)
+						Character->Kill();
+					Character->Reset();
+					AActor* playerStart = FindPlayerStart(playerController);
+					if (playerStart)
+					{
+						Character->SetActorLocation(playerStart->GetActorLocation());
+						Character->SetActorRotation(playerStart->GetActorRotation());
+						Controller->SetControlRotation(playerStart->GetActorRotation());
+					}
 				}
-				if (!isC4Given && Character->GetTeam() == ETeam::ET_RedTeam)
-				{
-					isC4Given = true;
-					Character->GiveC4();
-				}
+				playerController->UpdateCharacterOverlay();
 			}
 		}
 	}
@@ -179,14 +172,12 @@ void ARoundGameMode::RestartMatch(bool isForce)
 	{
 		if (IsValid(actor))
 		{
-			// if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
-			// 	continue;
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+				continue;
 			actor->Destroy();
 		}
 	}
 	_createdActors.Empty();
-	
-	SetCurMatchState(ECurMatchState::EMS_Waiting);
 }
 
 AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
@@ -240,19 +231,24 @@ void ARoundGameMode::SendPlayerJoined()
 	_joinedClinetCount++;
 	if (_joinedClinetCount >= _maxClientCount)
 	{
-		RestartMatch(true);
+		SetCurMatchState(ECurMatchState::EMS_Waiting, true);
 	}
-	//게임 모드에서 체크 시 컨트롤러 초기화가 덜되서 스테이트 on rep이 호출이 안됨
+	//게임 모드에서 체크 시 컨트롤러 초기화가 덜된 상태기 때문에 스테이트 on rep이 호출이 안됨
 }
 
-void ARoundGameMode::SetCurMatchState(ECurMatchState NewState)
+void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 {
+	if (CurRound == MaxRound)
+	{
+		NewState = ECurMatchState::EMS_GameEnd;
+	}
+	
 	_curMatchState = NewState;
 	if (_curMatchState == ECurMatchState::EMS_Waiting)
 	{
 		MatchTime = defaultMatchTime;
 		WaitingStartTime = GetWorld()->GetTimeSeconds();
-		UE_LOG(LogGameMode, Log, TEXT("EMS_Waiting"));
+		RestartMatch(IsInit);
 	}
 	else if (_curMatchState == ECurMatchState::EMS_InGame)
 	{
@@ -263,6 +259,10 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState)
 	{
 		CooldownStartTime = GetWorld()->GetTimeSeconds();
 		UE_LOG(LogGameMode, Log, TEXT("EMS_CoolDown"));
+	}
+	else if (_curMatchState == ECurMatchState::EMS_GameEnd)
+	{
+		//Shut Down Server After 30 sec
 	}
 	OnCurMatchStateSet();
 }

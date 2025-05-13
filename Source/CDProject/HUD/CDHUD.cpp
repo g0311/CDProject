@@ -76,6 +76,9 @@ void ACDHUD::AddSniperScope()
 
 void ACDHUD::AddCharacterOverlay()
 {
+	if (IsValid(CharacterOverlay))
+		return;
+	
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
 		if (CharacterOverlayClass)
@@ -144,6 +147,7 @@ void ACDHUD::AddStore(bool IsActivate)
 			if (ShopOverlay && ShopOverlay->IsInViewport())
 			{
 				ShopOverlay->RemoveFromParent();
+				ShopOverlay = nullptr;
 			}
 		}
 	}

@@ -32,6 +32,11 @@
 			"Enabled": true
 		},
 		{
+			"Name": "GameLiftPlugin",
+			"Enabled": true
+		}
+		},
+		{
 			"Name": "SmartObjects",
 			"Enabled": true
 		},

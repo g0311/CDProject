@@ -193,7 +193,7 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 			OutHit,
 			TraceStart,
 			End,
-			ECollisionChannel::ECC_Visibility
+			ECC_GameTraceChannel1
 		);
 		FVector BeamEnd = End;
 		if (OutHit.bBlockingHit)

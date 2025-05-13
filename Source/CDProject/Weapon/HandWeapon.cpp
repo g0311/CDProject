@@ -3,7 +3,7 @@
 
 #include "HandWeapon.h"
 
-#include "AssetTypeCategories.h"
+//#include "AssetTypeCategories.h"
 #include "ProjectileGrenade.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "GameFramework/ProjectileMovementComponent.h"

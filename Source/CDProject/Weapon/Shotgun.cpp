@@ -3,7 +3,7 @@
 
 #include "Shotgun.h"
 
-#include "BaseGizmos/HitTargets.h"
+//#include "BaseGizmos/HitTargets.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
@@ -32,7 +32,7 @@ void AShotgun::Fire(const FVector& HitTarget)
 		{
 			FVector End=TraceEndWithScatter(Start,HitTarget);
 			FHitResult FireHit;
-			// WeaponTraceHit(Start, HitTarget, FireHit);
+			WeaponTraceHit(Start, HitTarget, FireHit);
 			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHit.GetActor());
 			if (HasAuthority()&&CDCharacter)
 			{

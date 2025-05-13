@@ -5,7 +5,7 @@
 
 #include "Projectile.h"
 #include "VectorTypes.h"
-#include "AssetTypeActions/AssetDefinition_SoundBase.h"
+//#include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/DemolitionGameMode.h"
@@ -49,7 +49,6 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 			if (teamGameMode)
 			{
 				teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
-				teamGameMode->SetIsPlanted(true);
 
 				teamGameMode->AddDestroyableActor(c4Projectile);
 			}
