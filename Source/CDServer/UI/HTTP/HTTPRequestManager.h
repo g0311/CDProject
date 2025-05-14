@@ -9,9 +9,12 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class CDSERVER_API UHTTPRequestManager : public UObject
 {
 	GENERATED_BODY()
 	
+protected:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<class UAPIData> APIData;
 };
