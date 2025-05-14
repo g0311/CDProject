@@ -404,7 +404,7 @@ void ACDPlayerController::UpdateCharacterOverlay()
 		return;
 	
 	CDHUD->AddCharacterOverlay();
-	SetGold();
+	//SetGold();
 	if (OwnedCharacter)
 	{
 		SetHUDWeaponAmmo(OwnedCharacter->GetCombatComponent()->GetCurAmmo());

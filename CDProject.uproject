@@ -34,7 +34,6 @@
 		{
 			"Name": "GameLiftPlugin",
 			"Enabled": true
-		}
 		},
 		{
 			"Name": "SmartObjects",
