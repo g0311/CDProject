@@ -4,3 +4,5 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_GAME_MODULE( FDefaultModuleImpl, CDServer );
+
+DEFINE_LOG_CATEGORY(LogCD_DedicatedServer);

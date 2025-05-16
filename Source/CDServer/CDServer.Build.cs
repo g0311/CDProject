@@ -13,9 +13,12 @@ public class CDServer : ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
+			"UMG",
 			"GameLiftServerSDK",
 			"GameplayTags",
-			"HTTP"
+			"HTTP",
+			"Json",
+			"JsonUtilities"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
