@@ -4,12 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "CDServer/UI/HTTP/HTTPRequestManager.h"
+#include "Interfaces/IHttpRequest.h"
 #include "PortalManager.generated.h"
 
 /**
  * 
  */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBroadcastJoinGameSessionMessage, const FString&, StatusMessage);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBroadcastJoinGameSessionMessage, const FString&, StatusMessage, bool, bShouldResetJoinGame);
 
 UCLASS()
 class CDSERVER_API UPortalManager : public UHTTPRequestManager
@@ -21,4 +22,7 @@ public:
 	
 	UFUNCTION()
 	void JoinGameSession();
+
+private:
+	void FindOrCreateGameSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 };
