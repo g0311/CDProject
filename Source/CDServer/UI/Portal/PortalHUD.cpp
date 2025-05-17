@@ -19,6 +19,4 @@ void APortalHUD::BeginPlay()
 	FInputModeGameAndUI InputModeData;
 	OwningPlayerController->SetInputMode(InputModeData);
 	OwningPlayerController->SetShowMouseCursor(true);
-
-	
 }
