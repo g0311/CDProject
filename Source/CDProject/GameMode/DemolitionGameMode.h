@@ -21,7 +21,7 @@ public:
 	void RoundWin(bool isRed);
 	void SetSecondHalf();
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
-
+//
 protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void RestartMatch(bool isInit = false) override;

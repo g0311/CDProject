@@ -29,10 +29,13 @@ public:
 	FORCEINLINE bool IsChanging() { return IsInCombatState(CombatTags::State_Combat_ChangingWeapon); }
 	FORCEINLINE bool IsReloading() { return IsInCombatState(CombatTags::State_Combat_Reloading); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
-	FORCEINLINE int GetCurAmmo();
-	FORCEINLINE int GetCarriedAmmo();
+	
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE int GetCurAmmo();
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE int GetCarriedAmmo();
 	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
