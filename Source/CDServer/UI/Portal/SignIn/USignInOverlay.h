@@ -15,22 +15,58 @@ class CDSERVER_API USignInOverlay : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<class UJoinGame> JoinGameWidget;
-
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UPortalManager> PortalManagerClass;
 
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UWidgetSwitcher> WidgetSwitcher;
+	
 protected:
+	UFUNCTION()
 	virtual void NativeConstruct() override;
 	
 private:
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class USignInPage> SignInPage;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class USignUpPage> SignUpPage;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UConfirmSignUpPage> ConfirmSignUpPage;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class USuccessConfirmedPage> SuccessConfirmedPage;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UButton> Button_SignIn_Test;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UButton> Button_SignUp_Test;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UButton> Button_ConfirmSignUp_Test;
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UButton> Button_SuccessConfirm_Test;
+	
 	UPROPERTY()
 	TObjectPtr<class UPortalManager> PortalManager;
 
 	UFUNCTION()
-	void OnJoinGameButtonClicked();
-	
+	void ShowSignInPage();
 	UFUNCTION()
-	void UpdateJoinGameStatusMessage(const FString& StatusMessage, bool bResetJoinGameButton);
+	void ShowSignUpPage();
+	UFUNCTION()
+	void ShowConfirmSignUpPage();
+	UFUNCTION()
+	void ShowConfirmSuccessedPage();
+
+	UFUNCTION()
+	void SignInButtonClicked();
+	UFUNCTION()
+	void SignUpButtonClicked();
+	UFUNCTION()
+	void ConfirmButtonClicked();
+
+	UFUNCTION()
+	void OnSignInSucceeded();
+	UFUNCTION()
+	void OnSignUpSucceeded();
+	UFUNCTION()
+	void OnConfirmSignUpSucceeded();
 };

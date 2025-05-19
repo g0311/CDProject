@@ -77,3 +77,61 @@ void FCDPlayerSession::Dump() const
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("TerminationTime: %s"), *TerminationTime);
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("==========================="));
 }
+
+void FCDCodeDeliveryDetails::Dump() const
+{
+	UE_LOG(LogTemp, Log, TEXT("  AttributeName: %s"), *AttributeName);
+	UE_LOG(LogTemp, Log, TEXT("  DeliveryMedium: %s"), *DeliveryMedium);
+	UE_LOG(LogTemp, Log, TEXT("  Destination: %s"), *Destination);
+}
+
+void FCDSignUpResponse::Dump() const
+{
+	UE_LOG(LogTemp, Log, TEXT("==== SignUpResponse Dump ===="));
+	UE_LOG(LogTemp, Log, TEXT("UserSub: %s"), *UserSub);
+	UE_LOG(LogTemp, Log, TEXT("UserConfirmed: %s"), UserConfirmed ? TEXT("true") : TEXT("false"));
+	UE_LOG(LogTemp, Log, TEXT("Session: %s"), *Session);
+	UE_LOG(LogTemp, Log, TEXT("-- CodeDeliveryDetails --"));
+	CodeDeliveryDetails.Dump();
+	UE_LOG(LogTemp, Log, TEXT("============================="));
+}
+
+void FCDNewDeviceMetadata::Dump() const
+{
+	UE_LOG(LogTemp, Log, TEXT("    DeviceGroupKey: %s"), *DeviceGroupKey);
+	UE_LOG(LogTemp, Log, TEXT("    DeviceKey: %s"), *DeviceKey);
+}
+
+void FCDAuthenticationResult::Dump() const
+{
+	UE_LOG(LogTemp, Log, TEXT("AuthenticationResult:"));
+	UE_LOG(LogTemp, Log, TEXT("  AccessToken: %s"), *AccessToken);
+	UE_LOG(LogTemp, Log, TEXT("  ExpiresIn: %d"), ExpiresIn);
+	UE_LOG(LogTemp, Log, TEXT("  IdToken: %s"), *IdToken);
+	NewDeviceMetadata.Dump();
+	UE_LOG(LogTemp, Log, TEXT("  RefreshToken: %s"), *RefreshToken);
+	UE_LOG(LogTemp, Log, TEXT("  TokenType: %s"), *TokenType);
+}
+
+void FCDInitiateAuthResponse::Dump() const
+{
+	UE_LOG(LogTemp, Log, TEXT("=== InitiateAuthResponse Dump ==="));
+	AuthenticationResult.Dump();
+
+	UE_LOG(LogTemp, Log, TEXT("AvailableChallenges:"));
+	for(const FString& Challenge : AvailableChallenges)
+	{
+		UE_LOG(LogTemp, Log, TEXT("  %s"), *Challenge);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("ChallengeName: %s"), *ChallengeName);
+
+	UE_LOG(LogTemp, Log, TEXT("ChallengeParameters:"));
+	for(const auto& Pair : ChallengeParameters)
+	{
+		UE_LOG(LogTemp, Log, TEXT("  %s : %s"), *Pair.Key, *Pair.Value);
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("Session: %s"), *Session);
+	UE_LOG(LogTemp, Log, TEXT("=============================="));
+}

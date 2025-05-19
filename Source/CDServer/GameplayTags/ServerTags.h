@@ -6,7 +6,14 @@ namespace ServerTags
 	namespace GameSessionAPI
 	{
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(ListFleets);
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(FindOrCreateGameSession);;
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(FindOrCreateGameSession);
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(CreatePlayerSession);
+	}
+
+	namespace PortalAPI
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(SignIn);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(SignUp);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(ConfirmSignUp);
 	}
 }

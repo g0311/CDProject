@@ -118,3 +118,88 @@ struct FCDPlayerSession
     
     void Dump()const;  
 };
+
+USTRUCT()
+struct FCDCodeDeliveryDetails
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString AttributeName;
+    UPROPERTY()
+    FString DeliveryMedium;
+    UPROPERTY()
+    FString Destination;
+
+    void Dump()const;  
+};
+
+USTRUCT()
+struct FCDSignUpResponse
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FCDCodeDeliveryDetails CodeDeliveryDetails;
+    UPROPERTY()
+    FString Session;
+    UPROPERTY()
+    bool UserConfirmed;
+    UPROPERTY()
+    FString UserSub;
+    
+    void Dump()const;  
+};
+
+USTRUCT()
+struct FCDNewDeviceMetadata
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString DeviceGroupKey;
+    UPROPERTY()
+    FString DeviceKey;
+
+    void Dump() const;
+};
+
+USTRUCT()
+struct FCDAuthenticationResult
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString AccessToken;
+    UPROPERTY()
+    int32 ExpiresIn;
+    UPROPERTY()
+    FString IdToken;
+    UPROPERTY()
+    FCDNewDeviceMetadata NewDeviceMetadata;
+    UPROPERTY()
+    FString RefreshToken;
+    UPROPERTY()
+    FString TokenType;
+
+    void Dump() const;
+};
+
+USTRUCT()
+struct FCDInitiateAuthResponse
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FCDAuthenticationResult AuthenticationResult;
+    UPROPERTY()
+    TArray<FString> AvailableChallenges;
+    UPROPERTY()
+    FString ChallengeName;
+    UPROPERTY()
+    TMap<FString, FString> ChallengeParameters;
+    UPROPERTY()
+    FString Session;
+
+    void Dump() const;
+};
