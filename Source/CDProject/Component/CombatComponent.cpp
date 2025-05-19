@@ -141,16 +141,27 @@ bool UCombatComponent::IsInCombatState(FGameplayTag StateTag) const
 }
 
 int UCombatComponent::GetCurAmmo()
-{	
-	if (_weapons[_weaponIndex])
-		return _weapons[_weaponIndex]->GetAmmo();
+{
+	if (_weaponIndex>=0)
+	{
+		if (_weapons[_weaponIndex])
+		{
+			return _weapons[_weaponIndex]->GetAmmo();
+		}
+	}
+		
 	return 0;
 }
 
 int UCombatComponent::GetCarriedAmmo()
 {
-	if (_weapons[_weaponIndex])
-		return _weapons[_weaponIndex]->GetCarriedAmmo();
+	if (_weaponIndex>=-1)
+	{
+		if (_weapons[_weaponIndex])
+		{
+			return _weapons[_weaponIndex]->GetCarriedAmmo();
+		}
+	}
 	return 0;
 }
 

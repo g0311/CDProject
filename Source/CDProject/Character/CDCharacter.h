@@ -193,5 +193,5 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	class UCDCharacterAttributeSet* GetAttributeSet();
 	void InitializeAttributes();
-
+	
 };

@@ -36,6 +36,11 @@ public:
 	FORCEINLINE int GetCurAmmo();
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE int GetCarriedAmmo();
+
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	void ExcuteFire(FVector Target){Fire(Target);}
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	void ExcuteReload(){Reload();}
 	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
@@ -67,9 +72,9 @@ private:
 	//State
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
-	int _weaponIndex = -1;
+	int _weaponIndex = 1;
 	UPROPERTY(VisibleAnywhere)
-	int _befIndex = -1;
+	int _befIndex = 1;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TArray<class AWeapon*> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)

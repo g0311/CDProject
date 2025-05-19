@@ -28,7 +28,8 @@ public class CDProject : ModuleRules
 			"GameplayAbilities",
 			"GameplayTags",
 			"GameplayTasks",
-			"AnimGraphRuntime"
+			"AnimGraphRuntime",
+			"AIModule"
 		});
 
 		// Uncomment if you are using Slate UI
