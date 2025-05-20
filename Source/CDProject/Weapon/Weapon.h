@@ -118,6 +118,7 @@ public:
 	FORCEINLINE int32 GetAmmo() const {return Ammo;}
 	FORCEINLINE int32 GetCarriedAmmo() const {return CarriedAmmo;}
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
+	FORCEINLINE int32 SetAmmoCapacity(int32 NewCapacity) {return AmmoCapacity=NewCapacity;}
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
 	void SetWeaponVisible(bool tf);

@@ -29,18 +29,28 @@ public:
 	FORCEINLINE bool IsChanging() { return IsInCombatState(CombatTags::State_Combat_ChangingWeapon); }
 	FORCEINLINE bool IsReloading() { return IsInCombatState(CombatTags::State_Combat_Reloading); }
 	FORCEINLINE float GetFireDelay() { return _fireDelay; }
-	
-	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
-	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int GetCurAmmo();
-	UFUNCTION(BlueprintCallable)
-	FORCEINLINE int GetCarriedAmmo();
 
+	//Blueprint
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	int ExcuteGetCurAmmo(){return GetCurAmmo();};
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	int ExcuteGetCarriedAmmo(){return GetCarriedAmmo();};
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	int ExcuteGetAmmoCapacity(){return GetAmmoCapacity();};
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	void ExcuteSetAmmoCapacity(int NewAmmoCount){SetAmmoCapacity(NewAmmoCount);}
 	UFUNCTION(BlueprintCallable, Category="Blueprint")
 	void ExcuteFire(FVector Target){Fire(Target);}
 	UFUNCTION(BlueprintCallable, Category="Blueprint")
 	void ExcuteReload(){Reload();}
+	
+	
+	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
+	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
+	FORCEINLINE int GetCurAmmo();
+	FORCEINLINE int GetCarriedAmmo();
+	FORCEINLINE int GetAmmoCapacity();
+	FORCEINLINE int SetAmmoCapacity(int NewAmmoCount);
 	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();

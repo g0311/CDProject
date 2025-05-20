@@ -165,6 +165,31 @@ int UCombatComponent::GetCarriedAmmo()
 	return 0;
 }
 
+int UCombatComponent::GetAmmoCapacity()
+{
+	if (_weaponIndex>=-1)
+	{
+		if (_weapons[_weaponIndex])
+		{
+			return _weapons[_weaponIndex]->GetAmmoCapacity();
+		}
+	}
+	return 0;
+}
+
+int UCombatComponent::SetAmmoCapacity(int NewAmmoCount)
+{
+	if (_weaponIndex>=-1)
+	{
+		if (_weapons[_weaponIndex])
+		{
+			_weapons[_weaponIndex]->SetAmmoCapacity(NewAmmoCount);
+		}
+	}
+	return 0;
+}
+
+
 AWeapon* UCombatComponent::GetCurWeapon()
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
