@@ -133,5 +133,6 @@ void FCDInitiateAuthResponse::Dump() const
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("Session: %s"), *Session);
+	UE_LOG(LogTemp, Log, TEXT("Email: %s"), *Email);
 	UE_LOG(LogTemp, Log, TEXT("=============================="));
 }

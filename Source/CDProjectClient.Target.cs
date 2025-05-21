@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class CDProjectEditorTarget : TargetRules
+public class CDProjectClientTarget : TargetRules
 {
-	public CDProjectEditorTarget( TargetInfo Target) : base(Target)
+	public CDProjectClientTarget(TargetInfo Target) : base(Target)
 	{
-		Type = TargetType.Editor;
+		Type = TargetType.Client;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
 		ExtraModuleNames.Add("CDProject");

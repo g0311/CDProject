@@ -200,6 +200,8 @@ struct FCDInitiateAuthResponse
     TMap<FString, FString> ChallengeParameters;
     UPROPERTY()
     FString Session;
+    UPROPERTY()
+    FString Email;
 
     void Dump() const;
 };

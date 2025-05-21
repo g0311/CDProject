@@ -4,8 +4,23 @@
 #include "HTTPRequestManager.h"
 
 #include "HTTPRequestTypes.h"
+#include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "JsonObjectConverter.h"
 #include "CDServer/Game/Server_GameMode.h"
+
+UCDLocalPlayerSubsystem* UHTTPRequestManager::GetCDLocalPlayerSubsystem()
+{
+	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (IsValid(LocalPlayerController))
+	{
+		ULocalPlayer* LocalPlayer = LocalPlayerController->GetLocalPlayer();
+		if (IsValid(LocalPlayer))
+		{
+			return LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>();
+		}
+	}
+	return nullptr;
+}
 
 bool UHTTPRequestManager::ContainsError(TSharedPtr<FJsonObject> JsonObject)
 {

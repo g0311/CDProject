@@ -16,6 +16,8 @@ UCLASS(Blueprintable)
 class CDSERVER_API UHTTPRequestManager : public UObject
 {
 	GENERATED_BODY()
+public:
+	class UCDLocalPlayerSubsystem* GetCDLocalPlayerSubsystem();
 	
 protected:
 	UPROPERTY(EditDefaultsOnly)

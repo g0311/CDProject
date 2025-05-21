@@ -6,6 +6,7 @@
 #include "CDServer/UI/HTTP/HTTPRequestManager.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "Interfaces/IHttpRequest.h"
+#include "Interfaces/PortalManagement.h"
 #include "PortalManager.generated.h"
 
 /**
@@ -13,7 +14,7 @@
  */
 
 UCLASS()
-class CDSERVER_API UPortalManager : public UHTTPRequestManager
+class CDSERVER_API UPortalManager : public UHTTPRequestManager, public IPortalManagement
 {
 	GENERATED_BODY()
 public:
@@ -35,13 +36,19 @@ public:
 	
 	void SignIn(const FString& Username, const FString& Password);
 	void SignUp(const FString& Username, const FString& Password, const FString& Email);
+	void SignOut(const FString& AccessToken);
 	void Confirm(const FString& ConfirmationCode);
+	
+	virtual void RefreshToken(const FString& RefreshToken) override;
 	
 	UFUNCTION()
 	void QuitGame();
 private:
 	void SignIn_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	void SignUp_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
+	void SignOut_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	void ConfirmSignUp_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
+
+	void RefreshToken_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 
 };

@@ -4,6 +4,36 @@
 #include "PortalHUD.h"
 #include "SignIn/USignInOverlay.h"
 #include "Blueprint/UserWidget.h"
+#include "Dashboard/DashboardOverlay.h"
+
+void APortalHUD::OnSignIn()
+{
+	if (IsValid(SignInOverlay))
+	{
+		SignInOverlay->RemoveFromParent();
+	}
+
+	APlayerController* OwningPlayerController = GetOwningPlayerController();
+	DashboardOverlay = CreateWidget<UDashboardOverlay>(OwningPlayerController, DashboardOverlayClass, TEXT("DashboardOverlay"));
+	if (IsValid(DashboardOverlay))
+	{
+		DashboardOverlay->AddToViewport();
+	}
+}
+
+void APortalHUD::OnSignOut()
+{
+	if (IsValid(DashboardOverlay))
+	{
+		DashboardOverlay->RemoveFromParent();
+	}
+	APlayerController* OwningPlayerController = GetOwningPlayerController();
+	SignInOverlay = CreateWidget<USignInOverlay>(OwningPlayerController, SignInOverlayClass, TEXT("SignInOverlay"));
+	if (IsValid(SignInOverlay))
+	{
+		SignInOverlay->AddToViewport();
+	}
+}
 
 void APortalHUD::BeginPlay()
 {
@@ -15,6 +45,7 @@ void APortalHUD::BeginPlay()
 	{
 		SignInOverlay->AddToViewport();
 	}
+	
 
 	FInputModeGameAndUI InputModeData;
 	OwningPlayerController->SetInputMode(InputModeData);

@@ -6,6 +6,7 @@
 #include "JsonObjectConverter.h"
 #include "CDServer/Data/API/APIData.h"
 #include "CDServer/Game/Server_GameMode.h"
+#include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "Interfaces/IHttpResponse.h"
 
@@ -19,6 +20,11 @@ void UAPITestManager::ListFleetsButtonOnClicked()
 	Request->SetURL(APIUrl);
 	Request->SetVerb(TEXT("GET"));
 	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+	if (IsValid(LocalPlayerSubsystem))
+	{
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
+	}
 	//Request->SetContentAsString(); FOR INPUT
 	
 	Request->ProcessRequest();

@@ -26,7 +26,7 @@ private:
 	void FindOrCreateGameSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	void CreatePlayerSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	FString GetUniquePlayerId();
-	void HandleGameSessionStart(const FString& Status, const FString& SessionId);
+	void HandleGameSessionStatus(const FString& Status, const FString& SessionId);
 	void TryCreatePlayerSession(const FString& PlayerId, const FString& GameSessionId);
 
 	

@@ -5,6 +5,7 @@
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
 #include "CDServer/Data/API/APIData.h"
+#include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "GameFramework/PlayerState.h"
 #include "Interfaces/IHttpResponse.h"
@@ -22,6 +23,12 @@ void UGameSessionsManager::JoinGameSession()
 	Request->SetURL(APIUrl);
 	Request->SetVerb("POST");
 	Request->SetHeader("Content-Type", "application/json");
+
+	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+	if (IsValid(LocalPlayerSubsystem))
+	{
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
+	}
 
 	Request->ProcessRequest();
 }
@@ -53,7 +60,7 @@ void UGameSessionsManager::FindOrCreateGameSession_Response(FHttpRequestPtr Requ
 
 		const FString GameSessionId = GameSession.GameSessionId;
 		const FString GameSessionStatus = GameSession.Status;
-		HandleGameSessionStart(GameSessionStatus, GameSessionId);
+		HandleGameSessionStatus(GameSessionStatus, GameSessionId);
 	}
 }
 
@@ -71,12 +78,17 @@ FString UGameSessionsManager::GetUniquePlayerId()
 	return FString();
 }
 
-void UGameSessionsManager::HandleGameSessionStart(const FString& Status, const FString& SessionId)
+void UGameSessionsManager::HandleGameSessionStatus(const FString& Status, const FString& SessionId)
 {
 	if (Status.Equals(TEXT("ACTIVE")))
 	{
 		JoinGameSessionMessageDelegate.Broadcast(TEXT("Found Active Game Session"), false);
-		TryCreatePlayerSession(GetUniquePlayerId(), SessionId);
+
+		UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+		if (IsValid(LocalPlayerSubsystem))
+		{
+			TryCreatePlayerSession(LocalPlayerSubsystem->Username, SessionId);
+		}
 	}
 	else if (Status.Equals(TEXT("ACTIVATING")))
 	{
@@ -104,7 +116,12 @@ void UGameSessionsManager::TryCreatePlayerSession(const FString& PlayerId, const
 	Request->SetURL(APIUrl);
 	Request->SetVerb("POST");
 	Request->SetHeader("Content-Type", "application/json");
-
+	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+	if (IsValid(LocalPlayerSubsystem))
+	{
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
+	}
+	
 	TMap<FString, FString> Params =
 		{
 		{TEXT("playerId"), PlayerId},
@@ -141,9 +158,11 @@ void UGameSessionsManager::CreatePlayerSession_Response(FHttpRequestPtr Request,
 			LocalPlayerController->SetInputMode(InputModeData);
 			LocalPlayerController->SetShowMouseCursor(false);
 		}
+
+		FString Options = "?PlayerSessionId=" + PlayerSession.PlayerSessionId + "?Username=" + PlayerSession.PlayerId;
 		
 		const FString IpAndPort = PlayerSession.IpAddress + TEXT(":") + FString::FromInt(PlayerSession.Port);
 		const FName Address{*IpAndPort};
-		UGameplayStatics::OpenLevel(this, Address);
+		UGameplayStatics::OpenLevel(this, Address, true, Options);
 	}
 }
