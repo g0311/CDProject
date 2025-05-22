@@ -129,7 +129,11 @@ void ACDPlayerController::BeginPlay()
 	if (IsLocalController())
 	{
 		UpdateCharacterOverlay();
-		CDHUD->AddAnnouncement();
+		if (CDHUD)
+		{
+			CDHUD->AddAnnouncement();
+		}
+		
 	}
 }
 

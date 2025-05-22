@@ -4,7 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "RoundGameMode.h"
+#include "CDProject/Character/CDCharacter.h"
+#include "CDProject/AI/CDAIController.h"
+#include "AIController.h"
 #include "DemolitionGameMode.generated.h"
+
 
 /**
  * 
@@ -20,6 +24,7 @@ public:
 	void SetMatchTime(float c4ExplodeTime);
 	void RoundWin(bool isRed);
 	void SetSecondHalf();
+	void SpawnBot();
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
 //
 protected:
@@ -34,6 +39,10 @@ protected:
 	
 	TSet<class APlayerStart*> UsedStartPoints;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<ACDCharacter> AIBot;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AAIController> CDAIController;
 	//C4 Access
 	UPROPERTY(VisibleAnywhere)
 	class AC4Weapon* _c4Weapon;

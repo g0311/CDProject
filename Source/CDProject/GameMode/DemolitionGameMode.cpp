@@ -3,6 +3,8 @@
 
 #include "DemolitionGameMode.h"
 
+#include "AIController.h"
+#include "CDProject/Character/CDAIEnemy.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameState/CDGameState.h"
@@ -156,6 +158,47 @@ void ADemolitionGameMode::SetSecondHalf()
 		}
 	}
 }
+
+void ADemolitionGameMode::SpawnBot()
+{
+	if (!AIBot) return; 
+	
+	FVector SpawnLocation = FVector::ZeroVector; 
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	AAIController* AIController = GetWorld()->SpawnActor<AAIController>(CDAIController, SpawnLocation, SpawnRotation, SpawnParams);
+	if (AIController)
+	{
+		ACDCharacter* Enemy = GetWorld()->SpawnActor<ACDCharacter>(AIBot, SpawnLocation, SpawnRotation, SpawnParams);
+		if (Enemy)
+		{
+			AIController->Possess(Enemy);
+			
+			ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+			ACDPlayerState* BotPlayerState = Enemy->GetPlayerState<ACDPlayerState>();
+            
+			if (BGameState && BotPlayerState)
+			{
+				if (BGameState->BTeam.Num() >= BGameState->ATeam.Num())
+				{
+					BGameState->ATeam.AddUnique(BotPlayerState);
+					BotPlayerState->SetMatchTeam(ETeam::ET_ATeam);
+					BotPlayerState->SetTeam(ETeam::ET_RedTeam);
+				}
+				else
+				{
+					BGameState->BTeam.AddUnique(BotPlayerState);
+					BotPlayerState->SetMatchTeam(ETeam::ET_BTeam);
+					BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
+				}
+			}
+		}
+	}
+}
+
 
 void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 {
