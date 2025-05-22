@@ -140,6 +140,11 @@ bool UCombatComponent::IsInCombatState(FGameplayTag StateTag) const
 	return _combatStateTags.HasTagExact(StateTag);
 }
 
+void UCombatComponent::ExcuteMeleeAttack()
+{
+	RequestChange(2);
+}
+
 int UCombatComponent::GetCurAmmo()
 {
 	if (_weaponIndex>=0)

@@ -43,6 +43,8 @@ public:
 	void ExcuteFire(FVector Target){Fire(Target);}
 	UFUNCTION(BlueprintCallable, Category="Blueprint")
 	void ExcuteReload(){Reload();}
+	UFUNCTION(BlueprintCallable, Category="Blueprint")
+	void ExcuteMeleeAttack();
 	
 	
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
