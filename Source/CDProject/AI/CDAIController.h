@@ -22,4 +22,5 @@ protected:
 	class UBehaviorTreeComponent* BehaviorTreeComponent;
 
 	
+	
 };

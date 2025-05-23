@@ -25,6 +25,9 @@ public:
 	void RoundWin(bool isRed);
 	void SetSecondHalf();
 	void SpawnBot();
+	void BalancedBot();
+	void KickBot();
+	void InitBot(ACDCharacter* BotCharacter);
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
 //
 protected:
@@ -39,6 +42,7 @@ protected:
 	
 	TSet<class APlayerStart*> UsedStartPoints;
 
+	int32 BotCount=0;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ACDCharacter> AIBot;
 	UPROPERTY(EditAnywhere)
