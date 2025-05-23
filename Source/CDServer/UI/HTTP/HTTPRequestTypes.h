@@ -68,7 +68,7 @@ struct FCDGameSession
     UPROPERTY()
     FString MatchmakerData{};
     UPROPERTY()
-    int32 MaximumPlayerSessionCount{};
+    FString MaximumPlayerSessionCount{};
     UPROPERTY()
     FString Name{};
     UPROPERTY()
@@ -202,6 +202,20 @@ struct FCDInitiateAuthResponse
     FString Session;
     UPROPERTY()
     FString Email;
+
+    void Dump() const;
+};
+
+USTRUCT()
+struct FCDDescribeGameSessionResult
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<FCDGameSession> GameSessions;
+
+    UPROPERTY()
+    FString NextToken;
 
     void Dump() const;
 };

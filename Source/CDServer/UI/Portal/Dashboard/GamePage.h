@@ -20,6 +20,9 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UJoinGame> JoinGameWidget;
 	
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UPrivateSessionsWidget> PrivateSessionsWidget;
+	
 protected:
 	virtual void NativeConstruct() override;
 	
@@ -29,4 +32,17 @@ private:
 	
 	UFUNCTION()
 	void JoinGameButtonClicked();
+	
+	UFUNCTION()
+	void RefreshPrivateSessionsButtonClicked();
+	
+	UFUNCTION()
+	void JoinPrivateSessionButtonClicked();
+	
+	UFUNCTION()
+	void CreatePrivateSessionButtonClicked();
+	UFUNCTION()
+	void ShowCreatePannel();
+	UFUNCTION()
+	void HideCreatePannel();
 };

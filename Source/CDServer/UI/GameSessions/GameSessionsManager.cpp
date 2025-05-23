@@ -11,7 +11,7 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Kismet/GameplayStatics.h"
 
-void UGameSessionsManager::JoinGameSession()
+void UGameSessionsManager::JoinGameSession(const FString& GameMode)
 {
 	JoinGameSessionMessageDelegate.Broadcast(TEXT("Searching For Game Session..."), false);
 
@@ -29,17 +29,90 @@ void UGameSessionsManager::JoinGameSession()
 	{
 		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
 	}
+	TMap<FString, FString> Params =
+		{
+		{TEXT("isPrivate"), TEXT("false")},
+		{TEXT("map"), TEXT("Default")},
+		{TEXT("gameMode"), GameMode},
+		};
+	const FString& Content = SerializeJsonContent(Params);
+	
+	Request->ProcessRequest();
+}
+
+void UGameSessionsManager::FindGameSessions()
+{
+	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UGameSessionsManager::GetGameSessions_Response);
+
+	check(APIData);
+	const FString APIUrl = APIData->GetAPIEndpoint(ServerTags::GameSessionAPI::FindGameSessions);
+	Request->SetURL(APIUrl);
+	Request->SetVerb("GET");
+	Request->SetHeader("Content-Type", "application/json");
+
+	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+	if (IsValid(LocalPlayerSubsystem))
+	{
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
+	}
 
 	Request->ProcessRequest();
 }
 
+void UGameSessionsManager::CreatePrivateGameSession(const FString& RoomName, const FString& RoomMode,
+	const FString& RoomMap)
+{
+	PrivateSessionDelegate.Broadcast(TEXT("Creating Game Session..."), false);
+
+	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
+	Request->OnProcessRequestComplete().BindUObject(this, &UGameSessionsManager::FindOrCreateGameSession_Response);
+
+	check(APIData);
+	const FString APIUrl = APIData->GetAPIEndpoint(ServerTags::GameSessionAPI::FindOrCreateGameSession);
+	Request->SetURL(APIUrl);
+	Request->SetVerb("POST");
+	Request->SetHeader("Content-Type", "application/json");
+
+	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+	if (IsValid(LocalPlayerSubsystem))
+	{
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
+	}
+	TMap<FString, FString> Params =
+		{
+		{TEXT("name"), RoomName},
+		{TEXT("isPrivate"), TEXT("true")},
+		{TEXT("isStarted"), TEXT("false")},
+		{TEXT("map"), TEXT("Default")},
+		{TEXT("gameMode"), RoomMode},
+		};
+	const FString& Content = SerializeJsonContent(Params);
+	
+	Request->ProcessRequest();
+}
+
+void UGameSessionsManager::JoinPrivateGameSession(const FString& GameSessionId)
+{
+	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
+	if (IsValid(LocalPlayerSubsystem))
+	{
+		TryCreatePlayerSession(LocalPlayerSubsystem->Username, GameSessionId);
+	}
+	else
+	{
+		PrivateSessionDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+	}
+}
+
 
 void UGameSessionsManager::FindOrCreateGameSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response,
-                                                      bool bSucceeded)
+                                                            bool bSucceeded)
 {
 	if (!bSucceeded)
 	{
 		JoinGameSessionMessageDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+		PrivateSessionCreateDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
 		return;
 	}
 
@@ -50,6 +123,7 @@ void UGameSessionsManager::FindOrCreateGameSession_Response(FHttpRequestPtr Requ
 		if (ContainsError(JsonObject))
 		{
 			JoinGameSessionMessageDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+			PrivateSessionCreateDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
 			return;
 		}
 		//DumpMetaData(JsonObject);
@@ -60,7 +134,8 @@ void UGameSessionsManager::FindOrCreateGameSession_Response(FHttpRequestPtr Requ
 
 		const FString GameSessionId = GameSession.GameSessionId;
 		const FString GameSessionStatus = GameSession.Status;
-		HandleGameSessionStatus(GameSessionStatus, GameSessionId);
+		const FString GameMode = GameSession.GameProperties["GameMode"];
+		HandleGameSessionStatus(GameSessionStatus, GameSessionId, GameMode);
 	}
 }
 
@@ -78,7 +153,7 @@ FString UGameSessionsManager::GetUniquePlayerId()
 	return FString();
 }
 
-void UGameSessionsManager::HandleGameSessionStatus(const FString& Status, const FString& SessionId)
+void UGameSessionsManager::HandleGameSessionStatus(const FString& Status, const FString& SessionId, const FString& GameMode)
 {
 	if (Status.Equals(TEXT("ACTIVE")))
 	{
@@ -93,7 +168,11 @@ void UGameSessionsManager::HandleGameSessionStatus(const FString& Status, const 
 	else if (Status.Equals(TEXT("ACTIVATING")))
 	{
 		FTimerDelegate CreatePlayerSessionDelegate;
-		CreatePlayerSessionDelegate.BindUObject(this, &UGameSessionsManager::JoinGameSession);
+		CreatePlayerSessionDelegate.BindLambda([this, GameMode]()
+		{
+			if (IsValid(this))
+				JoinGameSession(GameMode);
+		});
 		APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
 		if (IsValid(LocalPlayerController))
 		{
@@ -108,6 +187,7 @@ void UGameSessionsManager::HandleGameSessionStatus(const FString& Status, const 
 
 void UGameSessionsManager::TryCreatePlayerSession(const FString& PlayerId, const FString& GameSessionId)
 {
+	PrivateSessionDelegate.Broadcast(TEXT("Joining Game Session..."), false);
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->OnProcessRequestComplete().BindUObject(this, &UGameSessionsManager::CreatePlayerSession_Response);
 
@@ -137,7 +217,8 @@ void UGameSessionsManager::CreatePlayerSession_Response(FHttpRequestPtr Request,
 {
 	if (!bSucceeded)
 	{
-		
+		PrivateSessionDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+		return;
 	}
 	TSharedPtr<FJsonObject> JsonObject;
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
@@ -145,6 +226,7 @@ void UGameSessionsManager::CreatePlayerSession_Response(FHttpRequestPtr Request,
 	{
 		if (ContainsError(JsonObject))
 		{
+			PrivateSessionDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
 			return;
 		}
 		FCDPlayerSession PlayerSession;
@@ -158,11 +240,31 @@ void UGameSessionsManager::CreatePlayerSession_Response(FHttpRequestPtr Request,
 			LocalPlayerController->SetInputMode(InputModeData);
 			LocalPlayerController->SetShowMouseCursor(false);
 		}
-
+		
 		FString Options = "?PlayerSessionId=" + PlayerSession.PlayerSessionId + "?Username=" + PlayerSession.PlayerId;
 		
 		const FString IpAndPort = PlayerSession.IpAddress + TEXT(":") + FString::FromInt(PlayerSession.Port);
 		const FName Address{*IpAndPort};
 		UGameplayStatics::OpenLevel(this, Address, true, Options);
+	}
+}
+
+void UGameSessionsManager::GetGameSessions_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded)
+{
+	if (!bSucceeded)	
+		return;
+
+	TSharedPtr<FJsonObject> JsonObject;
+	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
+	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
+	{
+		if (ContainsError(JsonObject))
+			return;
+		
+		FCDDescribeGameSessionResult DescribeGameSessionResult;
+		FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &DescribeGameSessionResult);
+		//GameSession.Dump();
+
+		OnGetSessionsRequestSucceeded.Broadcast(DescribeGameSessionResult);
 	}
 }

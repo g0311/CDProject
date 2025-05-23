@@ -4,6 +4,7 @@
 #include "PortalHUD.h"
 #include "SignIn/USignInOverlay.h"
 #include "Blueprint/UserWidget.h"
+#include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "Dashboard/DashboardOverlay.h"
 
 void APortalHUD::OnSignIn()
@@ -40,13 +41,23 @@ void APortalHUD::BeginPlay()
 	Super::BeginPlay();
 
 	APlayerController* OwningPlayerController = GetOwningPlayerController();
-	SignInOverlay = CreateWidget<USignInOverlay>(OwningPlayerController, SignInOverlayClass, TEXT("SignInOverlay"));
-	if (IsValid(SignInOverlay))
+	if (OwningPlayerController)
 	{
-		SignInOverlay->AddToViewport();
+		if (ULocalPlayer* LocalPlayer = OwningPlayerController->GetLocalPlayer())
+		{
+			if (UCDLocalPlayerSubsystem* LocalPlayerSubsystem = LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>())
+			{
+				if (LocalPlayerSubsystem->GetAuthResult().AccessToken.IsEmpty())
+				{
+					OnSignIn();
+				}
+				else
+				{
+					OnSignOut();
+				}
+			}
+		}
 	}
-	
-
 	FInputModeGameAndUI InputModeData;
 	OwningPlayerController->SetInputMode(InputModeData);
 	OwningPlayerController->SetShowMouseCursor(true);

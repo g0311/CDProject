@@ -3,6 +3,8 @@
 
 #include "Server_GameMode.h"
 
+#include "Kismet/GameplayStatics.h"
+
 DEFINE_LOG_CATEGORY(LogCD_ServerLog);
 
 AServer_GameMode::AServer_GameMode()
@@ -128,6 +130,32 @@ void AServer_GameMode::InitGameLift()
     {
         FString gameSessionId = FString(gameSession.GetGameSessionId());
         UE_LOG(LogCD_ServerLog, Log, TEXT("GameSession Initializing: %s"), *gameSessionId);
+
+        int PropertyCount;
+        const Aws::GameLift::Server::Model::GameProperty* gameProperties = gameSession.GetGameProperties(PropertyCount);
+        FString mapName = TEXT("DefaultMap");
+        for (int i = 0; i < PropertyCount; ++i)
+        {
+            const Aws::GameLift::Server::Model::GameProperty& property = gameProperties[i];
+            FString key = FString(property.GetKey());
+            FString value = FString(property.GetValue());
+
+            UE_LOG(LogCD_ServerLog, Log, TEXT("GameProperty: %s = %s"), *key, *value);
+
+            if (key.Equals(TEXT("gameMode"), ESearchCase::IgnoreCase))
+            {
+                mapName = value;
+            }
+        }
+
+        UE_LOG(LogCD_ServerLog, Log, TEXT("Changing map to: %s"), *mapName);
+        UWorld* World = GEngine->GetWorldContexts()[0].World();
+        if (World)
+        {
+            FString url = FString::Printf(TEXT("/Game/Maps/%s?listen"), *mapName);
+            UGameplayStatics::OpenLevel(World, FName(*url), true);
+        }
+
         gameLiftSdkModule->ActivateGameSession();
     };
     m_params.OnStartGameSession.BindLambda(onGameSession);
