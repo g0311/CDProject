@@ -11,8 +11,10 @@
 #include "CDProject/GameState/CDGameState.h"
 #include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "CDProject/Widget/ShopOverlay.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PlayerStart.h"
+#include "Engine/DataTable.h"
 #include "Runtime/Core/Tests/Containers/TestUtils.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -173,7 +175,31 @@ void ADemolitionGameMode::BalancedBot()
 	{
 		for (int i=0;i<BotsSpawnCount; i++) SpawnBot();
 	}
+
+	TArray<AActor*> BotEnemies;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDCharacter::StaticClass(), BotEnemies);
+	
+	for (AActor* Bot:BotEnemies)
+	{
+		AController* BotController = Bot->GetInstigatorController();
+		ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
+		if (Bot->ActorHasTag("Bot"))
+		{
+			int32 BotGold=BotState->GetGold();
+			FName WeaponName;
+			if (BotGold>=1000&&ShopOverlay)
+			{
+				FName RowName="Rifle";
+				FWeaponStruct* WeaponData=WeaponDataTable->FindRow<FWeaponStruct>(RowName, TEXT("BotBuyWeapon"));
+				if (WeaponData)
+				{
+					ShopOverlay->OnShopButtonClicked(*WeaponData);
+				}
+			}
+		}
+	}
 }
+
 
 void ADemolitionGameMode::KickBot()
 {

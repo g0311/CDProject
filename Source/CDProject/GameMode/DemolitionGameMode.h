@@ -7,6 +7,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/AI/CDAIController.h"
 #include "AIController.h"
+#include "CDProject/Widget/ShopOverlay.h"
 #include "DemolitionGameMode.generated.h"
 
 
@@ -47,6 +48,10 @@ protected:
 	TSubclassOf<ACDCharacter> AIBot;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AAIController> CDAIController;
+	UPROPERTY(EditAnywhere)
+	UShopOverlay* ShopOverlay;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon Data")
+	UDataTable* WeaponDataTable;
 	//C4 Access
 	UPROPERTY(VisibleAnywhere)
 	class AC4Weapon* _c4Weapon;
