@@ -237,47 +237,135 @@ void ADemolitionGameMode::SpawnBot()
 {
 	BotCount++;
 	if (!AIBot) return; 
-	
-	FVector SpawnLocation = FVector::ZeroVector; 
-	FRotator SpawnRotation = FRotator::ZeroRotator;
-	
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	AAIController* AIController = GetWorld()->SpawnActor<AAIController>(CDAIController, SpawnLocation, SpawnRotation, SpawnParams);
-	if (AIController)
+	ETeam BotAssignedTeam;
+	FString BotTeamTag;
+
+	ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	//ACDPlayerState* BotPlayerState = BotCharacter->GetPlayerState<ACDPlayerState>();
+    //FindPlayerStart	
+	if (BGameState->BTeam.Num() >= BGameState->ATeam.Num())
 	{
-		ACDCharacter* Enemy = GetWorld()->SpawnActor<ACDCharacter>(AIBot, SpawnLocation, SpawnRotation, SpawnParams);
-		if (Enemy)
-		{
-			AIController->Possess(Enemy);
-			ACDPlayerState* BotPlayerState = Enemy->GetPlayerState<ACDPlayerState>();
-			if (BotPlayerState)
-			{
-				AIController->PlayerState = BotPlayerState;
-				BotPlayerState->SetOwner(AIController);
-				
-				Enemy->Tags.Add(FName("Bot"));
-				InitBot(Enemy);
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("ADemolitionGameMode::SpawnBot: Failed to spawn PlayerState for bot."));
-				Enemy->Destroy(); 
-				AIController->Destroy(); 
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("ADemolitionGameMode::SpawnBot: Failed to spawn bot character (Enemy)."));
-			AIController->Destroy(); 
-		}
+		BotAssignedTeam = ETeam::ET_RedTeam;
+		BotTeamTag = TEXT("RED");
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("ADemolitionGameMode::SpawnBot: Failed to spawn AIController for bot."));
+		BotAssignedTeam = ETeam::ET_BlueTeam;
+		BotTeamTag = TEXT("BLUE");
 	}
+
+	if (!AvailStartPoints.Contains(BotTeamTag))
+	{
+		TArray<AActor*> AllStarts;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), AllStarts);
+
+		TArray<APlayerStart*> TeamStarts;
+		for (AActor* Actor : AllStarts)
+		{
+			APlayerStart* TeamStart = Cast<APlayerStart>(Actor);
+			if (TeamStart && TeamStart->PlayerStartTag == FName(*BotTeamTag))
+			{
+				TeamStarts.Add(TeamStart);
+			}
+		}
+		AvailStartPoints.Add(BotTeamTag, TeamStarts);
+	}
+
+	FVector SpawnLocation = FVector::ZeroVector;
+    FRotator SpawnRotation = FRotator::ZeroRotator;
+    APlayerStart* ChosenStart = nullptr;
+
+    if (AvailStartPoints.Contains(BotTeamTag))
+    {
+        TArray<APlayerStart*>& TeamAvailStarts = AvailStartPoints[BotTeamTag];
+        if (TeamAvailStarts.Num() > 0)
+        {
+            const int32 Index = FMath::RandRange(0, TeamAvailStarts.Num() - 1);
+            ChosenStart = TeamAvailStarts[Index];
+            SpawnLocation = ChosenStart->GetActorLocation();
+            SpawnRotation = ChosenStart->GetActorRotation();
+        }
+        else
+        {
+            return;
+        }
+    }
+    else
+    {
+        return;
+    }
+
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn; 
+	//If Collision -> possible none Collision place spawn
+    AAIController* AIController = GetWorld()->SpawnActor<AAIController>(CDAIController, SpawnLocation, SpawnRotation, SpawnParams);
+    if (AIController)
+    {
+        ACDCharacter* EnemyBot = GetWorld()->SpawnActor<ACDCharacter>(AIBot, SpawnLocation, SpawnRotation, SpawnParams);
+        if (EnemyBot)//PC->PS->Pawn->(Possess PC->Character)
+        {
+            ACDPlayerState* BotPlayerState = EnemyBot->GetPlayerState<ACDPlayerState>(); 
+            if (!BotPlayerState && AIController->PlayerState) 
+            {
+                BotPlayerState = Cast<ACDPlayerState>(AIController->PlayerState);
+            }
+            if (!BotPlayerState)
+            {
+            	UE_LOG(LogTemp, Warning, TEXT("PS is Not Spawn"));
+            	//AIController->InitPlayerState();//AI need PS
+            	return;
+            }
+
+
+            if (BotPlayerState)//AI Can't AutoPosses PS, PC
+            {
+                AIController->PlayerState = BotPlayerState; 
+                BotPlayerState->SetOwner(AIController);    
+                EnemyBot->Tags.Add(FName("Bot"));
+            	
+                if (BotAssignedTeam == ETeam::ET_RedTeam)
+                {
+                    BotPlayerState->SetMatchTeam(ETeam::ET_ATeam); 
+                    BotPlayerState->SetTeam(ETeam::ET_RedTeam);
+                    BGameState->ATeam.AddUnique(BotPlayerState);
+                }
+                else // ET_BlueTeam
+                {
+                    BotPlayerState->SetMatchTeam(ETeam::ET_BTeam); 
+                    BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
+                    BGameState->BTeam.AddUnique(BotPlayerState);
+                }
+                UE_LOG(LogTemp, Log, TEXT("BotTeamTag -> %s"), *BotTeamTag);
+            	
+                AIController->Possess(EnemyBot);
+                
+                // InitializeTeamCount()
+            }
+            else
+            {
+                UE_LOG(LogTemp, Error, TEXT("Failed Controller"));
+                EnemyBot->Destroy();
+                AIController->Destroy();
+                BotCount--;
+                return;
+            }
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed Pawn"));
+            AIController->Destroy();
+            BotCount--;
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed Anything"));
+        BotCount--;
+    }
 }
+
 void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 {
 	CooldownStartTime = GetWorld()->GetTimeSeconds();
@@ -288,28 +376,28 @@ void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 	Super::SetCurMatchState(NewState, IsInit);
 }
 
-void ADemolitionGameMode::InitBot(ACDCharacter* BotCharacter)
-{
-	UE_LOG(LogTemp, Warning, TEXT("InitBot!"));
-	ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-	ACDPlayerState* BotPlayerState = BotCharacter->GetPlayerState<ACDPlayerState>();
-
-	if (BGameState && BotPlayerState)
-	{
-		if (BGameState->BTeam.Num() >= BGameState->ATeam.Num())
-		{
-			BGameState->ATeam.AddUnique(BotPlayerState);
-			BotPlayerState->SetMatchTeam(ETeam::ET_ATeam);
-			BotPlayerState->SetTeam(ETeam::ET_RedTeam);
-		}
-		else
-		{
-			BGameState->BTeam.AddUnique(BotPlayerState);
-			BotPlayerState->SetMatchTeam(ETeam::ET_BTeam);
-			BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
-		}
-	}
-}
+// void ADemolitionGameMode::InitBot(ACDCharacter* BotCharacter)
+// {
+// 	UE_LOG(LogTemp, Warning, TEXT("InitBot!"));
+// 	// ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+// 	// ACDPlayerState* BotPlayerState = BotCharacter->GetPlayerState<ACDPlayerState>();
+// 	//
+// 	// if (BGameState && BotPlayerState)
+// 	// {
+// 	// 	if (BGameState->BTeam.Num() >= BGameState->ATeam.Num())
+// 	// 	{
+// 	// 		BGameState->ATeam.AddUnique(BotPlayerState);
+// 	// 		BotPlayerState->SetMatchTeam(ETeam::ET_ATeam);
+// 	// 		BotPlayerState->SetTeam(ETeam::ET_RedTeam);
+// 	// 	}
+// 	// 	else
+// 	// 	{
+// 	// 		BGameState->BTeam.AddUnique(BotPlayerState);
+// 	// 		BotPlayerState->SetMatchTeam(ETeam::ET_BTeam);
+// 	// 		BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
+// 	// 	}
+// 	// }
+// }
 
 void ADemolitionGameMode::HandleMatchHasStarted()
 {

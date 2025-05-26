@@ -52,6 +52,7 @@ protected:
 	UShopOverlay* ShopOverlay;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Weapon Data")
 	UDataTable* WeaponDataTable;
+
 	//C4 Access
 	UPROPERTY(VisibleAnywhere)
 	class AC4Weapon* _c4Weapon;
