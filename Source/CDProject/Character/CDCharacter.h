@@ -62,7 +62,7 @@ public:
 	bool _isDead = false;
 	bool bCanMove = true;;
 	//State로 리팩터링 필요..
-	
+
 private:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
