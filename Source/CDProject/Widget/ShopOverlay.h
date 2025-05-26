@@ -38,6 +38,7 @@ private:
 
 	class ACDPlayerState* PS;
 	class ACDPlayerController* PC;
+	class AAIController* AIPC;
 	class ACDCharacter* Character;
 	class UCombatComponent* CombatComp;
 

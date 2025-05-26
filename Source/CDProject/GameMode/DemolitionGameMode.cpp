@@ -7,6 +7,7 @@
 #include "aws/gamelift/server/model/Player.h"
 #include "CDProject/Character/CDAIEnemy.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameState/CDGameState.h"
 #include "CDProject/HUD/CDHUD.h"
@@ -166,38 +167,71 @@ void ADemolitionGameMode::SetSecondHalf()
 
 void ADemolitionGameMode::BalancedBot()
 {
-	int FullCount=10;
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	
+	int FullCount=10;
 	int CurrentPlayers=BGameState->ATeam.Num()+BGameState->BTeam.Num();
 	int BotsSpawnCount=FullCount-CurrentPlayers;
-	UE_LOG(LogTemp, Warning, TEXT("%d,%d"), CurrentPlayers, BotsSpawnCount);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Current Players -> %d, BotsSpawnCount -> %d"), CurrentPlayers, BotsSpawnCount);
+	
 	if (BGameState)
 	{
 		for (int i=0;i<BotsSpawnCount; i++) SpawnBot();
 	}
 
-	TArray<AActor*> BotEnemies;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDCharacter::StaticClass(), BotEnemies);
+	TArray<AActor*> ExtBot;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDCharacter::StaticClass(), ExtBot);
 	
-	for (AActor* Bot:BotEnemies)
+	for (AActor* Bot:ExtBot)
 	{
-		AController* BotController = Bot->GetInstigatorController();
-		ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
-		if (Bot->ActorHasTag("Bot"))
+		AAIController* BotController = Cast<AAIController>(Cast<APawn>(Bot)->GetController());
+		if (BotController)
 		{
-			int32 BotGold=BotState->GetGold();
-			FName WeaponName;
-			if (BotGold>=1000&&ShopOverlay)
+			ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
+			if (Bot->ActorHasTag("Bot"))//2nd Check for stable
 			{
-				FName RowName="Rifle";
-				FWeaponStruct* WeaponData=WeaponDataTable->FindRow<FWeaponStruct>(RowName, TEXT("BotBuyWeapon"));
-				if (WeaponData)
+				int32 BotGold=BotState->GetGold();
+				if (BotGold>=1000&&ShopOverlay)
 				{
-					ShopOverlay->OnShopButtonClicked(*WeaponData);
+					FName RowName="Rifle";
+					FWeaponStruct* WeaponData=WeaponDataTable->FindRow<FWeaponStruct>(RowName, TEXT("BotBuyWeapon"));
+					if (WeaponData)
+					{
+						ACDCharacter* BotCharacter = Cast<ACDCharacter>(BotController->GetCharacter());
+						if (!BotCharacter) return;
+						UCombatComponent* CombatComp = BotCharacter->GetCombatComponent();
+						if (!CombatComp) return;
+	
+						UWorld* World = GetWorld();
+						if (!World) return;
+						FActorSpawnParameters SpawnParams;
+						SpawnParams.Owner = BotCharacter;
+						SpawnParams.Instigator = BotCharacter;
+
+						AWeapon* SpawnedWeapon = World->SpawnActor<AWeapon>(
+							WeaponData->WeaponClass,
+							BotCharacter->GetActorLocation(),
+							FRotator::ZeroRotator,
+							SpawnParams
+						);
+
+						if (SpawnedWeapon)
+						{
+							CombatComp->GetWeapon(SpawnedWeapon, true);
+							BotState->SpendGold(WeaponData->Cost);
+						}
+					}
 				}
 			}
 		}
+		
 	}
+}
+
+void AISpawnWeapon(AAIController* BotController)
+{
+	
 }
 
 

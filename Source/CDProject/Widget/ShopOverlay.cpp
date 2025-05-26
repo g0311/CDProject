@@ -3,6 +3,7 @@
 
 #include "ShopOverlay.h"
 
+#include "AIController.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
@@ -71,6 +72,10 @@ void UShopOverlay::ServerGiveWeaponToPlayer_Implementation(const FWeaponStruct& 
 	if (!WeaponData.WeaponClass) return;
 	
 	PC = PC ? PC : Cast<ACDPlayerController>(GetOwningPlayer());
+	if (!PC)
+	{
+		AIPC=Cast<AAIController>(GetOwningPlayer());
+	}
 	if (!PC) return;
 	Character = Character ? Character : Cast<ACDCharacter>(PC->GetCharacter());
 	if (!Character) return;
