@@ -115,6 +115,7 @@ public:
 	FORCEINLINE float GetZoomInterpSpeed() const {return ZoomInterpSpeed;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const {return WeaponMesh;}
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh3p() const {return WeaponMesh3p;}
+	
 	FORCEINLINE int32 GetAmmo() const {return Ammo;}
 	FORCEINLINE int32 GetCarriedAmmo() const {return CarriedAmmo;}
 	FORCEINLINE int32 GetAmmoCapacity() const {return AmmoCapacity;}
@@ -122,6 +123,8 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType() const {return WeaponType;}
 	FORCEINLINE EWeaponState GetWeaponState() const {return WeaponState;}
 	void SetWeaponVisible(bool tf);
+
+	FVector GetWeaponMuzzle(); 
 protected:
 	virtual void BeginPlay() override;
 

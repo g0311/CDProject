@@ -747,10 +747,20 @@ void UCombatComponent::Fire(FVector fireDir)
 {
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-	
-	FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
+
+	FVector traceStart;
+	if (_playerCharacter && _playerCharacter->GetCamera())
+	{
+		traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
+	}
+	if (_playerCharacter->ActorHasTag("Bot"))
+	{
+		traceStart = _weapons[_weaponIndex]->GetWeaponMuzzle();
+		UE_LOG(LogTemp, Warning, TEXT("AICharacter Camera Open"));
+		fireDir=fireDir-traceStart;
+	}
 	FVector traceEnd = traceStart + fireDir * 10000.f;
-	//DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Blue, false, 0.5);
+	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Purple, false, 0.5);
 
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(GetOwner());
