@@ -25,6 +25,7 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UImage> Image_BackGround;
 
+	UPROPERTY()
 	TObjectPtr<class UPrivateSessionsWidget> parent;
 
 	UFUNCTION()
@@ -39,5 +40,7 @@ public:
 	const FString& GetGameSessionId();
 private:
 	FString GameSessionId;
+
+	bool bIsSelected = false;
 };
 

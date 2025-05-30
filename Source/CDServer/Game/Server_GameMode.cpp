@@ -3,6 +3,9 @@
 
 #include "Server_GameMode.h"
 
+#include "CDServer/UI/GameSessions/GameSessionsManager.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogCD_ServerLog);
@@ -11,11 +14,23 @@ AServer_GameMode::AServer_GameMode()
 {
 }
 
+APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal,
+    const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+    UE_LOG(LogCD_ServerLog, Warning, TEXT("LogIn"));
+    if (GetWorld()->GetTimerManager().IsTimerActive(ExitHandle))
+    {
+        UE_LOG(LogCD_ServerLog, Warning, TEXT("Clear Timeout Timer"));
+        GetWorld()->GetTimerManager().ClearTimer(ExitHandle);
+    }
+    return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+}
+
 void AServer_GameMode::BeginPlay()
 {
 	Super::BeginPlay();
-	
 #if WITH_GAMELIFT
+    GameSessionManager = NewObject<UGameSessionsManager>(this, GameSessionManagerClass);
 	InitGameLift();
 #endif
 }
@@ -77,7 +92,6 @@ void AServer_GameMode::SetServerParameters(FServerParameters& serverParameters)
         FString ProcessId = "ProcessId_" + TimeString;
         serverParameters.m_processId = TCHAR_TO_UTF8(*ProcessId);
     }
-    
     //The PID of the running process
     UE_LOG(LogCD_ServerLog, Log, TEXT("PID: %s"), *serverParameters.m_processId);
 }
@@ -126,37 +140,71 @@ void AServer_GameMode::InitGameLift()
     //Here is where a game server takes action based on the game session object.
     //When the game server is ready to receive incoming player connections, 
     //it invokes the server SDK call ActivateGameSession().
-    auto onGameSession = [=](Aws::GameLift::Server::Model::GameSession gameSession)
+    auto onGameSession = [=, this](Aws::GameLift::Server::Model::GameSession gameSession)
     {
-        FString gameSessionId = FString(gameSession.GetGameSessionId());
-        UE_LOG(LogCD_ServerLog, Log, TEXT("GameSession Initializing: %s"), *gameSessionId);
+        FString GameSessionId = FString(gameSession.GetGameSessionId());
+        UE_LOG(LogCD_ServerLog, Log, TEXT("GameSession Initializing: %s"), *GameSessionId);
 
         int PropertyCount;
         const Aws::GameLift::Server::Model::GameProperty* gameProperties = gameSession.GetGameProperties(PropertyCount);
-        FString mapName = TEXT("DefaultMap");
+
         for (int i = 0; i < PropertyCount; ++i)
         {
             const Aws::GameLift::Server::Model::GameProperty& property = gameProperties[i];
             FString key = FString(property.GetKey());
             FString value = FString(property.GetValue());
 
-            UE_LOG(LogCD_ServerLog, Log, TEXT("GameProperty: %s = %s"), *key, *value);
-
+            if (key.Equals(TEXT("isPrivate"), ESearchCase::IgnoreCase))
+            {
+                bIsPrivate = value;
+            }
             if (key.Equals(TEXT("gameMode"), ESearchCase::IgnoreCase))
             {
-                mapName = value;
+                RoomMode = value;
+            }
+            if (key.Equals(TEXT("mapName"), ESearchCase::IgnoreCase))
+            {
+                RoomName = value;
             }
         }
-
-        UE_LOG(LogCD_ServerLog, Log, TEXT("Changing map to: %s"), *mapName);
+        
         UWorld* World = GEngine->GetWorldContexts()[0].World();
         if (World)
         {
-            FString url = FString::Printf(TEXT("/Game/Maps/%s?listen"), *mapName);
-            UGameplayStatics::OpenLevel(World, FName(*url), true);
+            if (bIsPrivate.Equals(TEXT("false"), ESearchCase::IgnoreCase))
+            {
+                AsyncTask(ENamedThreads::GameThread, [World = World, Url = FString(TEXT("/Game/Maps/") + RoomMode + TEXT("/") + RoomName)]()
+                {
+                    if (World)
+                    {
+                        UE_LOG(LogTemp, Log, TEXT("Opening Level: %s"), *Url);
+                        UGameplayStatics::OpenLevel(World, FName(*Url), true);
+                    }
+                });
+                //On Game Map Loaded, Call Activate
+                //gameLiftSdkModule->ActivateGameSession();
+            }
+            else
+            {
+                AsyncTask(ENamedThreads::GameThread, [World, this]()
+                {
+                    if (World && IsValid(this))
+                    {
+                        World->GetTimerManager().SetTimer(this->ExitHandle, FTimerDelegate::CreateLambda([]()
+                        {
+                            UE_LOG(LogTemp, Warning, TEXT("Timer expired, shutting down server."));
+                            FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
+                            gameLiftSdkModule->ProcessEnding();
+                        }), 30.f, false);
+                    }
+                });
+                gameLiftSdkModule->ActivateGameSession();
+            }
         }
-
-        gameLiftSdkModule->ActivateGameSession();
+        else
+        {
+            UE_LOG(LogCD_ServerLog, Log, TEXT("World Is Null!!!"));
+        }
     };
     m_params.OnStartGameSession.BindLambda(onGameSession);
 

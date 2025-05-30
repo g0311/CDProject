@@ -27,18 +27,21 @@ public:
 	FAPIStatusMessage PrivateSessionCreateDelegate;
 	
 	UFUNCTION()
-	void JoinGameSession(const FString& GameMode);
+	void QuickJoinGameSession(const FString& GameMode, const FString& RoomMap);
 	void FindGameSessions();
 	void CreatePrivateGameSession(const FString& RoomName, const FString& RoomMode, const FString& RoomMap);
 	void JoinPrivateGameSession(const FString& GameSessionId);
-
+	void UpdateGameSession(const FString& GameSessionId, const FString& GameMap, const FString& GameMode, const FString& IsStarted);
+	void StartMatchMaking();
 private:
 	void FindOrCreateGameSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
+	void CreatePrivateGameSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	void CreatePlayerSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	void GetGameSessions_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
+	void UpdateGameSession_Response(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bSucceeded);
 	
 	FString GetUniquePlayerId();
-	void HandleGameSessionStatus(const FString& Status, const FString& SessionId, const FString& GameMode);
+	void HandleGameSessionStatus(const FString& Status, const FString& SessionId, const FString& GameMode, const FString& GameMap);
 	void TryCreatePlayerSession(const FString& PlayerId, const FString& GameSessionId);
 	
 	FTimerHandle CreatePlayerSessionTimer;

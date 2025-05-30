@@ -6,20 +6,18 @@
 #include "CDServer/UI/GameSessions/JoinGame/JoinGame.h"
 #include "CDServer/UI/GameSessions/GameSessionsManager.h"
 #include "CDServer/UI/GameSessions/PrivateSessions/PrivateSessionsWidget.h"
+#include "CDServer/Data/Map/MapData.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/SizeBox.h"
-#include "Components/TextBlock.h"
 
 void UGamePage::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (IsValid(GameSessionManagerClass))
-	{
-		GameSessionManager = NewObject<UGameSessionsManager>(this, GameSessionManagerClass);
-	}
+	check(IsValid(GameSessionManagerClass));
+	GameSessionManager = NewObject<UGameSessionsManager>(this, GameSessionManagerClass);
 	
 	JoinGameWidget->Button_JoinGame->OnClicked.AddDynamic(this, &UGamePage::JoinGameButtonClicked);
 	GameSessionManager->JoinGameSessionMessageDelegate.AddDynamic(JoinGameWidget, &UJoinGame::SetStatusMessage);
@@ -27,20 +25,21 @@ void UGamePage::NativeConstruct()
 	PrivateSessionsWidget->Button_Refresh->OnClicked.AddDynamic(this, &UGamePage::RefreshPrivateSessionsButtonClicked);
 	GameSessionManager->OnGetSessionsRequestSucceeded.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::UpdateSessions);
 	RefreshPrivateSessionsButtonClicked();
-
+	
 	PrivateSessionsWidget->Button_ShowCreatePannel->OnClicked.AddDynamic(this, &UGamePage::ShowCreatePannel);
 	PrivateSessionsWidget->Button_Quit->OnClicked.AddDynamic(this, &UGamePage::HideCreatePannel);
 	PrivateSessionsWidget->Button_Create->OnClicked.AddDynamic(this, &UGamePage::CreatePrivateSessionButtonClicked);
-	GameSessionManager->PrivateSessionDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetStatusMessage);
+	GameSessionManager->PrivateSessionCreateDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetStatusMessage);
 	
 	PrivateSessionsWidget->Button_Join->OnClicked.AddDynamic(this, &UGamePage::JoinPrivateSessionButtonClicked);
-	GameSessionManager->PrivateSessionCreateDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetCreateStatusMessage);
+	GameSessionManager->PrivateSessionDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetCreateStatusMessage);
 }
 
 void UGamePage::JoinGameButtonClicked()
 {
 	JoinGameWidget->Button_JoinGame->SetIsEnabled(false);
-	GameSessionManager->JoinGameSession(TEXT("Demolition"));
+	const FString mapName = MapData->GetRandomMapFromMode(TEXT("Demolition"));
+	GameSessionManager->QuickJoinGameSession(TEXT("Demolition"), mapName);
 }
 
 void UGamePage::RefreshPrivateSessionsButtonClicked()
@@ -52,7 +51,14 @@ void UGamePage::RefreshPrivateSessionsButtonClicked()
 void UGamePage::JoinPrivateSessionButtonClicked()
 {
 	PrivateSessionsWidget->Button_Join->SetIsEnabled(false);
+	UE_LOG(LogTemp, Display, TEXT("Joining private session"));
+	
+	if (!PrivateSessionsWidget->SelectedSessionLine)
+		return;
+	
 	FString GameSessionId = PrivateSessionsWidget->GetCurGameSessionId();
+	UE_LOG(LogTemp, Display, TEXT("Joining private session %s"), *GameSessionId);
+
 	GameSessionManager->JoinPrivateGameSession(GameSessionId);
 }
 
@@ -60,8 +66,8 @@ void UGamePage::CreatePrivateSessionButtonClicked()
 {
 	JoinGameWidget->Button_JoinGame->SetIsEnabled(false);
 	FString RoomName = PrivateSessionsWidget->TextBox_RoomName->GetText().ToString();
-	FString RoomMode = PrivateSessionsWidget->Dropdown_GameMode->GetSelectedOption();
-	FString RoomMap = TEXT("Default");
+	FString RoomMode = PrivateSessionsWidget->Dropdown_Mode->GetSelectedOption();
+	FString RoomMap = PrivateSessionsWidget->Dropdown_Map->GetSelectedOption();
 	GameSessionManager->CreatePrivateGameSession(RoomName, RoomMode, RoomMap);
 }
 
@@ -74,24 +80,7 @@ void UGamePage::HideCreatePannel()
 {
 	PrivateSessionsWidget->CreateSessionPage->SetVisibility(ESlateVisibility::Collapsed);
 	PrivateSessionsWidget->TextBox_RoomName->SetText(FText::GetEmpty());
-	PrivateSessionsWidget->Dropdown_GameMode->SetSelectedIndex(0);
+	PrivateSessionsWidget->Dropdown_Mode->SetSelectedIndex(0);
+	PrivateSessionsWidget->Dropdown_Map->SetSelectedIndex(0);
 	
-}
-
-void UPrivateSessionsWidget::SetStatusMessage(const FString& Message, bool bShouldResetWidgets)
-{
-	TextBlock_Status->SetText(FText::FromString(Message));
-	if (bShouldResetWidgets)
-	{
-		Button_Join->SetIsEnabled(true);
-	}
-}
-
-void UPrivateSessionsWidget::SetCreateStatusMessage(const FString& Message, bool bShouldResetWidgets)
-{
-	TextBlock_Create_Status->SetText(FText::FromString(Message));
-	if (bShouldResetWidgets)
-	{
-		Button_Create->SetIsEnabled(true);
-	}
 }

@@ -49,11 +49,11 @@ void APortalHUD::BeginPlay()
 			{
 				if (LocalPlayerSubsystem->GetAuthResult().AccessToken.IsEmpty())
 				{
-					OnSignIn();
+					OnSignOut();
 				}
 				else
 				{
-					OnSignOut();
+					OnSignIn();
 				}
 			}
 		}

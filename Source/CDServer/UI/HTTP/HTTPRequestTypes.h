@@ -39,6 +39,18 @@ struct FCDListFleetsResponse
 };
 
 USTRUCT()
+struct FCDGameProperty
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString Key;
+
+    UPROPERTY()
+    FString Value;
+};
+
+USTRUCT()
 struct FCDGameSession
 {
     GENERATED_BODY()
@@ -56,7 +68,7 @@ struct FCDGameSession
     UPROPERTY()
     FString FleetId{};
     UPROPERTY()
-    TMap<FString, FString> GameProperties{};
+    TArray<FCDGameProperty> GameProperties;
     UPROPERTY()
     FString GameSessionData{};
     UPROPERTY()

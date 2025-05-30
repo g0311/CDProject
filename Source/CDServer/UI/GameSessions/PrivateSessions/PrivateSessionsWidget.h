@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "PrivateSessionsWidget.generated.h"
 
+struct FCDDescribeGameSessionResult;
 /**
  * 
  */
@@ -34,7 +35,9 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UEditableTextBox> TextBox_RoomName;
 	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<class UComboBoxString> Dropdown_GameMode;
+	TObjectPtr<class UComboBoxString> Dropdown_Mode;
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UComboBoxString> Dropdown_Map;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UButton> Button_Create;
 	UPROPERTY(meta=(BindWidget))
@@ -50,10 +53,13 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UButton> Button_Join;
 	
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<class UMapData> MapData;
+	
 	UFUNCTION()
 	void UpdateSessions(const FCDDescribeGameSessionResult& DescribeGameSessionResult);
 
-	const FString& GetCurGameSessionId();
+	FString GetCurGameSessionId();
 	
 	UFUNCTION()
 	void SetStatusMessage(const FString& Message, bool bShouldResetWidgets);
@@ -68,4 +74,7 @@ private:
 	
 	UFUNCTION()
 	void EnableCreateButton(const FText& Text);
+
+	UFUNCTION()
+	void OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 };

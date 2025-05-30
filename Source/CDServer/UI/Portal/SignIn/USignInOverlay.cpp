@@ -125,5 +125,5 @@ void USignInOverlay::OnSignUpSucceeded()
 void USignInOverlay::OnConfirmSignUpSucceeded()
 {
 	ConfirmSignUpPage->ClearTextBoxes();
-	ShowConfirmSignUpPage();
+	ShowConfirmSuccessedPage();
 }

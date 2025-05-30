@@ -8,6 +8,7 @@ namespace ServerTags
 		UE_DEFINE_GAMEPLAY_TAG(FindOrCreateGameSession, "ServerTags.GameSessionAPI.FindOrCreateGameSession");
 		UE_DEFINE_GAMEPLAY_TAG(CreatePlayerSession, "ServerTags.GameSessionAPI.CreatePlayerSession");
 		UE_DEFINE_GAMEPLAY_TAG(FindGameSessions, "ServerTags.GameSessionAPI.FindGameSessions");
+		UE_DEFINE_GAMEPLAY_TAG(UpdateGameSession, "ServerTags.GameSessionAPI.UpdateGameSession");
 	}
 
 	namespace PortalAPI

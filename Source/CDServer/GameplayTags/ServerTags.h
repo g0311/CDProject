@@ -9,6 +9,7 @@ namespace ServerTags
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(FindOrCreateGameSession);
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(CreatePlayerSession);
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(FindGameSessions);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(UpdateGameSession);
 	}
 
 	namespace PortalAPI

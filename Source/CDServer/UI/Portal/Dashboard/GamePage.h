@@ -23,6 +23,8 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UPrivateSessionsWidget> PrivateSessionsWidget;
 	
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<class UMapData> MapData;
 protected:
 	virtual void NativeConstruct() override;
 	

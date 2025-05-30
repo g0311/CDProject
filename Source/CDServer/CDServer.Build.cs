@@ -18,7 +18,8 @@ public class CDServer : ModuleRules
 			"GameplayTags",
 			"HTTP",
 			"Json",
-			"JsonUtilities"
+			"JsonUtilities",
+			"NetCore"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

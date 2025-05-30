@@ -40,7 +40,7 @@ void FCDGameSession::Dump() const
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("StatusReason: %s"), *StatusReason);
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("PlayerSessionCreationPolicy: %s"), *PlayerSessionCreationPolicy);
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("CurrentPlayerSessionCount: %s"), *CurrentPlayerSessionCount);
-	UE_LOG(LogCD_DedicatedServer, Log, TEXT("MaximumPlayerSessionCount: %d"), MaximumPlayerSessionCount);
+	UE_LOG(LogCD_DedicatedServer, Log, TEXT("MaximumPlayerSessionCount: %s"), *MaximumPlayerSessionCount);
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("IpAddress: %s"), *IpAddress);
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("DnsName: %s"), *DnsName);
 	UE_LOG(LogCD_DedicatedServer, Log, TEXT("Port: %d"), Port);

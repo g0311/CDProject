@@ -33,7 +33,7 @@ void UConfirmSignUpPage::NativeConstruct()
 
 void UConfirmSignUpPage::UpdateConfirmButtonState(const FText& Text)
 {
-	const FRegexPattern SixDigitPattern(TEXT(R"(^\d{})"));
+	const FRegexPattern SixDigitPattern(TEXT(R"(^\d{6})"));
 	FRegexMatcher Matcher(SixDigitPattern, Text.ToString());
 	if (Matcher.FindNext())
 	{

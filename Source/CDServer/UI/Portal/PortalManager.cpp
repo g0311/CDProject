@@ -59,7 +59,7 @@ void UPortalManager::SignUp(const FString& Username, const FString& Password, co
 
 void UPortalManager::SignOut(const FString& AccessToken)
 {
-	SignInMessageDelegate.Broadcast(TEXT("Signing in..."), false);
+	SignInMessageDelegate.Broadcast(TEXT("Signing Out..."), false);
     	
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->OnProcessRequestComplete().BindUObject(this, &UPortalManager::SignOut_Response);

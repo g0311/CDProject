@@ -4,18 +4,32 @@
 #include "PrivateSessionsWidget.h"
 
 #include "PrivateSessionLine.h"
+#include "CDServer/Data/Map/MapData.h"
+#include "CDServer/Player/CDLobbyPlayerState.h"
+#include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "Components/Button.h"
+#include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 
+
+class UCDLocalPlayerSubsystem;
+class ACDLobbyPlayerState;
 
 void UPrivateSessionsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	TextBox_ForSearch->OnTextChanged.AddDynamic(this, &UPrivateSessionsWidget::FilterScrollBox);
 	TextBox_RoomName->OnTextChanged.AddDynamic(this, &UPrivateSessionsWidget::EnableCreateButton);
+	
+	for (auto Mode : MapData->GetModes())
+	{
+		Dropdown_Map->AddOption(Mode);
+	}
+	Dropdown_Mode->SetSelectedIndex(0);
+	OnDropdownSelectionChanged(FString(), ESelectInfo::Type());
 }
 
 void UPrivateSessionsWidget::UpdateSessions(const FCDDescribeGameSessionResult& DescribeGameSessionResult)
@@ -34,7 +48,13 @@ void UPrivateSessionsWidget::UpdateSessions(const FCDDescribeGameSessionResult& 
 		SessionLine->SetGameSessionId(Session.GameSessionId);
 		
 		SessionLine->TextBlock_RoomName->SetText(FText::FromString(Session.Name));
-		SessionLine->TextBlock_RoomMode->SetText(FText::FromString(Session.GameProperties["GameMode"]));
+		for (auto& property : Session.GameProperties)
+		{
+			if (property.Key == TEXT("Mode"))
+			{
+				SessionLine->TextBlock_RoomMode->SetText(FText::FromString(property.Value));
+			}
+		}
 		SessionLine->TextBlock_RoomCount->SetText(FText::FromString(Session.CurrentPlayerSessionCount + " / " + Session.MaximumPlayerSessionCount));
 
 		if (!Session.CurrentPlayerSessionCount.Equals(Session.MaximumPlayerSessionCount))
@@ -46,14 +66,34 @@ void UPrivateSessionsWidget::UpdateSessions(const FCDDescribeGameSessionResult& 
 	}
 }
 
-const FString& UPrivateSessionsWidget::GetCurGameSessionId()
+FString UPrivateSessionsWidget::GetCurGameSessionId()
 {
 	if (IsValid(SelectedSessionLine))
 	{
 		return SelectedSessionLine->GetGameSessionId();
 	}
 
-	return TEXT("");
+	return FString();
+}
+
+
+void UPrivateSessionsWidget::SetStatusMessage(const FString& Message, bool bShouldResetWidgets)
+{
+	TextBlock_Status->SetText(FText::FromString(Message));
+	if (bShouldResetWidgets)
+	{
+		Button_Join->SetIsEnabled(true);
+	}
+}
+
+void UPrivateSessionsWidget::SetCreateStatusMessage(const FString& Message, bool bShouldResetWidgets)
+{
+	TextBlock_Create_Status->SetText(FText::FromString(Message));
+	if (bShouldResetWidgets)
+	{
+		Button_Create->SetIsEnabled(true);
+		Button_Quit->SetIsEnabled(false);
+	}
 }
 
 void UPrivateSessionsWidget::FilterScrollBox(const FText& text)
@@ -88,4 +128,14 @@ void UPrivateSessionsWidget::EnableCreateButton(const FText& Text)
 	{
 		Button_Create->SetIsEnabled(true);
 	}
+}
+
+void UPrivateSessionsWidget::OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	Dropdown_Map->ClearOptions();
+	for (auto map : MapData->GetMapsFromMode(Dropdown_Mode->GetSelectedOption()))
+	{
+		Dropdown_Map->AddOption(map);
+	}
+	Dropdown_Map->SetSelectedIndex(0);
 }
