@@ -13,13 +13,18 @@ class CDPROJECT_API ACDAIController : public AAIController
 
 public:
 	ACDAIController();
-
+	
+	ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void OnPossess(APawn* InPawn) override;
 
-	UPROPERTY()
-	class UBehaviorTreeComponent* BehaviorTreeComponent;
+	// virtual FGenericTeamId GetGenericTeamId() const override;
+private:
+	UPROPERTY(EditDefaultsOnly, Category="AI")
+	uint8 TeamID=0;
+	
 
 	
 	

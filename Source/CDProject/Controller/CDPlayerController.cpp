@@ -48,6 +48,21 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 	CheckTimeSync(DeltaSeconds);
 }
 
+void ACDPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	if (APlayerState* LocalPS = GetPlayerState<APlayerState>())
+	{
+		if (ACDPlayerState* APS=Cast<ACDPlayerState>(LocalPS))
+		{
+			int32 TeamIdFromPS = APS->GetTeam()==ETeam::ET_RedTeam?1:2; 
+			SetGenericTeamId(FGenericTeamId(TeamIdFromPS));
+		}
+		else return;
+	}
+}
+
 void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

@@ -20,7 +20,8 @@ public class CDProject : ModuleRules
 			"MultiplayerSessions",
 			"Niagara",
 			"SlateCore",
-			"GameLiftServerSDK"
+			"GameLiftServerSDK",
+			"AIModule"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

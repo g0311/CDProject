@@ -3,19 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "GameFramework/PlayerController.h"
 #include "CDProject/Types/CurMatchState.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
-class CDPROJECT_API ACDPlayerController : public APlayerController
+class CDPROJECT_API ACDPlayerController : public APlayerController, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
 public:
 	ACDPlayerController();
 	virtual void Tick(float DeltaSeconds) override;
-
+	virtual void OnPossess(APawn* InPawn) override;
 	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	//HUD
 

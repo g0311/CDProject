@@ -229,11 +229,6 @@ void ADemolitionGameMode::BalancedBot()
 	}
 }
 
-void AISpawnWeapon(AAIController* BotController)
-{
-	
-}
-
 
 void ADemolitionGameMode::KickBot()
 {
