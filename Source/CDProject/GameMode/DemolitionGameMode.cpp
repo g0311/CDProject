@@ -39,24 +39,7 @@ void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 			}
 		}
 	}
-	//Server Call
-	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	// {
-	// 	ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-	// 	if (CDPC)
-	// 	{
-	// 		FTimerDelegate TimerDel;
-	// 		TimerDel.BindUObject(CDPC, &ACDPlayerController::SetKDOverlayUI); 
-	//
-	// 		FTimerHandle TimerHandle;
-	// 		GetWorld()->GetTimerManager().SetTimer(
-	// 			TimerHandle,
-	// 			TimerDel,
-	// 			0.1f,
-	// 			false
-	// 		);
-	// 	}
-	// }
+	
 	Super::PostLogin(NewPlayer);
 }
 
@@ -77,15 +60,32 @@ void ADemolitionGameMode::Logout(AController* Exiting)
 		}
 		InitializeTeamCount();
 	}
+}
+
+void ADemolitionGameMode::HandleSeamlessTravelPlayer(AController*& C)
+{
+	Super::HandleSeamlessTravelPlayer(C);
 	
-	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	// {
-	// 	ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-	// 	if (CDPC)
-	// 	{
-	// 		CDPC->SetKDOverlayUI(); 
-	// 	}
-	// }
+	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if (BGameState)
+	{
+		ACDPlayerState* BPState = C->GetPlayerState<ACDPlayerState>();
+		if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
+		{
+			if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
+			{
+				BGameState->ATeam.AddUnique(BPState);
+				BPState->SetMatchTeam(ETeam::ET_ATeam);
+				BPState->SetTeam(ETeam::ET_RedTeam);
+			}
+			else
+			{
+				BGameState->BTeam.AddUnique(BPState);
+				BPState->SetMatchTeam(ETeam::ET_BTeam);
+				BPState->SetTeam(ETeam::ET_BlueTeam);
+			}
+		}
+	}
 }
 
 void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)

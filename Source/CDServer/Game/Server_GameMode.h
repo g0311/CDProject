@@ -19,28 +19,31 @@ class CDSERVER_API AServer_GameMode : public AGameMode
 	GENERATED_BODY()
 public:
 	AServer_GameMode();
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
-
+	
+	virtual void Logout(AController* Exiting) override;
+	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
+	
+	void StartGame();
+	class UCDGameInstanceSubsystem* GetGameInstanceSubsystem();
 	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UGameSessionsManager> GameSessionManagerClass;
 protected:
 	virtual void BeginPlay() override;
-	void SetServerParameters(FServerParameters& serverParameters);
-	void ParseCommandLienPort(int32& outPort);
-	
-	FString RoomMode;
-	FString bIsPrivate;
-	FString RoomName;
-	FString GameSessionId;
 	
 	UPROPERTY()
 	TObjectPtr<class UGameSessionsManager> GameSessionManager;
 private:
-	FTimerHandle ExitHandle;
-	
-	// Process Parameters needs to remain in scope for the lifetime of the app
-	FProcessParameters m_params;
-    
 	void InitGameLift();
+	void SetServerParameters(FServerParameters& serverParameters);
+
+	void TryAcceptPlayerSession(const FString& PlayerSessionId, const FString& Username, FString& ErrorMessage);
+	
+	UPROPERTY()
+	TObjectPtr<class UCDGameInstanceSubsystem> CDGameInstanceSubsystem;
+	
+	void UpdatePlayersStatus();
+	FTimerHandle LobbyCheckTimerHandle;
 };

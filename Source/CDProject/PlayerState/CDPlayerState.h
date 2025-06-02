@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "CDProject/Types/Team.h"
-#include "GameFramework/PlayerState.h"
+#include "CDServer/Player/CDSessionPlayerState.h"
 #include "CDPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScoreUpdated);
@@ -10,7 +10,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdated, int32, NewGold);
 
 
 UCLASS()
-class CDPROJECT_API ACDPlayerState : public APlayerState
+class CDPROJECT_API ACDPlayerState : public ACDSessionPlayerState
 {
     GENERATED_BODY()
 

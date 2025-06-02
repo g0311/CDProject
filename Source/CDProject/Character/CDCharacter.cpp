@@ -92,6 +92,12 @@ void ACDCharacter::BeginPlay()
 			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
+	
+	if (GetPlayerState() && Cast<ACDPlayerState>(GetPlayerState()))
+	{
+		SetTeam(Cast<ACDPlayerState>(GetPlayerState())->GetTeam());
+	}
+	
 	if (HasAuthority())
 		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
 }
@@ -274,6 +280,11 @@ void ACDCharacter::Reset()
 		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
 		Multicast_Reset(false);
 	}
+
+	if (GetPlayerState() && Cast<ACDPlayerState>(GetPlayerState()))
+	{
+		SetTeam(Cast<ACDPlayerState>(GetPlayerState())->GetTeam());
+	}
 }
 
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
@@ -298,10 +309,14 @@ void ACDCharacter::SetTeam(ETeam team)
 {
 	UE_LOG(LogGameMode, Log, TEXT("Char Set Team Called"));
 	_team = team;
-	if (!GetMesh())
+	if (!GetMesh() || GetNetMode() == NM_DedicatedServer)
 		return;
+	
 	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
 	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_BLUE.M_UE4Man_Body_BLUE"));
+	if (!RedMaterial || !BlueMaterial)
+		return;
+	
 	switch (_team)
 	{
 	case ETeam::ET_RedTeam:

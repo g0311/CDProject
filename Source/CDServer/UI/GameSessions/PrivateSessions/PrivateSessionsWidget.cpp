@@ -5,7 +5,7 @@
 
 #include "PrivateSessionLine.h"
 #include "CDServer/Data/Map/MapData.h"
-#include "CDServer/Player/CDLobbyPlayerState.h"
+#include "CDServer/Player/CDSessionPlayerState.h"
 #include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "Components/Button.h"
@@ -16,7 +16,7 @@
 
 
 class UCDLocalPlayerSubsystem;
-class ACDLobbyPlayerState;
+class ACDSessionPlayerState;
 
 void UPrivateSessionsWidget::NativeConstruct()
 {

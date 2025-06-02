@@ -27,7 +27,7 @@ namespace MatchState
 ARoundGameMode::ARoundGameMode()
 {
 	DefaultPawnClass = ACDCharacter::StaticClass();
-	bDelayedStart=true;
+	//bDelayedStart=true;
 }
 
 void ARoundGameMode::Tick(float DeltaSeconds)
@@ -67,8 +67,7 @@ void ARoundGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	//LevelStartingTime=GetWorld()->GetTimeSeconds();
-
-	StartMatch();
+	//StartMatch();
 }
 
 void ARoundGameMode::OnCurMatchStateSet()

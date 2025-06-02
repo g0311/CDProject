@@ -3,36 +3,162 @@
 
 #include "Server_GameMode.h"
 
+#include "CDGameInstanceSubsystem.h"
+#include "CDServer/Player/CDSessionPlayerState.h"
 #include "CDServer/UI/GameSessions/GameSessionsManager.h"
+#include "GameFramework/GameState.h"
+#include "GameFramework/HUD.h"
 #include "GameFramework/PlayerController.h"
-#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogCD_ServerLog);
 
 AServer_GameMode::AServer_GameMode()
 {
+    bUseSeamlessTravel = true;
+}
+
+void AServer_GameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId,
+                                FString& ErrorMessage)
+{
+    Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+    
+    const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
+    const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
+    
+    TryAcceptPlayerSession(PlayerSessionId, Username, ErrorMessage);
 }
 
 APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal,
-    const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+                                           const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
-    UE_LOG(LogCD_ServerLog, Warning, TEXT("LogIn"));
-    if (GetWorld()->GetTimerManager().IsTimerActive(ExitHandle))
+    if (UGameInstance* GameInstance = GetGameInstance(); IsValid(GameInstance))
     {
-        UE_LOG(LogCD_ServerLog, Warning, TEXT("Clear Timeout Timer"));
-        GetWorld()->GetTimerManager().ClearTimer(ExitHandle);
+        if (CDGameInstanceSubsystem = GameInstance->GetSubsystem<UCDGameInstanceSubsystem>(); IsValid(CDGameInstanceSubsystem))
+        {
+            UE_LOG(LogCD_ServerLog, Warning, TEXT("LogIn"));
+            if (GetWorld()->GetTimerManager().IsTimerActive(CDGameInstanceSubsystem->ExitHandle))
+            {
+                UE_LOG(LogCD_ServerLog, Warning, TEXT("Clear Timeout Timer"));
+                GetWorld()->GetTimerManager().ClearTimer(CDGameInstanceSubsystem->ExitHandle);
+            }
+        }
     }
+
+    const FString NetIdStr = UniqueId.IsValid() ? UniqueId->ToString() : TEXT("Unknown");
+    const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
+    const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
+
+    //save player info
+    UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstanceSubsystem();
+    if (IsValid(GameInstanceSubsystem))
+    {
+        GameInstanceSubsystem->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr));
+    }
+    
     return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+}
+
+void AServer_GameMode::Logout(AController* Exiting)
+{
+    Super::Logout(Exiting);
+
+    if (GetNumPlayers() == 0)
+    {
+        UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Empty"));
+        FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
+        gameLiftSdkModule->ProcessEnding();
+    }
+}
+
+void AServer_GameMode::HandleSeamlessTravelPlayer(AController*& C)
+{
+    Super::HandleSeamlessTravelPlayer(C);
+    
+    APlayerController* PC = Cast<APlayerController>(C);
+    if (PC)
+    {
+        PC->ClientSetHUD(HUDClass);
+        
+        if (PC->GetPawn())
+        {
+            PC->GetPawn()->Destroy();
+        }
+        RestartPlayer(PC);
+    }
+}
+void AServer_GameMode::StartGame()
+{
+    if (IsValid(GameSessionManager))
+    {
+        UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstanceSubsystem();
+        if (IsValid(GameInstanceSubsystem))
+        {
+            GameSessionManager->UpdateGameSession(GameInstanceSubsystem->GetGameSessionId(), GameInstanceSubsystem->GetRoomMap(), GameInstanceSubsystem->GetRoomMode(), TEXT("true"));	
+            UWorld* World = GEngine->GetWorldContexts()[0].World();
+            if (World)
+            {
+                FString url = TEXT("/Game/Maps/") + GameInstanceSubsystem->GetRoomMode() + TEXT("/") + GameInstanceSubsystem->GetRoomMap();
+                UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
+                GetWorld()->ServerTravel(url, false);
+                GetWorld()->SeamlessTravel(url);
+                
+            }
+        }
+    }
+}
+
+UCDGameInstanceSubsystem* AServer_GameMode::GetGameInstanceSubsystem()
+{
+    if (UGameInstance* GameInstance = GetGameInstance(); IsValid(GameInstance))
+    {
+        if (CDGameInstanceSubsystem = GameInstance->GetSubsystem<UCDGameInstanceSubsystem>(); IsValid(CDGameInstanceSubsystem))
+        {
+            return CDGameInstanceSubsystem;
+        }
+    }
+    return nullptr;
 }
 
 void AServer_GameMode::BeginPlay()
 {
-	Super::BeginPlay();
-#if WITH_GAMELIFT
-    GameSessionManager = NewObject<UGameSessionsManager>(this, GameSessionManagerClass);
-	InitGameLift();
-#endif
+    InitGameLift();
+    UE_LOG(LogCD_ServerLog, Warning, TEXT("Server Lobby GameMode On"));
+
+    if (GameSessionManagerClass)
+    {
+        GameSessionManager = NewObject<UGameSessionsManager>(this, GameSessionManagerClass);
+    }
+    else
+    {
+        UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Manager is null"));
+    }
+    
+    if (HasAuthority())
+    {
+        GetWorldTimerManager().SetTimer(
+       LobbyCheckTimerHandle,
+       this,
+       &AServer_GameMode::UpdatePlayersStatus,
+       0.5f,
+       true
+        );
+    }
+	
+    Super::BeginPlay();
+}
+
+void AServer_GameMode::InitGameLift()
+{
+    if (UGameInstance* GameInstance = GetGameInstance(); IsValid(GameInstance))
+    {
+        if (CDGameInstanceSubsystem = GameInstance->GetSubsystem<UCDGameInstanceSubsystem>(); IsValid(CDGameInstanceSubsystem))
+        {
+            FServerParameters ServerParameters;
+            SetServerParameters(ServerParameters);
+            CDGameInstanceSubsystem->InitGameLift(ServerParameters);
+        }
+    }
 }
 
 void AServer_GameMode::SetServerParameters(FServerParameters& serverParameters)
@@ -96,157 +222,68 @@ void AServer_GameMode::SetServerParameters(FServerParameters& serverParameters)
     UE_LOG(LogCD_ServerLog, Log, TEXT("PID: %s"), *serverParameters.m_processId);
 }
 
-void AServer_GameMode::ParseCommandLienPort(int32& outPort)
+void AServer_GameMode::TryAcceptPlayerSession(const FString& PlayerSessionId, const FString& Username,
+    FString& ErrorMessage)
 {
-    // TArray<FString> commandLineTokens;
-    // TArray<FString> commandLineSwitches;
-    // FCommandLine::Parse(FCommandLine::Get(), commandLineTokens, commandLineSwitches);
-    // for (const FString& switchString : commandLineSwitches)
-    // {
-    //     FString key;
-    //     FString value;
-    //     if (switchString.Split("=", &key, &value))
-    //     {
-    //         if (key.Equals(TEXT("port"), ESearchCase::IgnoreCase))
-    //         {
-    //             outPort = FCString::Atoi(*value);
-    //             return;
-    //         }
-    //     }
-    // }
-    FParse::Value(FCommandLine::Get(), TEXT("-port="), outPort);
-    //그냥 이거랑 똑같음
+    if (PlayerSessionId.IsEmpty() || Username.IsEmpty())
+    {
+        ErrorMessage = TEXT("PlayerSessionId and/or Username invalid");
+        return;
+    }
+
+    //Server Check
+#if WITH_GAMELIFT
+    Aws::GameLift::Server::Model::DescribePlayerSessionsRequest DescribePlayerSessionsRequest;
+    DescribePlayerSessionsRequest.SetPlayerSessionId(TCHAR_TO_ANSI(*PlayerSessionId));
+    const auto& DescribePlayerSessionsOutcome = Aws::GameLift::Server::DescribePlayerSessions(DescribePlayerSessionsRequest);
+    if(!DescribePlayerSessionsOutcome.IsSuccess())
+    {
+        ErrorMessage = TEXT("DescribePlayerSession failed");
+        return;
+    }
+
+    const auto& DescribePlayerSessionsResult = DescribePlayerSessionsOutcome.GetResult();
+    int32 Count = 0;
+    const Aws::GameLift::Server::Model::PlayerSession* PlayerSessions = DescribePlayerSessionsResult.GetPlayerSessions(Count);
+    if (PlayerSessions == nullptr || Count == 0)
+    {
+        ErrorMessage = TEXT("GetPlayerSessions failed");
+        return;
+    }
+    for (int32 i = 0; i < Count; i++)
+    {
+        if(!Username.Equals(PlayerSessions[i].GetPlayerId())) continue;
+        if (PlayerSessions[i].GetStatus() != Aws::GameLift::Server::Model::PlayerSessionStatus::RESERVED)
+        {
+            ErrorMessage = TEXT("PlayerSessions have already been reserved");
+            return;
+        }
+        const auto& AcceptPlayerSessionOutcome = Aws::GameLift::Server::AcceptPlayerSession(TCHAR_TO_ANSI(*PlayerSessionId));
+        ErrorMessage = AcceptPlayerSessionOutcome.IsSuccess() ? "" : FString::Printf(TEXT("Failed to accept player session"));
+    }
+#endif
 }
 
-void AServer_GameMode::InitGameLift()
+void AServer_GameMode::UpdatePlayersStatus()
 {
-    UE_LOG(LogCD_ServerLog, Log, TEXT("Initializing the GameLift Server"));
-
-    //Getting the module first.
-    FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-
-    //Define the server parameters for an Amazon GameLift Servers Anywhere fleet. These are not needed for an Amazon GameLift Servers managed EC2 fleet.
-    FServerParameters serverParameters;
-    SetServerParameters(serverParameters);
-
-    //InitSDK establishes a local connection with the Amazon GameLift Servers Agent to enable further communication.
-    //Use InitSDK(serverParameters) for an Amazon GameLift Servers Anywhere fleet. 
-    //Use InitSDK() for Amazon GameLift Servers managed EC2 fleet.
-    gameLiftSdkModule->InitSDK(serverParameters);
-
-    //Implement callback function onStartGameSession
-    //Amazon GameLift Servers sends a game session activation request to the game server
-    //and passes a game session object with game properties and other settings.
-    //Here is where a game server takes action based on the game session object.
-    //When the game server is ready to receive incoming player connections, 
-    //it invokes the server SDK call ActivateGameSession().
-    auto onGameSession = [=, this](Aws::GameLift::Server::Model::GameSession gameSession)
+    if (IsValid(GetGameState<AGameState>()) && IsValid(GetGameInstanceSubsystem()))
     {
-        FString GameSessionId = FString(gameSession.GetGameSessionId());
-        UE_LOG(LogCD_ServerLog, Log, TEXT("GameSession Initializing: %s"), *GameSessionId);
-
-        int PropertyCount;
-        const Aws::GameLift::Server::Model::GameProperty* gameProperties = gameSession.GetGameProperties(PropertyCount);
-
-        for (int i = 0; i < PropertyCount; ++i)
+        for (auto PS :  GetGameState<AGameState>()->PlayerArray)
         {
-            const Aws::GameLift::Server::Model::GameProperty& property = gameProperties[i];
-            FString key = FString(property.GetKey());
-            FString value = FString(property.GetValue());
-
-            if (key.Equals(TEXT("isPrivate"), ESearchCase::IgnoreCase))
+            if (!PS) continue;
+            FString NetIdStr = PS->GetUniqueId().IsValid() ? PS->GetUniqueId()->ToString() : TEXT("Unknown");
+            int32 Ping = FMath::RoundToInt(PS->ExactPing);
+            FPlayerSessionInfoArray& InfoArray = GetGameInstanceSubsystem()->GetPlayerInfos();
+            for (auto& Info : InfoArray.Items)
             {
-                bIsPrivate = value;
+                InfoArray.UpdatePing(NetIdStr, Ping);
             }
-            if (key.Equals(TEXT("gameMode"), ESearchCase::IgnoreCase))
+            
+            ACDSessionPlayerState* SessionPlayerState = Cast<ACDSessionPlayerState>(PS);
+            if (IsValid(SessionPlayerState))
             {
-                RoomMode = value;
-            }
-            if (key.Equals(TEXT("mapName"), ESearchCase::IgnoreCase))
-            {
-                RoomName = value;
+                SessionPlayerState->Client_ReceivePlayerInfos(InfoArray);
             }
         }
-        
-        UWorld* World = GEngine->GetWorldContexts()[0].World();
-        if (World)
-        {
-            if (bIsPrivate.Equals(TEXT("false"), ESearchCase::IgnoreCase))
-            {
-                AsyncTask(ENamedThreads::GameThread, [World = World, Url = FString(TEXT("/Game/Maps/") + RoomMode + TEXT("/") + RoomName)]()
-                {
-                    if (World)
-                    {
-                        UE_LOG(LogTemp, Log, TEXT("Opening Level: %s"), *Url);
-                        UGameplayStatics::OpenLevel(World, FName(*Url), true);
-                    }
-                });
-                //On Game Map Loaded, Call Activate
-                //gameLiftSdkModule->ActivateGameSession();
-            }
-            else
-            {
-                AsyncTask(ENamedThreads::GameThread, [World, this]()
-                {
-                    if (World && IsValid(this))
-                    {
-                        World->GetTimerManager().SetTimer(this->ExitHandle, FTimerDelegate::CreateLambda([]()
-                        {
-                            UE_LOG(LogTemp, Warning, TEXT("Timer expired, shutting down server."));
-                            FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-                            gameLiftSdkModule->ProcessEnding();
-                        }), 30.f, false);
-                    }
-                });
-                gameLiftSdkModule->ActivateGameSession();
-            }
-        }
-        else
-        {
-            UE_LOG(LogCD_ServerLog, Log, TEXT("World Is Null!!!"));
-        }
-    };
-    m_params.OnStartGameSession.BindLambda(onGameSession);
-
-    //Implement callback function OnProcessTerminate
-    //Amazon GameLift Servers invokes this callback before shutting down the instance hosting this game server.
-    //It gives the game server a chance to save its state, communicate with services, etc., 
-    //and initiate shut down. When the game server is ready to shut down, it invokes the 
-    //server SDK call ProcessEnding() to tell Amazon GameLift Servers it is shutting down.
-    auto onProcessTerminate = [=]()
-    {
-        UE_LOG(LogCD_ServerLog, Log, TEXT("Game Server Process is terminating"));
-        gameLiftSdkModule->ProcessEnding();
-    };
-    m_params.OnTerminate.BindLambda(onProcessTerminate);
-
-    //Implement callback function OnHealthCheck
-    //Amazon GameLift Servers invokes this callback approximately every 60 seconds.
-    //A game server might want to check the health of dependencies, etc.
-    //Then it returns health status true if healthy, false otherwise.
-    //The game server must respond within 60 seconds, or Amazon GameLift Servers records 'false'.
-    //In this example, the game server always reports healthy.
-    auto onHealthCheck = []()
-    {
-        UE_LOG(LogCD_ServerLog, Log, TEXT("Performing Health Check"));
-        return true;
-    };
-    m_params.OnHealthCheck.BindLambda(onHealthCheck);
-
-    //The game server gets ready to report that it is ready to host game sessions
-    //and that it will listen on port 7777 for incoming player connections.
-    int32 port = FURL::UrlConfig.DefaultPort;
-    ParseCommandLienPort(port);
-    m_params.port = port;
-
-    //Here, the game server tells Amazon GameLift Servers where to find game session log files.
-    //At the end of a game session, Amazon GameLift Servers uploads everything in the specified 
-    //location and stores it in the cloud for access later.
-    TArray<FString> logfiles;
-    logfiles.Add(TEXT("CDProject/Saved/Logs/CDProject.log"));
-    m_params.logParameters = logfiles;
-
-    //The game server calls ProcessReady() to tell Amazon GameLift Servers it's ready to host game sessions.
-    UE_LOG(LogCD_ServerLog, Log, TEXT("Calling Process Ready"));
-    gameLiftSdkModule->ProcessReady(m_params);
+    }
 }

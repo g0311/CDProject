@@ -3,14 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CDServer/Data/Player/FPlayerSessionInfo.h"
 #include "GameFramework/PlayerState.h"
-#include "CDLobbyPlayerState.generated.h"
+#include "CDSessionPlayerState.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class CDSERVER_API ACDLobbyPlayerState : public APlayerState
+class CDSERVER_API ACDSessionPlayerState : public APlayerState
 {
 	GENERATED_BODY()
 public:
@@ -20,6 +21,9 @@ public:
 	UFUNCTION(Server,Reliable)
 	void Server_UpdateSession(const FString& playerSessionId, const FString& RoomMode, const FString& RoomMap);
 	
-	FString PlayerSessionId;
-	//Only Using In Server
+	UFUNCTION(Server,Reliable)
+	void Server_LeaveSession(const FString& playerSessionId);
+
+	UFUNCTION(Client,Reliable)
+	void Client_ReceivePlayerInfos(const FPlayerSessionInfoArray& InInfos);
 };

@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include "Net/Serialization/FastArraySerializer.h"
-#include "FPlayerLobbyInfo.generated.h"
+#include "FPlayerSessionInfo.generated.h"
 
 USTRUCT()
-struct FPlayerLobbyInfo : public FFastArraySerializerItem 
+struct FPlayerSessionInfo : public FFastArraySerializerItem 
 {
 	GENERATED_BODY()
 
@@ -20,42 +20,42 @@ struct FPlayerLobbyInfo : public FFastArraySerializerItem
 	int32 Ping;
 	
 	UPROPERTY()
-	FString NetIDStr;
+	FString NetIdStr;
 	
-	bool operator==(const FPlayerLobbyInfo& Other) const
+	bool operator==(const FPlayerSessionInfo& Other) const
 	{
 		return PlayerSessionId == Other.PlayerSessionId;
 	}
 
-	FPlayerLobbyInfo(const FString& InSessionId, const FString& InUsername, bool bInReady, int32 InPing, const FString& InNetIdStr)
-	: PlayerSessionId(InSessionId), Username(InUsername), ReadyState(bInReady), Ping(InPing), NetIDStr(InNetIdStr)
+	FPlayerSessionInfo(const FString& InSessionId, const FString& InUsername, bool bInReady, int32 InPing, const FString& InNetIdStr)
+	: PlayerSessionId(InSessionId), Username(InUsername), ReadyState(bInReady), Ping(InPing), NetIdStr(InNetIdStr)
 	{}
-	FPlayerLobbyInfo()
+	FPlayerSessionInfo()
 	: ReadyState(false), Ping(-1)
 	{}
 };
 
 
 USTRUCT()
-struct FPlayerLobbyInfoArray : public FFastArraySerializer
+struct FPlayerSessionInfoArray : public FFastArraySerializer
 {
 	GENERATED_BODY()
 
 	UPROPERTY()
-	TArray<FPlayerLobbyInfo> Items;
+	TArray<FPlayerSessionInfo> Items;
 
 	bool NetDeltaSerialize(FNetDeltaSerializeInfo& DeltaParms)
 	{
-		return FastArrayDeltaSerialize<FPlayerLobbyInfo, FPlayerLobbyInfoArray>(Items, DeltaParms, *this);
+		return FastArrayDeltaSerialize<FPlayerSessionInfo, FPlayerSessionInfoArray>(Items, DeltaParms, *this);
 	}
 	
-	void AddPlayer(const FPlayerLobbyInfo& Info)
+	void AddPlayer(const FPlayerSessionInfo& Info)
 	{
 		int32 Index = Items.Add(Info);
 		MarkItemDirty(Items[Index]);
 	}
 
-	void RemovePlayer(const FPlayerLobbyInfo& Info)
+	void RemovePlayer(const FPlayerSessionInfo& Info)
 	{
 		int32 Index = Items.Find(Info);
 		if (Index != INDEX_NONE)
@@ -80,6 +80,20 @@ struct FPlayerLobbyInfoArray : public FFastArraySerializer
 					playerInfo.ReadyState = !playerInfo.ReadyState;
 				}
 				MarkItemDirty(playerInfo);
+				return;
+			}
+		}
+	}
+
+	void UpdatePing(const FString& NetIdStr, int32 Ping)
+	{
+		for (auto& playerInfo : Items)
+		{
+			if (NetIdStr == playerInfo.NetIdStr)
+			{
+				playerInfo.Ping = Ping;
+				MarkItemDirty(playerInfo);
+				return;
 			}
 		}
 	}

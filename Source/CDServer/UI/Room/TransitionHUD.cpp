@@ -3,8 +3,10 @@
 
 #include "TransitionHUD.h"
 #include "RoomPage.h"
-#include "CDServer/Game/CDLobbyServerGameState.h"
-#include "CDServer/Game/FPlayerLobbyInfo.h"
+#include "CDServer/Game/CDGameInstanceSubsystem.h"
+#include "CDServer/Player/CDSessionPlayerState.h"
+
+class ACDSessionPlayerState;
 
 void ATransitionHUD::BeginPlay()
 {
@@ -33,9 +35,13 @@ void ATransitionHUD::BeginPlay()
 
 void ATransitionHUD::UpdateRoomPage()
 {
-	ACDLobbyServerGameState* GameState = GetWorld()->GetGameState<ACDLobbyServerGameState>();
-	if (!GameState) return;
-
-	const TArray<FPlayerLobbyInfo>& Infos = GameState->GetPlayerInfos();
-	RoomPage->UpdatePlayerList(Infos, GameState->GetRoomMode(), GameState->GetRoomMap());
+	if (IsValid(GetGameInstance()))
+	{
+		UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstance()->GetSubsystem<UCDGameInstanceSubsystem>();
+		if (IsValid(GameInstanceSubsystem))
+		{
+			FPlayerSessionInfoArray& Infos = GameInstanceSubsystem->GetPlayerInfos();
+			RoomPage->UpdatePlayerList(Infos.Items, GameInstanceSubsystem->GetRoomMode(), GameInstanceSubsystem->GetRoomMap());
+		}
+	}
 }
