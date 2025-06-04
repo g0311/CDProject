@@ -1,7 +1,8 @@
 #include "CDPlayerState.h"
+
+#include "CookOnTheFly.h"
 #include "Net/UnrealNetwork.h"
 #include "CDProject/Character/CDCharacter.h"
-#include "CDProject/Controller/CDPlayerController.h"
 
 ACDPlayerState::ACDPlayerState()
 {
@@ -13,6 +14,16 @@ void ACDPlayerState::BeginPlay()
 	Super::BeginPlay();
 	if (Team != ETeam::ET_NoTeam)
 		SetTeam(Team);
+}
+
+FCDMatchStats ACDPlayerState::GetRecordInput()
+{
+	FCDMatchStats MatchStats;
+	MatchStats.Kill = Kills;
+	MatchStats.Death = Deaths;
+	MatchStats.shot = TotalShot;
+	MatchStats.Headshot = HeadShot;
+	return MatchStats;
 }
 
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -91,14 +102,6 @@ void ACDPlayerState::OnRep_Team()
 	if (Character)
 	{
 		Character->SetTeam(Team);
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateLambda([this]()
-		{
-			if (IsValid(this))
-				OnRep_Team();
-		}));
 	}
 }
 

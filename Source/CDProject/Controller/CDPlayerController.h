@@ -6,10 +6,11 @@
 #include "GenericTeamAgentInterface.h"
 #include "GameFramework/PlayerController.h"
 #include "CDProject/Types/CurMatchState.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
-class CDPROJECT_API ACDPlayerController : public APlayerController, public IGenericTeamAgentInterface
+class CDPROJECT_API ACDPlayerController : public ACDSessionPlayerController, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 

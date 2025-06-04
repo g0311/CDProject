@@ -1,0 +1,28 @@
+﻿#include "CoreMinimal.h"
+#include "NativeGameplayTags.h"
+
+namespace ServerTags
+{
+	namespace GameSessionAPI
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(ListFleets);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(FindOrCreateGameSession);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(CreatePlayerSession);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(FindGameSessions);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(UpdateGameSession);
+	}
+
+	namespace PortalAPI
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(SignIn);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(SignUp);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(ConfirmSignUp);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(SignOut);
+	}
+	
+	namespace GameStatsAPI
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(RecordMatchStats);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(RetrieveMatchStats);
+	}
+}

@@ -43,6 +43,10 @@ ACDPlayerController::ACDPlayerController()
 void ACDPlayerController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	if (MatchState == ECurMatchState::EMS_None)
+		return;
+	
 	SetHUDTime();
 	//InitializeHUD();
 	CheckTimeSync(DeltaSeconds);
@@ -73,6 +77,7 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME(ACDPlayerController, WaitingStartTime);
 	DOREPLIFETIME(ACDPlayerController, MatchStartTime);
 	DOREPLIFETIME(ACDPlayerController, CooldownStartTime);
+	DOREPLIFETIME(ACDPlayerController, HUDCharID);
 }
 
 void ACDPlayerController::ServerCheckMatchState_Implementation()
@@ -669,6 +674,10 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 
 		OwnedCharacter = acdCharacter;
 	}
+
+	FInputModeGameOnly InputModeData;
+	SetInputMode(InputModeData);
+	SetShowMouseCursor(false);
 }
 
 void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch, float time)

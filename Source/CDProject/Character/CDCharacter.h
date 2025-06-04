@@ -50,12 +50,12 @@ private:
 
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Dead(class AController* instigatorController);
+	void Multicast_Dead(class AController* instigatorController, bool bIsHeadShot);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Hit();
+	void Multicast_Hit(class AController* instigatorController, bool bIsHeadShot);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Reset(bool isAlive);
-	void HandleDamage(float FinalDamage, class AController* instigatorController);
+	void HandleDamage(float FinalDamage, class AController* instigatorController, bool bIsHeadShot);
 	void UpdateArmMeshLocation(float DeltaTime);
 
 public:

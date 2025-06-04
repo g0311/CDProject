@@ -22,6 +22,7 @@ public:
 	ADemolitionGameMode();
 	void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	void SetMatchTime(float c4ExplodeTime);
 	void RoundWin(bool isRed);
 	void SetSecondHalf();

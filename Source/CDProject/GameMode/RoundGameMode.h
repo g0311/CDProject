@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameMode.h"
 #include "CDProject/Types/CurMatchState.h"
+#include "CDServer/Game/Server_GameMode.h"
 #include "RoundGameMode.generated.h"
 
 namespace MatchState
@@ -15,7 +15,7 @@ namespace MatchState
 }
 
 UCLASS()
-class CDPROJECT_API ARoundGameMode : public AGameMode
+class CDPROJECT_API ARoundGameMode : public AServer_GameMode
 {
 	GENERATED_BODY()
 public:

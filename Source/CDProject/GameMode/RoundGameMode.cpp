@@ -12,7 +12,9 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "CDProject/GameState/CDGameState.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "CDServer/Game/CDSessionGameState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Runtime/Core/Tests/Containers/TestUtils.h"
@@ -27,7 +29,7 @@ namespace MatchState
 ARoundGameMode::ARoundGameMode()
 {
 	DefaultPawnClass = ACDCharacter::StaticClass();
-	bDelayedStart=true;
+	//bDelayedStart=true;
 }
 
 void ARoundGameMode::Tick(float DeltaSeconds)
@@ -67,8 +69,7 @@ void ARoundGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	//LevelStartingTime=GetWorld()->GetTimeSeconds();
-
-	StartMatch();
+	//StartMatch();
 }
 
 void ARoundGameMode::OnCurMatchStateSet()
@@ -264,6 +265,22 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 	else if (_curMatchState == ECurMatchState::EMS_GameEnd)
 	{
 		//Shut Down Server After 30 sec
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this]()
+		{
+			if (IsValid(this))
+			{
+				if (ACDGameState* CDGameState = GetGameState<ACDGameState>(); IsValid(CDGameState))
+				{
+					if (CDGameState->TeamAScore > CDGameState->TeamBScore)
+						EndGame(WinState::ATEAMWIN);
+					else if (CDGameState->TeamAScore == CDGameState->TeamBScore)
+						EndGame(WinState::DRAW);
+					else
+						EndGame(WinState::ATEAMLOSE);		
+				}
+			}
+		}), 5.f, false);
 	}
 	OnCurMatchStateSet();
 }
