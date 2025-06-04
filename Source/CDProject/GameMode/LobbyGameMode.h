@@ -16,6 +16,6 @@ class CDPROJECT_API ALobbyGameMode : public AGameMode
 public:
 	ALobbyGameMode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-
+	
 	void StartGame();
 };

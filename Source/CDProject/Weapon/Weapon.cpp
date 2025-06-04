@@ -84,6 +84,22 @@ void AWeapon::SpendCarriedAmmo(int32 ReloadAmount)
 	CarriedAmmo = FMath::Max(CarriedAmmo - ReloadAmount, 0);
 }
 
+FVector AWeapon::GetWeaponMuzzle()
+{
+	FVector muzzleLocation = FVector::ZeroVector;
+
+	if (WeaponMesh && WeaponMesh->DoesSocketExist("MuzzleFlash"))
+	{
+		muzzleLocation = WeaponMesh->GetSocketLocation("MuzzleFlash");
+	}
+	else
+	{
+		return muzzleLocation = GetActorLocation();
+	}
+	return muzzleLocation;
+}
+
+
 void AWeapon::SetWeaponVisible(bool tf)
 {
 	WeaponVisible = tf;

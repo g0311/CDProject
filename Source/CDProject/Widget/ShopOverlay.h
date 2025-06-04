@@ -17,26 +17,28 @@ public:
 	void OnShopButtonClicked(const FWeaponStruct& WeaponData);
 	UFUNCTION(Server, Reliable)
 	void ServerGiveWeaponToPlayer(const FWeaponStruct& WeaponData);
-	
+
+	UPROPERTY(meta = (BindWidget), meta=(AllowPrivateAccess))
+	UShopButton* RifleButton1;
 private:
 	UPROPERTY(EditAnywhere, Category=Weapons)
 	UDataTable* WeaponDataTable;
 
-	UPROPERTY(meta=(BindWidget))
+	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* PistolButton1;
-	UPROPERTY(meta = (BindWidget))
-	UShopButton* RifleButton1;
-	UPROPERTY(meta=(BindWidget))
+	
+	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* SniperButton1;
-	UPROPERTY(meta=(BindWidget))
+	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* ShotgunButton1;
-	UPROPERTY(meta=(BindWidget))
+	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* SMGButton1;
 
 	TMap<UButton*, FWeaponStruct> ButtonWeaponMap;
 
 	class ACDPlayerState* PS;
 	class ACDPlayerController* PC;
+	class AAIController* AIPC;
 	class ACDCharacter* Character;
 	class UCombatComponent* CombatComp;
 

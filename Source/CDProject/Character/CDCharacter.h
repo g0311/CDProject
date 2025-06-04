@@ -62,7 +62,7 @@ public:
 	bool _isDead = false;
 	bool bCanMove = true;;
 	//State로 리팩터링 필요..
-	
+
 private:
 	//Component
 	UPROPERTY(VisibleAnywhere, Category = "Components")
@@ -105,6 +105,7 @@ private:
 	
 public:
 	FORCEINLINE USkeletalMeshComponent* GetArmMesh() { return _armMesh; }
+	UFUNCTION(BlueprintCallable)
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return _combat; }
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
@@ -145,7 +146,7 @@ private:
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
 	void Jump() override;
-	void Crouch(bool bClientSimulation = false) override;
+	// void Crouch(bool bClientSimulation = false) override;
 	void Walk();
 	void UnWalk();
 
@@ -192,5 +193,5 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	class UCDCharacterAttributeSet* GetAttributeSet();
 	void InitializeAttributes();
-
+	
 };

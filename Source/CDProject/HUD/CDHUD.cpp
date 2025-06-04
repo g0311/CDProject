@@ -103,7 +103,7 @@ void ACDHUD::AddGameStateOverlay()
 
 void ACDHUD::AddAnnouncement()
 {
-	if (IsValid(Announcement))
+	if (!IsValid(Announcement))
 		return;
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{

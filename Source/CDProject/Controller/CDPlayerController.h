@@ -3,19 +3,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
+#include "GameFramework/PlayerController.h"
 #include "CDProject/Types/CurMatchState.h"
 #include "CDServer/Player/CDSessionPlayerController.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
-class CDPROJECT_API ACDPlayerController : public ACDSessionPlayerController
+class CDPROJECT_API ACDPlayerController : public ACDSessionPlayerController, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
 public:
 	ACDPlayerController();
 	virtual void Tick(float DeltaSeconds) override;
-
+	virtual void OnPossess(APawn* InPawn) override;
 	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	//HUD
 
@@ -32,7 +34,8 @@ public:
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
 	void SetMinimap();
-	void SetGold();
+	UFUNCTION()
+	void SetGold(int32 NewGold);
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
 

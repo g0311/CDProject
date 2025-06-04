@@ -144,6 +144,7 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 
 void ARoundGameMode::RestartMatch(bool isInit)
 {
+	
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
 		AController* Controller = Cast<AController>(*PCIter);

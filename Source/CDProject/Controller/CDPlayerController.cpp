@@ -52,6 +52,21 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 	CheckTimeSync(DeltaSeconds);
 }
 
+void ACDPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	if (APlayerState* LocalPS = GetPlayerState<APlayerState>())
+	{
+		if (ACDPlayerState* APS=Cast<ACDPlayerState>(LocalPS))
+		{
+			int32 TeamIdFromPS = APS->GetTeam()==ETeam::ET_RedTeam?1:2; 
+			SetGenericTeamId(FGenericTeamId(TeamIdFromPS));
+		}
+		else return;
+	}
+}
+
 void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -125,11 +140,20 @@ void ACDPlayerController::BeginPlay()
 			SetHUDShield(_character->GetAttributeSet()->GetShield());
 		}
 	}
+	PS = Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>());
+	if (PS)
+	{
+		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
+	}
 	ServerCheckMatchState();
 	if (IsLocalController())
 	{
 		UpdateCharacterOverlay();
-		CDHUD->AddAnnouncement();
+		if (CDHUD)
+		{
+			CDHUD->AddAnnouncement();
+		}
+		
 	}
 }
 
@@ -404,7 +428,7 @@ void ACDPlayerController::UpdateCharacterOverlay()
 		return;
 	
 	CDHUD->AddCharacterOverlay();
-	SetGold();
+	//SetGold();
 	if (OwnedCharacter)
 	{
 		SetHUDWeaponAmmo(OwnedCharacter->GetCombatComponent()->GetCurAmmo());
@@ -461,14 +485,20 @@ void ACDPlayerController::SetMinimap()
 	}
 }
 
-void ACDPlayerController::SetGold()
+void ACDPlayerController::SetGold(int32 NewGold)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	PS=PS==nullptr?Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>()):PS;
 	
+	// if (CDHUD && CDHUD->CharacterOverlay && PS)
+	// {
+	// 	HUDGoldCount = PS->GetGold();
+	// 	FText GoldText = FText::AsNumber(HUDGoldCount); 
+	// 	CDHUD->CharacterOverlay->Gold->SetText(GoldText);
+	// }
 	if (CDHUD && CDHUD->CharacterOverlay && PS)
 	{
-		HUDGoldCount = PS->GetGold();
+		HUDGoldCount = NewGold;
 		FText GoldText = FText::AsNumber(HUDGoldCount); 
 		CDHUD->CharacterOverlay->Gold->SetText(GoldText);
 	}
@@ -706,7 +736,8 @@ void ACDPlayerController::OnRep_MatchState()
 
 void ACDPlayerController::OnRep_HUDGoldCount()
 {
-	SetGold();
+	int32 NewGold=0;
+	SetGold(NewGold);
 }
 
 void ACDPlayerController::OnRep_HUDKillCount()

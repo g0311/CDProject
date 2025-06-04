@@ -31,6 +31,7 @@ public:
     int32 GetDeaths() const { return Deaths; }
     FString GetPlayerName() const { return Name; }
     int32 GetGold() const { return Gold; }
+    UFUNCTION(BlueprintCallable)
     ETeam GetTeam() const { return Team; }
     ETeam GetMatchTeam() const { return MatchTeam; }
 
@@ -60,9 +61,10 @@ protected:
     void OnRep_Deaths();
 
 private:
-    UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, Category = "Player Stats")
+    UPROPERTY(ReplicatedUsing = OnRep_Team,VisibleAnywhere, Category = "Player Stats",meta = (AllowPrivateAccess = "true"))
     ETeam Team = ETeam::ET_NoTeam;
-    UPROPERTY(Replicated, VisibleAnywhere)
+
+    UPROPERTY(Replicated, VisibleAnywhere,meta = (AllowPrivateAccess = "true"))
     ETeam MatchTeam = ETeam::ET_NoTeam;
     UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
     FString Name;

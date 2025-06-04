@@ -592,13 +592,15 @@ void ACDCharacter::Jump()
 	Super::Jump();
 }
 
-void ACDCharacter::Crouch(bool bClientSimulation)
-{
-	if (GetCharacterMovement()->IsFalling())
-		return;
-	
-	Super::Crouch(bClientSimulation);
-}
+// void ACDCharacter::Crouch(bool bClientSimulation)
+// {
+// 	if (GetCharacterMovement()->IsFalling())
+// 		return;
+// 	
+// 	Super::Crouch(bClientSimulation);
+// }
+
+
 
 void ACDCharacter::Walk()
 {
