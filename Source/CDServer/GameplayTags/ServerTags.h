@@ -19,4 +19,10 @@ namespace ServerTags
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(ConfirmSignUp);
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(SignOut);
 	}
+	
+	namespace GameStatsAPI
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(RecordMatchStats);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(RetrieveMatchStats);
+	}
 }

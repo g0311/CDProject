@@ -23,7 +23,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<class UAPIData> APIData;
 
-	bool ContainsError(TSharedPtr<FJsonObject> JsonObject);
+	FString ContainsError(TSharedPtr<FJsonObject> JsonObject);
 	void DumpMetaData(TSharedPtr<FJsonObject> JsonObject);
 
 	FString SerializeJsonContent(const TMap<FString, FString>& Params); 

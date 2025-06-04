@@ -4,11 +4,14 @@
 #include "Server_GameMode.h"
 
 #include "CDGameInstanceSubsystem.h"
-#include "CDServer/Player/CDSessionPlayerState.h"
+#include "CDSessionGameState.h"
+#include "CDProject/PlayerState/CDPlayerState.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
 #include "CDServer/UI/GameSessions/GameSessionsManager.h"
+#include "CDServer/UI/GameStats/GameStatsManager.h"
 #include "GameFramework/GameState.h"
-#include "GameFramework/HUD.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogCD_ServerLog);
@@ -32,6 +35,8 @@ void AServer_GameMode::PreLogin(const FString& Options, const FString& Address, 
 APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal,
                                            const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
+    APlayerController* PlayerController = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+    
     if (UGameInstance* GameInstance = GetGameInstance(); IsValid(GameInstance))
     {
         if (CDGameInstanceSubsystem = GameInstance->GetSubsystem<UCDGameInstanceSubsystem>(); IsValid(CDGameInstanceSubsystem))
@@ -49,20 +54,34 @@ APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemote
     const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
     const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
 
-    //save player info
-    UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstanceSubsystem();
-    if (IsValid(GameInstanceSubsystem))
+    if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(PlayerController); IsValid(CDPC))
     {
-        GameInstanceSubsystem->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr));
+        CDPC->SetPlayerSessionId(PlayerSessionId);
     }
     
-    return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+    if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+    {
+        SessionGameState->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr));
+        SessionGameState->GetPlayerInfos().Log();
+    }
+    
+    return PlayerController;
 }
 
 void AServer_GameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
 
+    ACDSessionPlayerController* PlayerController = Cast<ACDSessionPlayerController>(Exiting);
+    if (IsValid(PlayerController))
+    {
+        const FString PlayerSessionId = PlayerController->GetPlayerSessionId();
+        if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+        {
+            SessionGameState->Server_LeaveSession(PlayerSessionId);
+        }
+    }
+    
     if (GetNumPlayers() == 0)
     {
         UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Empty"));
@@ -91,18 +110,103 @@ void AServer_GameMode::StartGame()
 {
     if (IsValid(GameSessionManager))
     {
-        UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstanceSubsystem();
-        if (IsValid(GameInstanceSubsystem))
+        if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
         {
-            GameSessionManager->UpdateGameSession(GameInstanceSubsystem->GetGameSessionId(), GameInstanceSubsystem->GetRoomMap(), GameInstanceSubsystem->GetRoomMode(), TEXT("true"));	
+            GameSessionManager->UpdateGameSession(SessionGameState->GetGameSessionId(), SessionGameState->GetRoomMap(), SessionGameState->GetRoomMode(), TEXT("true"));	
+            SessionGameState->PushProperty();
             UWorld* World = GEngine->GetWorldContexts()[0].World();
             if (World)
             {
-                FString url = TEXT("/Game/Maps/") + GameInstanceSubsystem->GetRoomMode() + TEXT("/") + GameInstanceSubsystem->GetRoomMap();
+                FString url = TEXT("/Game/Maps/") + SessionGameState->GetRoomMode() + TEXT("/") + SessionGameState->GetRoomMap();
                 UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
                 GetWorld()->ServerTravel(url, false);
                 GetWorld()->SeamlessTravel(url);
-                
+            }
+        }
+    }
+}
+
+void AServer_GameMode::EndGame(WinState winState)
+{
+    if (IsValid(GameStatsManager))
+    {
+        if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+        {
+            for (auto& player : SessionGameState->PlayerArray)
+            {
+                if (ACDPlayerState* CDPlayerState = Cast<ACDPlayerState>(player); IsValid(CDPlayerState))
+                {
+                    FCDRecordMatchStatsInput RecordMatchStatsInput;
+                    FCDMatchStats MatchStats = CDPlayerState->GetRecordInput();
+                    FCDMatchData MatchData;
+                    MatchData.Kill = MatchStats.Kill;
+                    MatchData.Death = MatchStats.Death;
+                    MatchData.Mode = SessionGameState->GetRoomMode();
+                    MatchData.Map = SessionGameState->GetRoomMap();
+                    if (winState == ATEAMWIN)
+                    {
+                        if (CDPlayerState->GetTeam() == ETeam::ET_ATeam)
+                        {
+                            MatchStats.Totalwin = 1;
+                            MatchData.Iswin = 1;
+                        }
+                        else
+                        {
+                            MatchStats.Totallose = 1;
+                            MatchData.Iswin = -1;
+                        }
+                    }
+                    else if (winState == ATEAMLOSE)
+                    {
+                        if (CDPlayerState->GetTeam() == ETeam::ET_BTeam)
+                        {
+                            MatchStats.Totalwin = 1;
+                            MatchData.Iswin = 1;
+                        }
+                        else
+                        {
+                            MatchStats.Totallose = 1;
+                            MatchData.Iswin = -1;
+                        }
+                    }
+                    else if (winState == DRAW)
+                    {
+                        MatchStats.Totaldraw = 1;
+                        MatchData.Iswin = 0;
+                    }
+                    else
+                    {
+                        MatchStats.Totaldraw = 2;
+                        MatchData.Iswin = 2;
+                    }
+                    RecordMatchStatsInput.Username = CDPlayerState->GetPlayerName();
+                    RecordMatchStatsInput.MatchData = MatchData;
+                    RecordMatchStatsInput.MatchStats = MatchStats;
+                    GameStatsManager->RecordMatchStats(RecordMatchStatsInput);
+                }
+            }
+        }
+    }
+    if (IsValid(GameSessionManager))
+    {
+        if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+        {
+            if (SessionGameState->IsPrivate())
+            {
+                GameSessionManager->UpdateGameSession(SessionGameState->GetGameSessionId(), SessionGameState->GetRoomMap(), SessionGameState->GetRoomMode(), TEXT("false"));	
+                SessionGameState->PushProperty();
+                UWorld* World = GEngine->GetWorldContexts()[0].World();
+                if (World)
+                {
+                    FString url = TEXT("/Game/Maps/ServerDefaultMap");
+                    UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
+                }
+            }
+            else
+            {
+                FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
+                gameLiftSdkModule->ProcessEnding();
+                FPlatformMisc::RequestExit(false);
             }
         }
     }
@@ -129,20 +233,9 @@ void AServer_GameMode::BeginPlay()
     {
         GameSessionManager = NewObject<UGameSessionsManager>(this, GameSessionManagerClass);
     }
-    else
+    if (GameStatsManagerClass)
     {
-        UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Manager is null"));
-    }
-    
-    if (HasAuthority())
-    {
-        GetWorldTimerManager().SetTimer(
-       LobbyCheckTimerHandle,
-       this,
-       &AServer_GameMode::UpdatePlayersStatus,
-       0.5f,
-       true
-        );
+        GameStatsManager = NewObject<UGameStatsManager>(this, GameStatsManagerClass);
     }
 	
     Super::BeginPlay();
@@ -262,28 +355,4 @@ void AServer_GameMode::TryAcceptPlayerSession(const FString& PlayerSessionId, co
         ErrorMessage = AcceptPlayerSessionOutcome.IsSuccess() ? "" : FString::Printf(TEXT("Failed to accept player session"));
     }
 #endif
-}
-
-void AServer_GameMode::UpdatePlayersStatus()
-{
-    if (IsValid(GetGameState<AGameState>()) && IsValid(GetGameInstanceSubsystem()))
-    {
-        for (auto PS :  GetGameState<AGameState>()->PlayerArray)
-        {
-            if (!PS) continue;
-            FString NetIdStr = PS->GetUniqueId().IsValid() ? PS->GetUniqueId()->ToString() : TEXT("Unknown");
-            int32 Ping = FMath::RoundToInt(PS->ExactPing);
-            FPlayerSessionInfoArray& InfoArray = GetGameInstanceSubsystem()->GetPlayerInfos();
-            for (auto& Info : InfoArray.Items)
-            {
-                InfoArray.UpdatePing(NetIdStr, Ping);
-            }
-            
-            ACDSessionPlayerState* SessionPlayerState = Cast<ACDSessionPlayerState>(PS);
-            if (IsValid(SessionPlayerState))
-            {
-                SessionPlayerState->Client_ReceivePlayerInfos(InfoArray);
-            }
-        }
-    }
 }

@@ -121,6 +121,7 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 
 	void Log()
 	{
+		UE_LOG(LogTemp, Log, TEXT("Info Log Called!!"));
 		for (auto playerInfo : Items)
 		{
 			UE_LOG(LogTemp, Log, TEXT("username: %s, readyState: %d, ping: %d"), *playerInfo.PlayerSessionId, playerInfo.ReadyState, playerInfo.Ping);

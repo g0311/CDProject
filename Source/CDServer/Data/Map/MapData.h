@@ -25,6 +25,7 @@ class CDSERVER_API UMapData : public UDataAsset
 public:
 	const TArray<FString> GetModes();
 	const TArray<FString> GetMapsFromMode(FString Mode);
+	const FString GetRandomMode();
 	const FString GetRandomMapFromMode(FString Mode);
 	
 protected:

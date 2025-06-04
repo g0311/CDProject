@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
 #include "CDProject/Types/CurMatchState.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
 #include "CDPlayerController.generated.h"
 
 UCLASS()
-class CDPROJECT_API ACDPlayerController : public APlayerController
+class CDPROJECT_API ACDPlayerController : public ACDSessionPlayerController
 {
 	GENERATED_BODY()
 

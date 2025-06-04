@@ -5,18 +5,12 @@
 
 #include "PrivateSessionLine.h"
 #include "CDServer/Data/Map/MapData.h"
-#include "CDServer/Player/CDSessionPlayerState.h"
-#include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
-
-
-class UCDLocalPlayerSubsystem;
-class ACDSessionPlayerState;
 
 void UPrivateSessionsWidget::NativeConstruct()
 {
@@ -92,7 +86,7 @@ void UPrivateSessionsWidget::SetCreateStatusMessage(const FString& Message, bool
 	if (bShouldResetWidgets)
 	{
 		Button_Create->SetIsEnabled(true);
-		Button_Quit->SetIsEnabled(false);
+		Button_Quit->SetIsEnabled(true);
 	}
 }
 

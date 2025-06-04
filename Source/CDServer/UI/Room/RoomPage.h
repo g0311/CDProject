@@ -17,6 +17,9 @@ class CDSERVER_API URoomPage : public UUserWidget
 	GENERATED_BODY()
 public:
 	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UTextBlock> TextBlock_RoomName;
+	
+	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UButton> Button_Leave;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UButton> Button_Ready;

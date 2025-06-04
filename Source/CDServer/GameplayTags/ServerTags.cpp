@@ -18,4 +18,10 @@ namespace ServerTags
 		UE_DEFINE_GAMEPLAY_TAG(ConfirmSignUp, "ServerTags.PortalAPI.ConfirmSignUp");
 		UE_DEFINE_GAMEPLAY_TAG(SignOut, "ServerTags.PortalAPI.SignOut");
 	}
+
+	namespace GameStatsAPI
+	{
+		UE_DEFINE_GAMEPLAY_TAG(RecordMatchStats, "ServerTags.GameStatsAPI.RecordMatchStats");
+		UE_DEFINE_GAMEPLAY_TAG(RetrieveMatchStats, "ServerTags.GameStatsAPI.RetrieveMatchStats");
+	}
 }

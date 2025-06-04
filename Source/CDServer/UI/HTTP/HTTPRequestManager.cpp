@@ -22,7 +22,7 @@ UCDLocalPlayerSubsystem* UHTTPRequestManager::GetCDLocalPlayerSubsystem()
 	return nullptr;
 }
 
-bool UHTTPRequestManager::ContainsError(TSharedPtr<FJsonObject> JsonObject)
+FString UHTTPRequestManager::ContainsError(TSharedPtr<FJsonObject> JsonObject)
 {
 	if (JsonObject->HasField(TEXT("errorType"))|| JsonObject->HasField(TEXT("errorMessage")))
 	{
@@ -32,17 +32,17 @@ bool UHTTPRequestManager::ContainsError(TSharedPtr<FJsonObject> JsonObject)
 		UE_LOG(LogCD_ServerLog, Error, TEXT("Error Type: %s"), *ErrorType);
 		UE_LOG(LogCD_ServerLog, Error, TEXT("Error Message: %s"), *ErrorMessage);
 
-		return true;
+		return ErrorType;
 	}
 	else if (JsonObject->HasField(TEXT("$fault")))
 	{
 		FString ErrorType = JsonObject->HasField(TEXT("name")) ? JsonObject->GetStringField(TEXT("name")) : TEXT("Unknown Error"); 
 		UE_LOG(LogCD_ServerLog, Error, TEXT("Error Type: %s"), *ErrorType);
 
-		return true;
+		return ErrorType;
 	}
 	
-	return false;
+	return FString();
 }
 
 void UHTTPRequestManager::DumpMetaData(TSharedPtr<FJsonObject> JsonObject)

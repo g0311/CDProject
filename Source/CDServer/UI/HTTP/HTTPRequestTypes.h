@@ -44,10 +44,9 @@ struct FCDGameProperty
     GENERATED_BODY()
 
     UPROPERTY()
-    FString Key;
-
+    FString Key{};
     UPROPERTY()
-    FString Value;
+    FString Value{};
 };
 
 USTRUCT()
@@ -104,29 +103,29 @@ struct FCDPlayerSession
     GENERATED_BODY()
     
     UPROPERTY()
-    FString CreationTime;
+    FString CreationTime{};
     UPROPERTY()
-    FString DnsName;
+    FString DnsName{};
     UPROPERTY()
-    FString FleetArn;
+    FString FleetArn{};
     UPROPERTY()
-    FString FleetId;
+    FString FleetId{};
     UPROPERTY()
-    FString GameSessionId;
+    FString GameSessionId{};
     UPROPERTY()
-    FString IpAddress;
+    FString IpAddress{};
     UPROPERTY()
-    FString PlayerData;
+    FString PlayerData{};
     UPROPERTY()
-    FString PlayerId;
+    FString PlayerId{};
     UPROPERTY()
-    FString PlayerSessionId;
+    FString PlayerSessionId{};
     UPROPERTY()
-    int32 Port;
+    int32 Port{};
     UPROPERTY()
-    FString Status;
+    FString Status{};
     UPROPERTY()
-    FString TerminationTime;
+    FString TerminationTime{};
     
     void Dump()const;  
 };
@@ -137,11 +136,11 @@ struct FCDCodeDeliveryDetails
     GENERATED_BODY()
 
     UPROPERTY()
-    FString AttributeName;
+    FString AttributeName{};
     UPROPERTY()
-    FString DeliveryMedium;
+    FString DeliveryMedium{};
     UPROPERTY()
-    FString Destination;
+    FString Destination{};
 
     void Dump()const;  
 };
@@ -152,13 +151,13 @@ struct FCDSignUpResponse
     GENERATED_BODY()
 
     UPROPERTY()
-    FCDCodeDeliveryDetails CodeDeliveryDetails;
+    FCDCodeDeliveryDetails CodeDeliveryDetails{};
     UPROPERTY()
-    FString Session;
+    FString Session{};
     UPROPERTY()
-    bool UserConfirmed;
+    bool UserConfirmed{};
     UPROPERTY()
-    FString UserSub;
+    FString UserSub{};
     
     void Dump()const;  
 };
@@ -169,9 +168,9 @@ struct FCDNewDeviceMetadata
     GENERATED_BODY()
 
     UPROPERTY()
-    FString DeviceGroupKey;
+    FString DeviceGroupKey{};
     UPROPERTY()
-    FString DeviceKey;
+    FString DeviceKey{};
 
     void Dump() const;
 };
@@ -182,17 +181,17 @@ struct FCDAuthenticationResult
     GENERATED_BODY()
 
     UPROPERTY()
-    FString AccessToken;
+    FString AccessToken{};
     UPROPERTY()
-    int32 ExpiresIn;
+    int32 ExpiresIn{};
     UPROPERTY()
-    FString IdToken;
+    FString IdToken{};
     UPROPERTY()
-    FCDNewDeviceMetadata NewDeviceMetadata;
+    FCDNewDeviceMetadata NewDeviceMetadata{};
     UPROPERTY()
-    FString RefreshToken;
+    FString RefreshToken{};
     UPROPERTY()
-    FString TokenType;
+    FString TokenType{};
 
     void Dump() const;
 };
@@ -203,17 +202,17 @@ struct FCDInitiateAuthResponse
     GENERATED_BODY()
 
     UPROPERTY()
-    FCDAuthenticationResult AuthenticationResult;
+    FCDAuthenticationResult AuthenticationResult{};
     UPROPERTY()
-    TArray<FString> AvailableChallenges;
+    TArray<FString> AvailableChallenges{};
     UPROPERTY()
-    FString ChallengeName;
+    FString ChallengeName{};
     UPROPERTY()
-    TMap<FString, FString> ChallengeParameters;
+    TMap<FString, FString> ChallengeParameters{};
     UPROPERTY()
-    FString Session;
+    FString Session{};
     UPROPERTY()
-    FString Email;
+    FString Email{};
 
     void Dump() const;
 };
@@ -224,10 +223,88 @@ struct FCDDescribeGameSessionResult
     GENERATED_BODY()
 
     UPROPERTY()
-    TArray<FCDGameSession> GameSessions;
+    TArray<FCDGameSession> GameSessions{};
 
     UPROPERTY()
-    FString NextToken;
+    FString NextToken{};
 
     void Dump() const;
+};
+
+
+USTRUCT()
+struct FCDMatchData
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    int32 Kill{};
+    UPROPERTY()
+    int32 Death{};
+    UPROPERTY()
+    int32 Iswin{};
+    UPROPERTY()
+    FString Mode{};
+    UPROPERTY()
+    FString Map{};
+};
+
+
+USTRUCT()
+struct FCDMatchStats
+{
+    GENERATED_BODY()
+    
+    UPROPERTY()
+    int32 Kill{};
+    UPROPERTY()
+    int32 Death{};
+    UPROPERTY()
+    int32 shot{};
+    UPROPERTY()
+    int32 Headshot{};
+    UPROPERTY()
+    int32 Totalwin{};
+    UPROPERTY()
+    int32 Totaldraw{};
+    UPROPERTY()
+    int32 Totallose{};
+};
+
+USTRUCT()
+struct FCDRecordMatchStatsInput
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString Username{};
+    UPROPERTY()
+    FCDMatchStats MatchStats{};
+    UPROPERTY()
+    FCDMatchData MatchData{};
+};
+
+USTRUCT()
+struct FCDRetrieveMatchStatsResult
+{
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString Username{};
+    UPROPERTY()
+    int32 Kill{};
+    UPROPERTY()
+    int32 Death{};
+    UPROPERTY()
+    int32 shot{};
+    UPROPERTY()
+    int32 Headshot{};
+    UPROPERTY()
+    int32 Totalwin{};
+    UPROPERTY()
+    int32 Totaldraw{};
+    UPROPERTY()
+    int32 Totallose{};
+    UPROPERTY()
+    TArray<FCDMatchData> Matches{};
 };

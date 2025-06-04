@@ -22,7 +22,6 @@ public:
 
 	FString Username;
 	FString Email;
-	FString PlayerSessionId;
 private:
 	UPROPERTY();
     FCDAuthenticationResult AuthenticationResult;

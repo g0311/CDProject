@@ -21,6 +21,21 @@ const TArray<FString> UMapData::GetMapsFromMode(FString Mode)
 		return TArray<FString>();
 }
 
+const FString UMapData::GetRandomMode()
+{
+	TArray<FString> Keys;
+	Maps.GetKeys(Keys);
+
+	if (Keys.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GetRandomMode: No modes available in Maps."));
+		return FString();
+	}
+
+	const int32 RandomIndex = FMath::RandRange(0, Keys.Num() - 1);
+	return Keys[RandomIndex];
+}
+
 const FString UMapData::GetRandomMapFromMode(FString Mode)
 {
 	if (Maps.Contains(Mode))

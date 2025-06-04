@@ -6,8 +6,8 @@
 #include "RoomPlayerLine.h"
 #include "CDServer/Data/Map/MapData.h"
 #include "CDServer/Data/Player/FPlayerSessionInfo.h"
-#include "CDServer/Player/CDSessionPlayerState.h"
 #include "CDServer/Player/CDLocalPlayerSubsystem.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/TextBlock.h"
@@ -65,12 +65,13 @@ void URoomPage::UpdatePlayerList(const TArray<FPlayerSessionInfo> Infos, const F
 
 	//Update Room Host
 	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+	ACDSessionPlayerController* SessionPlayerController = Cast<ACDSessionPlayerController>(LocalPlayerController);
 	ULocalPlayer* LocalPlayer = LocalPlayerController->GetLocalPlayer();
-	if (!Infos.IsEmpty() && IsValid(LocalPlayerController) && IsValid(LocalPlayer))
+	if (!Infos.IsEmpty() && IsValid(SessionPlayerController) && IsValid(LocalPlayer))
 	{
 		if (LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>())
 		{
-			const FString PlayerSessionId = LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>()->PlayerSessionId;
+			const FString PlayerSessionId = SessionPlayerController->GetPlayerSessionId();
 			if (Infos[0].PlayerSessionId == PlayerSessionId)
 			{
 				//Activate Select Map & Mode
@@ -94,34 +95,17 @@ void URoomPage::OnLeaveButtonClicked()
 	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
 	if (IsValid(LocalPlayerController))
 	{
-		ACDSessionPlayerState* LobbyPlayerState = LocalPlayerController->GetPlayerState<ACDSessionPlayerState>();
-		ULocalPlayer* LocalPlayer = LocalPlayerController->GetLocalPlayer();
-		if (IsValid(LocalPlayer))
-		{
-			const FString PlayerSessionId = LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>()->PlayerSessionId;
-			if (LobbyPlayerState)
-			{
-				LobbyPlayerState->Server_LeaveSession(PlayerSessionId);
-			}
-		}
 		LocalPlayerController->ClientTravel(TEXT("/Game/Maps/ClientDefaultLevel"), TRAVEL_Absolute);
 	}
 }
 
 void URoomPage::OnReadyButtonClicked()
 {
-	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
-	if (IsValid(LocalPlayerController))
+	if (APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld()); IsValid(LocalPlayerController))
 	{
-		ACDSessionPlayerState* LobbyPlayerState = LocalPlayerController->GetPlayerState<ACDSessionPlayerState>();
-		ULocalPlayer* LocalPlayer = LocalPlayerController->GetLocalPlayer();
-		if (IsValid(LocalPlayer))
+		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
 		{
-			const FString PlayerSessionId = LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>()->PlayerSessionId;
-			if (LobbyPlayerState)
-			{
-				LobbyPlayerState->Server_PlayerReady(PlayerSessionId, false);
-			}
+			CDPC->Server_PlayerReady(false);
 		}
 	}
 }
@@ -138,15 +122,9 @@ void URoomPage::OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Ty
 	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
 	if (IsValid(LocalPlayerController))
 	{
-		ACDSessionPlayerState* LobbyPlayerState = LocalPlayerController->GetPlayerState<ACDSessionPlayerState>();
-		ULocalPlayer* LocalPlayer = LocalPlayerController->GetLocalPlayer();
-		if (IsValid(LocalPlayer))
+		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
 		{
-			const FString PlayerSessionId = LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>()->PlayerSessionId;
-			if (LobbyPlayerState)
-			{
-				LobbyPlayerState->Server_UpdateSession(PlayerSessionId, Dropdown_Mode->GetSelectedOption(), Dropdown_Map->GetSelectedOption());
-			}
+			CDPC->Server_UpdateSession(Dropdown_Mode->GetSelectedOption(), Dropdown_Map->GetSelectedOption());
 		}
 	}
 }

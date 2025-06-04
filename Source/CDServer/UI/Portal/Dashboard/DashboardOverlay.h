@@ -21,15 +21,11 @@ public:
 	TObjectPtr<class UGamePage> GamePage;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UCareerPage> CareerPage;
-	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<class ULeaderBoardPage> LeaderBoardPage;
 	
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UButton> Button_Game;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UButton> Button_Career;
-	UPROPERTY(meta=(BindWidget))
-	TObjectPtr<class UButton> Button_LeaderBoard;
 protected:
 	virtual void NativeConstruct() override;
 
@@ -38,6 +34,4 @@ private:
 	void ShowGamePage();
 	UFUNCTION()
 	void ShowCareerPage();
-	UFUNCTION()
-	void ShowLeaderBoardPage();
 };

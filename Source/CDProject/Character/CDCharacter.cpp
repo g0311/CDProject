@@ -187,7 +187,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	}
 	ETeam playerTeam = playerState->GetTeam();
 	ETeam causerTeam = causerPlayerState->GetTeam();
-	if (playerTeam == causerTeam && playerTeam != ETeam::ET_NoTeam)
+	if (playerTeam == causerTeam)
 	{
 		return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
 	}
@@ -199,7 +199,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	}
 
 	float finalDamage = DamageAmount;
-	
+	bool bIsHeadShot = false;
 	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 	{
 		const FPointDamageEvent* pointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
@@ -214,6 +214,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 				ParentBone.ToString().Contains("neck"))
 			{
 				finalDamage *= 2.f;
+				bIsHeadShot = true;
 				break;
 			}
 			if (ParentBone.ToString().Contains("upperarm"))
@@ -231,7 +232,7 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		}
 	}
 	//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
-	HandleDamage(finalDamage, EventInstigator);
+	HandleDamage(finalDamage, EventInstigator, bIsHeadShot);
 	
 	//for listen server
 	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
@@ -343,7 +344,7 @@ void ACDCharacter::ServerPlayFootStepSound_Implementation()
 	PlayFootStepSound();	
 }
 
-void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorController)
+void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorController, bool bIsHeadShot)
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
@@ -368,11 +369,21 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 			ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
-				if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
+				if (ACDPlayerController* attackerPlayerController = Cast<ACDPlayerController>(instigatorController))
 				{
-					if (ACDPlayerController* attackerPlayerController = Cast<ACDPlayerController>(instigatorController))
+					if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
 					{
 						GameMode->PlayerEliminated(victimPlayerController, attackerPlayerController);
+					}
+					if (GameMode->GetCurMatchState() == ECurMatchState::EMS_InGame)
+					{
+						ACDPlayerState* CDPlayerState = attackerPlayerController->GetPlayerState<ACDPlayerState>();
+						if (IsValid(CDPlayerState))
+						{
+							CDPlayerState->AddShot();
+							if (bIsHeadShot)
+								CDPlayerState->AddHeadShot();
+						}
 					}
 				}
 			}
@@ -386,7 +397,7 @@ void ACDCharacter::Multicast_Dead_Implementation(AController* instigatorControll
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 }
 
-void ACDCharacter::Multicast_Hit_Implementation()
+void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorController, bool bIsHeadShot)
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
@@ -397,6 +408,24 @@ void ACDCharacter::Multicast_Hit_Implementation()
 	if (armAnim)
 	{
 		armAnim->PlayHitMontage();
+	}
+	
+	ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		if (ACDPlayerController* attackerPlayerController = Cast<ACDPlayerController>(instigatorController))
+		{
+			if (GameMode->GetCurMatchState() == ECurMatchState::EMS_InGame)
+			{
+				ACDPlayerState* CDPlayerState = attackerPlayerController->GetPlayerState<ACDPlayerState>();
+				if (IsValid(CDPlayerState))
+				{
+					CDPlayerState->AddShot();
+					if (bIsHeadShot)
+						CDPlayerState->AddHeadShot();
+				}
+			}
+		}
 	}
 }
 
@@ -414,7 +443,7 @@ void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 	}
 }
 
-void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController)
+void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController, bool bIsHeadShot)
 {
 	if (_attributeSet == nullptr) return;
 
@@ -434,11 +463,11 @@ void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorContro
 	
 	if (CurHealth == 0.f)
 	{
-		Multicast_Dead(instigatorController);
+		Multicast_Dead(instigatorController, bIsHeadShot);
 	}
 	else
 	{
-		Multicast_Hit();
+		Multicast_Hit(instigatorController, bIsHeadShot);
 	}
 }
 

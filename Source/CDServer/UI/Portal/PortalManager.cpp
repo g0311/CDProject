@@ -137,9 +137,10 @@ void UPortalManager::SignIn_Response(FHttpRequestPtr Request, FHttpResponsePtr R
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 	{
-		if (ContainsError(JsonObject))
+		FString ErrorType = ContainsError(JsonObject);
+		if (!ErrorType.IsEmpty())
 		{
-			SignInMessageDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+			SignInMessageDelegate.Broadcast(ErrorType, true);
 			return;
 		}
 		//DumpMetaData(JsonObject);
@@ -180,9 +181,10 @@ void UPortalManager::SignUp_Response(FHttpRequestPtr Request, FHttpResponsePtr R
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 	{
-		if (ContainsError(JsonObject))
+		FString ErrorType = ContainsError(JsonObject);
+		if (!ErrorType.IsEmpty())
 		{
-			SignUpMessageDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+			SignUpMessageDelegate.Broadcast(ErrorType, true);
 			return;
 		}
 		//DumpMetaData(JsonObject);
@@ -202,7 +204,8 @@ void UPortalManager::SignOut_Response(FHttpRequestPtr Request, FHttpResponsePtr 
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 	{
-		if (ContainsError(JsonObject))
+		FString ErrorType = ContainsError(JsonObject);
+		if (!ErrorType.IsEmpty())
 			return;
 
 		APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
@@ -229,7 +232,8 @@ void UPortalManager::ConfirmSignUp_Response(FHttpRequestPtr Request, FHttpRespon
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 	{
-		if (ContainsError(JsonObject))
+		FString ErrorType = ContainsError(JsonObject);
+		if (!ErrorType.IsEmpty())
 		{
 			if(JsonObject->HasField("name"))
 			{
@@ -241,7 +245,7 @@ void UPortalManager::ConfirmSignUp_Response(FHttpRequestPtr Request, FHttpRespon
 			}
 			else
 			{
-				ConfirmSignUpMessageDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+				ConfirmSignUpMessageDelegate.Broadcast(ErrorType, true);
 			}
 			return;
 		}
@@ -257,7 +261,8 @@ void UPortalManager::RefreshToken_Response(FHttpRequestPtr Request, FHttpRespons
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 	{
-		if (ContainsError(JsonObject)) return;
+		FString ErrorType = ContainsError(JsonObject);
+		if (!ErrorType.IsEmpty()) return;
 
 		FCDInitiateAuthResponse initiateAuthResponse;
 		FJsonObjectConverter::JsonObjectToUStruct(JsonObject.ToSharedRef(), &initiateAuthResponse);

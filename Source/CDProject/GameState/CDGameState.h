@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
+#include "CDServer/Game/CDSessionGameState.h"
 #include "GameFramework/GameState.h"
 #include "CDGameState.generated.h"
 
@@ -11,7 +12,7 @@
  * 
  */
 UCLASS()
-class CDPROJECT_API ACDGameState : public AGameState
+class CDPROJECT_API ACDGameState : public ACDSessionGameState
 {
 	GENERATED_BODY()
 public:

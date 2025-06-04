@@ -29,16 +29,18 @@ void UGamePage::NativeConstruct()
 	PrivateSessionsWidget->Button_ShowCreatePannel->OnClicked.AddDynamic(this, &UGamePage::ShowCreatePannel);
 	PrivateSessionsWidget->Button_Quit->OnClicked.AddDynamic(this, &UGamePage::HideCreatePannel);
 	PrivateSessionsWidget->Button_Create->OnClicked.AddDynamic(this, &UGamePage::CreatePrivateSessionButtonClicked);
-	GameSessionManager->PrivateSessionCreateDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetStatusMessage);
+	GameSessionManager->PrivateSessionCreateDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetCreateStatusMessage);
 	
 	PrivateSessionsWidget->Button_Join->OnClicked.AddDynamic(this, &UGamePage::JoinPrivateSessionButtonClicked);
-	GameSessionManager->PrivateSessionDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetCreateStatusMessage);
+	GameSessionManager->PrivateSessionDelegate.AddDynamic(PrivateSessionsWidget, &UPrivateSessionsWidget::SetStatusMessage);
 }
 
 void UGamePage::JoinGameButtonClicked()
 {
 	JoinGameWidget->Button_JoinGame->SetIsEnabled(false);
-	const FString mapName = MapData->GetRandomMapFromMode(TEXT("Demolition"));
+	PrivateSessionsWidget->Button_Join->SetIsEnabled(false);
+	PrivateSessionsWidget->Button_Create->SetIsEnabled(false);
+	const FString mapName = MapData->GetRandomMapFromMode(MapData->GetRandomMode());
 	GameSessionManager->QuickJoinGameSession(TEXT("Demolition"), mapName);
 }
 
@@ -50,7 +52,9 @@ void UGamePage::RefreshPrivateSessionsButtonClicked()
 
 void UGamePage::JoinPrivateSessionButtonClicked()
 {
+	JoinGameWidget->Button_JoinGame->SetIsEnabled(false);
 	PrivateSessionsWidget->Button_Join->SetIsEnabled(false);
+	PrivateSessionsWidget->Button_Create->SetIsEnabled(false);
 	UE_LOG(LogTemp, Display, TEXT("Joining private session"));
 	
 	if (!PrivateSessionsWidget->SelectedSessionLine)
@@ -65,6 +69,8 @@ void UGamePage::JoinPrivateSessionButtonClicked()
 void UGamePage::CreatePrivateSessionButtonClicked()
 {
 	JoinGameWidget->Button_JoinGame->SetIsEnabled(false);
+	PrivateSessionsWidget->Button_Join->SetIsEnabled(false);
+	PrivateSessionsWidget->Button_Create->SetIsEnabled(false);
 	FString RoomName = PrivateSessionsWidget->TextBox_RoomName->GetText().ToString();
 	FString RoomMode = PrivateSessionsWidget->Dropdown_Mode->GetSelectedOption();
 	FString RoomMap = PrivateSessionsWidget->Dropdown_Map->GetSelectedOption();

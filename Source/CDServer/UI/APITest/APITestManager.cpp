@@ -36,7 +36,8 @@ void UAPITestManager::ListFleets_Response(FHttpRequestPtr Request, FHttpResponse
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
 	{
-		if (ContainsError(JsonObject))
+		FString ErrorType = ContainsError(JsonObject);
+		if (!ErrorType.IsEmpty())
 		{
 			OnListFleetsResponseReceived.Broadcast(FCDListFleetsResponse(), false);
 			return;

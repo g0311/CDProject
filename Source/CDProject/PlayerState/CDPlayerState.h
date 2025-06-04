@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "CDProject/Types/Team.h"
-#include "CDServer/Player/CDSessionPlayerState.h"
+#include "CDServer/UI/HTTP/HTTPRequestTypes.h"
+#include "GameFramework/PlayerState.h"
+
 #include "CDPlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScoreUpdated);
@@ -10,7 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdated, int32, NewGold);
 
 
 UCLASS()
-class CDPROJECT_API ACDPlayerState : public ACDSessionPlayerState
+class CDPROJECT_API ACDPlayerState : public APlayerState
 {
     GENERATED_BODY()
 
@@ -30,6 +32,9 @@ public:
     int32 GetGold() const { return Gold; }
     ETeam GetTeam() const { return Team; }
     ETeam GetMatchTeam() const { return MatchTeam; }
+
+    void AddShot() { TotalShot++; }
+    void AddHeadShot() { HeadShot++;}
     
     void SetTeam(ETeam NewTeam);
     void SetMatchTeam(ETeam NewTeam);
@@ -40,6 +45,7 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Gold")
     FOnGoldUpdated OnGoldUpdated;
 
+    FCDMatchStats GetRecordInput();
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     
@@ -59,10 +65,15 @@ private:
     ETeam MatchTeam = ETeam::ET_NoTeam;
     UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
     FString Name;
+    UPROPERTY(ReplicatedUsing = OnRep_Gold, EditAnywhere, Category = "Player Stats")
+    int32 Gold = 0;
+
     UPROPERTY(ReplicatedUsing = OnRep_Kills, VisibleAnywhere, Category = "Player Stats")
     int32 Kills = 0;
     UPROPERTY(ReplicatedUsing = OnRep_Deaths, VisibleAnywhere, Category = "Player Stats")
     int32 Deaths = 0;
-    UPROPERTY(ReplicatedUsing = OnRep_Gold, EditAnywhere, Category = "Player Stats")
-    int32 Gold = 0;
+    UPROPERTY(VisibleAnywhere)
+    int32 TotalShot = 0;
+    UPROPERTY(VisibleAnywhere)
+    int32 HeadShot = 0;
 };

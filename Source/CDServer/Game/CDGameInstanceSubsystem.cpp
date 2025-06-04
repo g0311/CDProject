@@ -2,6 +2,7 @@
 
 #include "CDGameInstanceSubsystem.h"
 
+#include "CDSessionGameState.h"
 #include "Server_GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -37,12 +38,12 @@ void UCDGameInstanceSubsystem::InitGameLift(const FServerParameters& ServerParam
     //it invokes the server SDK call ActivateGameSession().
     auto onGameSession = [=, this](Aws::GameLift::Server::Model::GameSession gameSession)
     {
-        FString GameSessionId = FString(gameSession.GetGameSessionId());
+        GameSessionId = FString(gameSession.GetGameSessionId());
         UE_LOG(CD_GAMEINSTANCE, Log, TEXT("GameSession Initializing: %s"), *GameSessionId);
 
         int PropertyCount;
         const Aws::GameLift::Server::Model::GameProperty* gameProperties = gameSession.GetGameProperties(PropertyCount);
-
+        
         for (int i = 0; i < PropertyCount; ++i)
         {
             const Aws::GameLift::Server::Model::GameProperty& property = gameProperties[i];
@@ -60,6 +61,14 @@ void UCDGameInstanceSubsystem::InitGameLift(const FServerParameters& ServerParam
             if (key.Equals(TEXT("Map"), ESearchCase::IgnoreCase))
             {
                 RoomMap = value;
+            }
+        }
+        
+        if (GetWorld())
+        {
+            if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+            {
+                SessionGameState->UpdateProperty(RoomMode,RoomMap,RoomName,bIsPrivate, GameSessionId);
             }
         }
         
@@ -151,86 +160,4 @@ void UCDGameInstanceSubsystem::InitGameLift(const FServerParameters& ServerParam
 void UCDGameInstanceSubsystem::ParseCommandLienPort(int32& outPort)
 {
     FParse::Value(FCommandLine::Get(), TEXT("-port="), outPort);
-}
-
-void UCDGameInstanceSubsystem::AddPlayerInfo(FPlayerSessionInfo playerInfo)
-{
-    PlayerInfos.AddPlayer(playerInfo);
-}
-
-void UCDGameInstanceSubsystem::RemovePlayerInfo(const FString& PlayerSessionId)
-{
-    for (auto& playerInfo : PlayerInfos.Items)
-    {
-        if (PlayerSessionId == playerInfo.PlayerSessionId)
-        {
-            PlayerInfos.RemovePlayer(playerInfo);
-        }
-    }
-}
-
-FPlayerSessionInfoArray& UCDGameInstanceSubsystem::GetPlayerInfos()
-{
-    return PlayerInfos;
-}
-
-const FString& UCDGameInstanceSubsystem::GetRoomMode()
-{
-    return RoomMode;
-}
-
-const FString& UCDGameInstanceSubsystem::GetRoomMap()
-{
-    return RoomMap;
-}
-
-void UCDGameInstanceSubsystem::SetRoomMode(const FString& PlayerSessionId, const FString& NextRoomMode)
-{
-    if (!PlayerInfos.Items.IsEmpty() && PlayerSessionId == PlayerInfos.Items[0].PlayerSessionId)
-    {
-        this->RoomMode = NextRoomMode;
-    }
-}
-
-void UCDGameInstanceSubsystem::SetRoomMap(const FString& PlayerSessionId, const FString& NextRoomMap)
-{
-    if (!PlayerInfos.Items.IsEmpty() && PlayerSessionId == PlayerInfos.Items[0].PlayerSessionId)
-    {
-        this->RoomMap = NextRoomMap;
-    }
-}
-
-const FString& UCDGameInstanceSubsystem::GetGameSessionId()
-{
-    return GameSessionId;
-}
-
-void UCDGameInstanceSubsystem::Server_LeaveSession(const FString& PlayerSessionId)
-{
-#if WITH_GAMELIFT
-    Aws::GameLift::Server::RemovePlayerSession(TCHAR_TO_UTF8(*PlayerSessionId));
-#endif
-    RemovePlayerInfo(PlayerSessionId);
-}
-
-void UCDGameInstanceSubsystem::Server_PlayerReady(const FString& PlayerSessionId, bool ShouldReset)
-{
-    if (PlayerInfos.IsPlayerHost(PlayerSessionId))
-    {
-        UE_LOG(LogCD_ServerLog, Warning, TEXT("Server_PlayerReady: Player Is Host"));
-        if (PlayerInfos.IsAllPlayerReady())
-        {
-            AServer_GameMode* Server_GameMode = Cast<AServer_GameMode>(GetWorld()->GetAuthGameMode());
-            if (IsValid(Server_GameMode))
-            {
-                Server_GameMode->StartGame();	
-            }
-        }
-    }
-    else
-    {
-        UE_LOG(LogCD_ServerLog, Warning, TEXT("Server_PlayerReady: Player Is Not Host"));
-        PlayerInfos.UpdatePlayerReadyState(PlayerSessionId, ShouldReset);
-        PlayerInfos.Log();
-    }
 }

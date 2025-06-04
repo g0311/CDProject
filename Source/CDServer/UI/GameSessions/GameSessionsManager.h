@@ -20,11 +20,13 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FAPIStatusMessage JoinGameSessionMessageDelegate;
 	UPROPERTY(BlueprintAssignable)
-	FOnGetSessionsRequestSucceeded OnGetSessionsRequestSucceeded;
-	UPROPERTY(BlueprintAssignable)
 	FAPIStatusMessage PrivateSessionDelegate;
 	UPROPERTY(BlueprintAssignable)
 	FAPIStatusMessage PrivateSessionCreateDelegate;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnGetSessionsRequestSucceeded OnGetSessionsRequestSucceeded;
+	//Sessions 반환용
 	
 	UFUNCTION()
 	void QuickJoinGameSession(const FString& GameMode, const FString& RoomMap);

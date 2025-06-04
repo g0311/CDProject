@@ -11,6 +11,14 @@
 /**
  * 
  */
+enum WinState
+{
+	ATEAMLOSE = -1,
+	DRAW = 0,
+	ATEAMWIN = 1,
+	NONE = 2,
+};
+
 DECLARE_LOG_CATEGORY_EXTERN(LogCD_ServerLog, Log, All);
 
 UCLASS()
@@ -26,15 +34,21 @@ public:
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	
 	void StartGame();
+	void EndGame(WinState winState);
 	class UCDGameInstanceSubsystem* GetGameInstanceSubsystem();
 	
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UGameSessionsManager> GameSessionManagerClass;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UGameStatsManager> GameStatsManagerClass;
 protected:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY()
 	TObjectPtr<class UGameSessionsManager> GameSessionManager;
+	UPROPERTY()
+	TObjectPtr<class UGameStatsManager> GameStatsManager;
 private:
 	void InitGameLift();
 	void SetServerParameters(FServerParameters& serverParameters);
@@ -43,7 +57,4 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<class UCDGameInstanceSubsystem> CDGameInstanceSubsystem;
-	
-	void UpdatePlayersStatus();
-	FTimerHandle LobbyCheckTimerHandle;
 };
