@@ -20,13 +20,14 @@ public:
 	//HUD
 
 	void SetHUDTime();
+	void UpdateCharacterOverlay();
 	void SetHUDHealth(float Health);
 	void SetHUDShield(float Shield);
 	void SetHUDKill(float killcount);
 	void SetHUDDeath(float deathcount);
 	void SetHUDWeaponAmmo(int32 Ammo);
 	void SetHUDWeaponInfo(class AWeapon* weapon);
-	void SetHUDCarriedAmmo(int32 Ammo);
+	void SetHUDWeaponCarriedAmmo(int32 Ammo);
 	void SetHUDMatchCount(float CountdownTime);
 	void SetHUDAnnouncementCountdown(float Countdown);
 	void SetTeamScore();
@@ -83,6 +84,7 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchState(ECurMatchState state, float curTime);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -175,5 +177,23 @@ private:
 private:
 	virtual void LeaveGame() /*override*/;	
 
+public:
+	virtual void SetupInputComponent() override;
+	UFUNCTION(Client, Reliable)
+	void ClientSetPlayerAlive(bool isAlive);
+	
+private:
+	UPROPERTY(VisibleAnywhere, Category = "Input")
+	class ACDCharacter* OwnedCharacter = nullptr;
+	UPROPERTY(VisibleAnywhere, Category = "Input")
+	TArray<TObjectPtr<ACDCharacter>> TeamCharacters;
+	
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputMappingContext> DeadInputMappingContext;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> LeftClickAction;
+	int32 CurPlayerIndex = 0;
+	void LMouseDown();
+	
 };
 

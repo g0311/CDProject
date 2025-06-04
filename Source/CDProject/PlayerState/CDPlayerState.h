@@ -24,6 +24,7 @@ public:
     void AddKill();
     void AddDeath();
     void AddGold(int32 Amount);
+    void SetGold(int32 Amount);
     bool SpendGold(int32 Amount);
     
     int32 GetKills() const { return Kills; }

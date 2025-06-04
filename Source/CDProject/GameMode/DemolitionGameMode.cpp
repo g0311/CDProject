@@ -195,7 +195,7 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 	}
 }
 
-void ADemolitionGameMode::RestartMatch(bool isForce)
+void ADemolitionGameMode::RestartMatch(bool isInit)
 {
 	TArray<AController*> PlayerControllers;
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
@@ -207,7 +207,6 @@ void ADemolitionGameMode::RestartMatch(bool isForce)
 	}
 	Test::Shuffle(PlayerControllers);
 
-	bool isC4Given = false;
 	for (AController* controller : PlayerControllers)
 	{
 		if (controller)
@@ -216,35 +215,21 @@ void ADemolitionGameMode::RestartMatch(bool isForce)
 			ACDCharacter* Character = Cast<ACDCharacter>(controller->GetCharacter());
 			if (Character && playerController)
 			{
-				if (isForce)
-					Character->Kill();
-				Character->Reset();
-				AActor* playerStart = FindPlayerStart(playerController);
-				if (playerStart)
+				if (Character->GetTeam() == ETeam::ET_RedTeam)
 				{
-					Character->SetActorLocation(playerStart->GetActorLocation());
-					Character->SetActorRotation(playerStart->GetActorRotation());
-					controller->SetControlRotation(playerStart->GetActorRotation());
-				}
-				if (!isC4Given && Character->GetTeam() == ETeam::ET_RedTeam)
-				{
-					isC4Given = true;
 					Character->GiveC4();
+					break;
 				}
+			}
+			if (isInit && controller->GetPlayerState<ACDPlayerState>())
+			{
+				controller->GetPlayerState<ACDPlayerState>()->SetGold(1000);
 			}
 		}
 	}
-	for (auto actor : _createdActors)
-	{
-		if (IsValid(actor))
-		{
-			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
-				continue;
-			actor->Destroy();
-		}
-	}
-	_createdActors.Empty();
 	InitializeTeamCount();
+
+	Super::RestartMatch(isInit);
 }
 
 void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
@@ -303,7 +288,7 @@ void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimCont
 }
 
 void ADemolitionGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
-{
+{ //Unused
 	if (ElimmedCharacter)
 	{
 		ElimmedCharacter->Reset();

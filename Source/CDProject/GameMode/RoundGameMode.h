@@ -24,7 +24,7 @@ public:
 	// virtual void PostLogin(APlayerController* NewPlayer) override;
 	// virtual void Logout(AController* Exiting) override;
 	
-	virtual void RestartMatch(bool isForce = false); //Custom
+	virtual void RestartMatch(bool isInit = false); //Custom
 	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = L"") override;
 	//virtual bool ShouldSpawnAtStartSpot(AController* Player) override;
 	void SendPlayerJoined();

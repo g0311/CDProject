@@ -40,7 +40,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	{
 		Countdown=FMath::CeilToInt(WaitingStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
 		//UE_LOG(LogGameMode, Log, TEXT("Countdown %f"), Countdown);
-		if (Countdown==-1)
+		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_InGame);
 		}
@@ -48,7 +48,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	else if (_curMatchState==ECurMatchState::EMS_InGame)
 	{
 		Countdown=MatchStartTime + MatchTime-GetWorld()->GetTimeSeconds();
-		if (Countdown<=0.f)
+		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_CoolDown);
 		}
@@ -57,7 +57,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	{
 		Countdown=CooldownStartTime + CooldownTime-GetWorld()->GetTimeSeconds();
 		//UE_LOG(LogGameMode, Log, TEXT("%f %f %f"), CooldownTime, CooldownStartTime, GetWorld()->GetTimeSeconds());
-		if (Countdown<=0.f)
+		if (Countdown<=0.1f)
 		{
 			//UE_LOG(LogGameMode, Log, TEXT("Restart Called"));
 			SetCurMatchState(ECurMatchState::EMS_Waiting);
@@ -114,6 +114,7 @@ void ARoundGameMode::PlayerEliminated(class ACDPlayerController* VictimControlle
 	if (VictimPlayerState)
 	{
 		VictimPlayerState->AddDeath();
+		VictimController->ClientSetPlayerAlive(false);
 	}
 	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	// {
@@ -141,27 +142,30 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 	}
 }
 
-void ARoundGameMode::RestartMatch(bool isForce)
+void ARoundGameMode::RestartMatch(bool isInit)
 {
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
 		AController* Controller = Cast<AController>(*PCIter);
 		if (Controller)
 		{
-			ACDPlayerController* playerController=Cast<ACDPlayerController>(Controller);
-			ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter());
-			if (Character && playerController)
+			if (ACDPlayerController* playerController=Cast<ACDPlayerController>(Controller))
 			{
-				if (isForce)
-					Character->Kill();
-				Character->Reset();
-				AActor* playerStart = FindPlayerStart(playerController);
-				if (playerStart)
+				playerController->ClientSetPlayerAlive(true);
+				if (ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter()))
 				{
-					Character->SetActorLocation(playerStart->GetActorLocation());
-					Character->SetActorRotation(playerStart->GetActorRotation());
-					Controller->SetControlRotation(playerStart->GetActorRotation());
+					if (isInit)
+						Character->Kill();
+					Character->Reset();
+					AActor* playerStart = FindPlayerStart(playerController);
+					if (playerStart)
+					{
+						Character->SetActorLocation(playerStart->GetActorLocation());
+						Character->SetActorRotation(playerStart->GetActorRotation());
+						Controller->SetControlRotation(playerStart->GetActorRotation());
+					}
 				}
+				playerController->UpdateCharacterOverlay();
 			}
 		}
 	}
