@@ -1,7 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CDProject/Types/Team.h"
+#include "CDServer/Player/CDPlayerStateStatsProvider.h"
+#include "CDServer/Player/Team.h"
 #include "CDServer/UI/HTTP/HTTPRequestTypes.h"
 #include "GameFramework/PlayerState.h"
 
@@ -12,7 +13,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGoldUpdated, int32, NewGold);
 
 
 UCLASS()
-class CDPROJECT_API ACDPlayerState : public APlayerState
+class CDPROJECT_API ACDPlayerState : public APlayerState, public ICDPlayerStateStatsProvider
 {
     GENERATED_BODY()
 
@@ -29,25 +30,28 @@ public:
     
     int32 GetKills() const { return Kills; }
     int32 GetDeaths() const { return Deaths; }
-    FString GetPlayerName() const { return Name; }
+    FString GetUsername() const { return Name; }
     int32 GetGold() const { return Gold; }
-    UFUNCTION(BlueprintCallable)
-    ETeam GetTeam() const { return Team; }
     ETeam GetMatchTeam() const { return MatchTeam; }
-
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Player Stats")
+    ETeam GetTeam() const;
+  
     void AddShot() { TotalShot++; }
     void AddHeadShot() { HeadShot++;}
     
     void SetTeam(ETeam NewTeam);
     void SetMatchTeam(ETeam NewTeam);
     void SwitchTeam();
+    void SetUsername(FString NewUsername) { Name = NewUsername; }
     
     UPROPERTY(BlueprintAssignable, Category = "Score")
     FOnScoreUpdated OnScoreUpdated;
     UPROPERTY(BlueprintAssignable, Category = "Gold")
     FOnGoldUpdated OnGoldUpdated;
 
-    FCDMatchStats GetRecordInput();
+    virtual FCDMatchStats GetPRecordInput() const override;
+    virtual ETeam GetPTeam() const override;
+    virtual FString GetPUsername() const override;
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     
@@ -63,8 +67,7 @@ protected:
 private:
     UPROPERTY(ReplicatedUsing = OnRep_Team,VisibleAnywhere, Category = "Player Stats",meta = (AllowPrivateAccess = "true"))
     ETeam Team = ETeam::ET_NoTeam;
-
-    UPROPERTY(Replicated, VisibleAnywhere,meta = (AllowPrivateAccess = "true"))
+    UPROPERTY(Replicated,VisibleAnywhere, Category = "Player Stats",meta = (AllowPrivateAccess = "true"))
     ETeam MatchTeam = ETeam::ET_NoTeam;
     UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
     FString Name;

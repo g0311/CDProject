@@ -11,6 +11,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/Weapon/ProjectileC4.h"
+#include "CDServer/Player/Team.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -160,7 +161,7 @@ int UCombatComponent::GetCurAmmo()
 
 int UCombatComponent::GetCarriedAmmo()
 {
-	if (_weaponIndex>=-1)
+	if (_weaponIndex != -1)
 	{
 		if (_weapons[_weaponIndex])
 		{
@@ -448,7 +449,6 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 		return;
 
 	_weapons[_weaponIndex]->SetWeaponVisible(tf);
-	_weapons[_weaponIndex]->SetWeaponVisible(tf);
 }
 
 void UCombatComponent::SetBefWeaponVisible(bool tf)
@@ -459,7 +459,6 @@ void UCombatComponent::SetBefWeaponVisible(bool tf)
 		return;
 	}
 
-	_weapons[_befIndex]->SetWeaponVisible(tf);
 	_weapons[_befIndex]->SetWeaponVisible(tf);
 
 	_befIndex = _weaponIndex;
@@ -940,6 +939,8 @@ void UCombatComponent::SetHUDCrosshairs(float spread)
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 {
+	if (!IsValid(this))
+		return;
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
@@ -971,6 +972,8 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 
 void UCombatComponent::NetMulticastReload_Implementation()
 {
+	if (!IsValid(this))
+		return;
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	if (!_playerCharacter)
@@ -986,6 +989,8 @@ void UCombatComponent::NetMulticastReload_Implementation()
 
 void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 {
+	if (!IsValid(this))
+		return;
 	if (!IsValid(weapon))
 		return;
 	weapon->GetWeaponMesh()->SetVisibility(true);
@@ -994,6 +999,8 @@ void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 
 void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
+	if (!IsValid(this))
+		return;
 	if (_weaponIndex == -1)
 		return;
 	
@@ -1001,7 +1008,8 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, idx]()
 		{
-			NetMulticastChangeWeapon_Implementation(idx);
+			if (IsValid(this))
+				NetMulticastChangeWeapon_Implementation(idx);
 		});
 		return;
 	} //Wait Until Weapon Replicated
@@ -1025,6 +1033,8 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 
 void UCombatComponent::NetMulticastGrenadeReady_Implementation()
 {
+	if (!IsValid(this))
+		return;
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	if (bodyAnim)
@@ -1043,6 +1053,8 @@ void UCombatComponent::NetMulticastGrenadeReady_Implementation()
 
 void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
 {
+	if (!IsValid(this))
+		return;
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 	
@@ -1065,6 +1077,8 @@ void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
 
 void UCombatComponent::NetMulticastCancelReload_Implementation()
 {
+	if (!IsValid(this))
+		return;
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 
@@ -1077,6 +1091,8 @@ void UCombatComponent::NetMulticastCancelReload_Implementation()
 
 void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf, float duration)
 {
+	if (!IsValid(this))
+		return;
 	if (!_playerCharacter)
 		return;
 	
@@ -1097,6 +1113,8 @@ void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf, float duratio
 
 void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf, float duration)
 {
+	if (!IsValid(this))
+		return;
 	if (!_playerCharacter || !_playerCharacter->IsLocallyControlled())
 		return;
 
@@ -1111,43 +1129,4 @@ void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf, float durati
 	{
 		pc->ShowC4DefusingProgress(false);
 	}
-}
-
-void UCombatComponent::OnRep_WeaponID()
-{ //Change Weapon
-	if (_playerCharacter && _playerCharacter->IsLocallyControlled() && !_playerCharacter->HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("ONREP WEAPON IND // ID: %d"), _weaponIndex);
-	}
-	
-	if (_weaponIndex == -1)
-		return;
-	
-	if (!_weapons[_weaponIndex])
-	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
-		{
-			OnRep_WeaponID();
-		});
-		return;
-	} //Wait Until Weapon Replicated
-	if (!_playerCharacter)
-		return;
-
-	RemoveCombatState(CombatTags::State_Combat_GrenadeReady);
-	_weapons[_weaponIndex]->SetHUDAmmo();
-	
-	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
-	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
-	
-	if (bodyAnim)
-	{
-		bodyAnim->PlayEquipMontage(_weapons[_weaponIndex]);
-	}
-	if (armAnim)
-	{
-		armAnim->PlayEquipMontage(_weapons[_weaponIndex]);
-	}
-	
-	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
 }

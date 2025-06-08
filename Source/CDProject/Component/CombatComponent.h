@@ -49,10 +49,10 @@ public:
 	
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
 	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
-	FORCEINLINE int GetCurAmmo();
-	FORCEINLINE int GetCarriedAmmo();
-	FORCEINLINE int GetAmmoCapacity();
-	FORCEINLINE int SetAmmoCapacity(int NewAmmoCount);
+	int GetCurAmmo();
+	int GetCarriedAmmo();
+	int GetAmmoCapacity();
+	int SetAmmoCapacity(int NewAmmoCount);
 	
 	AWeapon* GetCurWeapon();
 	bool IsAmmoEmpty();
@@ -84,11 +84,11 @@ private:
 	//State
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
-	int _weaponIndex = 1;
+	int _weaponIndex = -1;
 	UPROPERTY(VisibleAnywhere)
-	int _befIndex = 1;
+	int _befIndex = -1;
 	UPROPERTY(VisibleAnywhere, Replicated)
-	TArray<class AWeapon*> _weapons;
+	TArray<TObjectPtr<AWeapon>> _weapons;
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool _isC4Area = false;	
 
@@ -153,7 +153,6 @@ private:
 	void ChangeWeapon(int idx);
 	void DropWeapon();
 	void SetHUDCrosshairs(float spread);
-
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastFire(FVector target);
@@ -173,6 +172,4 @@ private:
 	void NetMulticastC4Defuse(bool tf, float duration = 0.f);
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
-	UFUNCTION()
-	void OnRep_WeaponID();
 };

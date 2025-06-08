@@ -20,7 +20,6 @@ public class CDProject : ModuleRules
 			"MultiplayerSessions",
 			"Niagara",
 			"SlateCore",
-			
 			"CDServer",
 			"AIModule"
 		});

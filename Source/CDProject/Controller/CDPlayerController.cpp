@@ -55,15 +55,16 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 void ACDPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-
-	if (APlayerState* LocalPS = GetPlayerState<APlayerState>())
+	
+	if (ACDPlayerState* APS = GetPlayerState<ACDPlayerState>())
 	{
-		if (ACDPlayerState* APS=Cast<ACDPlayerState>(LocalPS))
+		int32 TeamIdFromPS = APS->GetTeam()==ETeam::ET_RedTeam?1:2; 
+		SetGenericTeamId(FGenericTeamId(TeamIdFromPS));
+
+		if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(InPawn))
 		{
-			int32 TeamIdFromPS = APS->GetTeam()==ETeam::ET_RedTeam?1:2; 
-			SetGenericTeamId(FGenericTeamId(TeamIdFromPS));
+			CDCharacter->SetUserName(APS->GetUsername());
 		}
-		else return;
 	}
 }
 
@@ -78,6 +79,25 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 	DOREPLIFETIME(ACDPlayerController, MatchStartTime);
 	DOREPLIFETIME(ACDPlayerController, CooldownStartTime);
 	DOREPLIFETIME(ACDPlayerController, HUDCharID);
+}
+
+void ACDPlayerController::InitializeController_Implementation()
+{
+	CDHUD=Cast<ACDHUD>(GetHUD());
+	if (IsLocalController())
+	{
+		UpdateCharacterOverlay();
+		ShowAnnounceText(true);
+		UE_LOG(LogTemp, Warning, TEXT("Add Player Overlay"));
+	}
+	
+	PS = Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>());
+	if (PS)
+	{
+		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
+	}
+	
+	ServerCheckMatchState();	
 }
 
 void ACDPlayerController::ServerCheckMatchState_Implementation()
@@ -127,33 +147,9 @@ void ACDPlayerController::ClientSetMatchState_Implementation(ECurMatchState stat
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	CDHUD=Cast<ACDHUD>(GetHUD());
-	ACDCharacter* _character = Cast<ACDCharacter>(GetCharacter());
-	if (CDHUD && _character)
+	if (!HasAuthority() || (HasAuthority() && IsLocalController()))
 	{
-		if (bInitializeHealth)
-		{
-			SetHUDHealth(_character->GetAttributeSet()->GetHealth());
-		}
-		if (bInitializeShield)
-		{
-			SetHUDShield(_character->GetAttributeSet()->GetShield());
-		}
-	}
-	PS = Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>());
-	if (PS)
-	{
-		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
-	}
-	ServerCheckMatchState();
-	if (IsLocalController())
-	{
-		UpdateCharacterOverlay();
-		if (CDHUD)
-		{
-			CDHUD->AddAnnouncement();
-		}
-		
+		InitializeController_Implementation();
 	}
 }
 
@@ -275,19 +271,6 @@ void ACDPlayerController::HandleCooldown()
 		}
 	}
 }
-
-void ACDPlayerController::ServerSendClientJoined_Implementation()
-{
-	if (GetWorld()->GetAuthGameMode())
-	{
-		ARoundGameMode* gamemode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
-		if (IsValid(gamemode))
-		{
-			gamemode->SendPlayerJoined();
-		}
-	}
-}
-
 
 void ACDPlayerController::SetHUDHealth(float Health)
 {
@@ -637,16 +620,11 @@ void ACDPlayerController::ShowAnnounceText(bool bShow)
 		if (bShow)
 		{
 			CDHUD->AddAnnouncement();
-			if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
-			{
-				FString AnnouncementText = "Starting Match...";
-				CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
-				CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
-			}
 		}
 		else
 		{
-			CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+			if (CDHUD->Announcement)
+				CDHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
@@ -656,25 +634,38 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 	Super::AcknowledgePossession(P);
 	if (IsLocalController()) 
 	{
-		ServerSendClientJoined();
-		
 		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
-		ACDCharacter* acdCharacter = dynamic_cast<ACDCharacter*>(P);
-		if (subSystem && acdCharacter)
+		if(ACDCharacter* CDCharacter = dynamic_cast<ACDCharacter*>(P); IsValid(CDCharacter))
 		{
-			subSystem->AddMappingContext(acdCharacter->GetInputMapping(), 0);
+			if (subSystem && CDCharacter)
+			{
+				subSystem->AddMappingContext(CDCharacter->GetInputMapping(), 0);
+			}
+
+			if (CDCharacter->GetAbilitySystemComponent())
+			{
+				CDCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
+			}
+			
+			CDCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
+			
+			OwnedCharacter = CDCharacter;
 		}
-
-		if (acdCharacter->GetAbilitySystemComponent())
-		{
-			acdCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
-		}
-
-		acdCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
-
-		OwnedCharacter = acdCharacter;
 	}
-
+	
+	ACDCharacter* _character = Cast<ACDCharacter>(GetCharacter());
+	if (CDHUD && _character)
+	{
+		if (bInitializeHealth)
+		{
+			SetHUDHealth(_character->GetAttributeSet()->GetHealth());
+		}
+		if (bInitializeShield)
+		{
+			SetHUDShield(_character->GetAttributeSet()->GetShield());
+		}
+	}
+	
 	FInputModeGameOnly InputModeData;
 	SetInputMode(InputModeData);
 	SetShowMouseCursor(false);
@@ -686,12 +677,20 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		WaitingStartTime = time;
-		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
+		if (IsValid(GetCharacter()))
+		{
+			//GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
+			GetCharacter()->DisableInput(this);
+		}
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = time;
-		GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		if (IsValid(GetCharacter()))
+		{
+			//GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			GetCharacter()->EnableInput(this);
+		}
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
@@ -798,7 +797,6 @@ void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RESET RESET CALLBACK"));
 		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
 		if (subSystem)
 		{
@@ -832,11 +830,10 @@ void ACDPlayerController::LMouseDown()
 void ACDPlayerController::ShowSniperScope()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (!CDHUD->SniperScope)
+	if (CDHUD && !CDHUD->SniperScope)
 	{
 		CDHUD->AddSniperScope();
 	}
-
 	if (CDHUD&&CDHUD->SniperScope&&CDHUD->SniperScope->ScopeZoomIn)
 	{
 		ACDCharacter* CDCharacter=Cast<ACDCharacter>(GetCharacter());

@@ -122,6 +122,8 @@ void AWeapon::BeginPlay()
 	EnableCustomDepth(false);
 	InitAmmoCount=Ammo;
 	InitCarriedAmmoCount=CarriedAmmo;
+
+	OnRep_WeaponVisible();
 }
 
 void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

@@ -49,10 +49,10 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 		return FastArrayDeltaSerialize<FPlayerSessionInfo, FPlayerSessionInfoArray>(Items, DeltaParms, *this);
 	}
 	
-	void AddPlayer(const FPlayerSessionInfo& Info)
+	void AddPlayer(FPlayerSessionInfo Info)
 	{
 		int32 Index = Items.Add(Info);
-		MarkItemDirty(Items[Index]);
+		MarkArrayDirty();
 	}
 
 	void RemovePlayer(const FPlayerSessionInfo& Info)

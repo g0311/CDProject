@@ -65,10 +65,10 @@ void AAProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 		2.f
 	);
 	
-	if (OtherActor)
-		UE_LOG(LogTemp, Warning, TEXT("Bullet Collided Actor %s"), *OtherActor->GetName());
-	if (OtherComp)
-		UE_LOG(LogTemp, Warning, TEXT("Bullet Collided Comp %s"), *OtherComp->GetName());
+	// if (OtherActor)
+	// 	UE_LOG(LogTemp, Warning, TEXT("Bullet Collided Actor %s"), *OtherActor->GetName());
+	// if (OtherComp)
+	// 	UE_LOG(LogTemp, Warning, TEXT("Bullet Collided Comp %s"), *OtherComp->GetName());
 	
 	Super::OnHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 }

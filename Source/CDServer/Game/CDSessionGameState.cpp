@@ -2,7 +2,6 @@
 
 
 #include "CDSessionGameState.h"
-
 #include "CDGameInstanceSubsystem.h"
 #include "Server_GameMode.h"
 #include "Net/UnrealNetwork.h"
@@ -32,8 +31,17 @@ void ACDSessionGameState::RemovePlayerInfo(const FString& PlayerSessionId)
         if (PlayerSessionId == playerInfo.PlayerSessionId)
         {
             PlayerInfos.RemovePlayer(playerInfo);
+            break;
         }
     }
+    // for (int32 i = PlayerInfos.Items.Num() - 1; i >= 0; --i)
+    // {
+    //     if (PlayerInfos.Items[i].PlayerSessionId == PlayerSessionId)
+    //     {
+    //         PlayerInfos.Items.RemoveAt(i);
+    //         return;
+    //     }
+    // }
 }
 
 FPlayerSessionInfoArray& ACDSessionGameState::GetPlayerInfos()
@@ -123,7 +131,7 @@ void ACDSessionGameState::BeginPlay()
 {
     Super::BeginPlay();
     
-    if (HasAuthority() && IsValid(GetGameInstance()))
+    if (IsRunningDedicatedServer() && HasAuthority() && IsValid(GetGameInstance()))
     {
         UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstance()->GetSubsystem<UCDGameInstanceSubsystem>();
         if (IsValid(GameInstanceSubsystem))

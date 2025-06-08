@@ -21,17 +21,17 @@ class CDPROJECT_API ARoundGameMode : public AServer_GameMode
 public:
 	ARoundGameMode();
 	virtual void Tick(float DeltaSeconds) override;
-	// virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 	// virtual void Logout(AController* Exiting) override;
+	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	
 	virtual void RestartMatch(bool isInit = false); //Custom
 	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName = L"") override;
 	//virtual bool ShouldSpawnAtStartSpot(AController* Player) override;
-	void SendPlayerJoined();
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false);
 	virtual void PlayerEliminated(
-		class ACDPlayerController* VictimController,
-		ACDPlayerController* AttackerController
+		class AController* VictimController,
+		AController* AttackerController
 		);
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
 
