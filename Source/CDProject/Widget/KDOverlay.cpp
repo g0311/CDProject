@@ -3,6 +3,7 @@
 #include <string>
 
 #include "CDProject/GameState/CDGameState.h"
+#include "CDServer/Player/Team.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"

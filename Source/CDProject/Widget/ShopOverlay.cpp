@@ -7,6 +7,7 @@
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDProject/Types/WeaponStruct.h"
 #include "Components/Button.h"
@@ -54,7 +55,6 @@ bool UShopOverlay::CanPurchase(const FWeaponStruct& WeaponData)
 		UE_LOG(LogTemp, Warning, TEXT("Can't Purchase"));
 		return false;
 	}
-	
 }
 
 void UShopOverlay::GiveWeaponToPlayer(const FWeaponStruct& WeaponData)
@@ -64,42 +64,7 @@ void UShopOverlay::GiveWeaponToPlayer(const FWeaponStruct& WeaponData)
 		UE_LOG(LogTemp, Display, TEXT("No WeaponClass"));
 		return;
 	}
-	ServerGiveWeaponToPlayer(WeaponData);
-	
+	ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwningPlayerPawn());
+	if (IsValid(CDCharacter))
+		CDCharacter->ServerGiveWeapon(WeaponData);
 }
-void UShopOverlay::ServerGiveWeaponToPlayer_Implementation(const FWeaponStruct& WeaponData)
-{
-	if (!WeaponData.WeaponClass) return;
-	
-	PC = PC ? PC : Cast<ACDPlayerController>(GetOwningPlayer());
-	if (!PC)
-	{
-		AIPC=Cast<AAIController>(GetOwningPlayer());
-	}
-	if (!PC) return;
-	Character = Character ? Character : Cast<ACDCharacter>(PC->GetCharacter());
-	if (!Character) return;
-	CombatComp = CombatComp ? CombatComp : Character->GetCombatComponent();
-	if (!CombatComp) return;
-	
-	UWorld* World = GetWorld();
-	if (!World) return;
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = Character;
-	SpawnParams.Instigator = Character;
-
-	AWeapon* SpawnedWeapon = World->SpawnActor<AWeapon>(
-		WeaponData.WeaponClass,
-		Character->GetActorLocation(),
-		FRotator::ZeroRotator,
-		SpawnParams
-	);
-
-	if (SpawnedWeapon)
-	{
-		UE_LOG(LogTemp,Display,TEXT("Spawn Weapon!"))
-		CombatComp->GetWeapon(SpawnedWeapon, true);
-		PS->SpendGold(WeaponData.Cost);
-	}
-}
-

@@ -103,11 +103,12 @@ void ACDHUD::AddGameStateOverlay()
 
 void ACDHUD::AddAnnouncement()
 {
-	if (!IsValid(Announcement))
-		return;
 	if (APlayerController* PlayerController=GetOwningPlayerController())
 	{
-		Announcement=CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);
+		if (Announcement == nullptr)
+		{
+			Announcement=CreateWidget<UAnnouncement>(PlayerController,AnnouncementClass);
+		}
 		Announcement->AddToViewport();
 	}
 }

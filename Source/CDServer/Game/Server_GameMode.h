@@ -20,6 +20,7 @@ enum WinState
 };
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCD_ServerLog, Log, All);
+#define MAX_PLAYER 6
 
 UCLASS()
 class CDSERVER_API AServer_GameMode : public AGameMode

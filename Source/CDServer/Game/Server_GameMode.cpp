@@ -5,7 +5,7 @@
 
 #include "CDGameInstanceSubsystem.h"
 #include "CDSessionGameState.h"
-#include "CDProject/PlayerState/CDPlayerState.h"
+#include "CDServer/Player/CDPlayerStateStatsProvider.h"
 #include "CDServer/Player/CDSessionPlayerController.h"
 #include "CDServer/UI/GameSessions/GameSessionsManager.h"
 #include "CDServer/UI/GameStats/GameStatsManager.h"
@@ -28,8 +28,11 @@ void AServer_GameMode::PreLogin(const FString& Options, const FString& Address, 
     
     const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
     const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
-    
-    TryAcceptPlayerSession(PlayerSessionId, Username, ErrorMessage);
+
+    if (IsRunningDedicatedServer())
+    {
+        TryAcceptPlayerSession(PlayerSessionId, Username, ErrorMessage);
+    }
 }
 
 APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal,
@@ -72,6 +75,9 @@ void AServer_GameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
 
+    if (!IsRunningDedicatedServer())
+        return;
+    
     ACDSessionPlayerController* PlayerController = Cast<ACDSessionPlayerController>(Exiting);
     if (IsValid(PlayerController))
     {
@@ -106,6 +112,7 @@ void AServer_GameMode::HandleSeamlessTravelPlayer(AController*& C)
         RestartPlayer(PC);
     }
 }
+
 void AServer_GameMode::StartGame()
 {
     if (IsValid(GameSessionManager))
@@ -134,10 +141,11 @@ void AServer_GameMode::EndGame(WinState winState)
         {
             for (auto& player : SessionGameState->PlayerArray)
             {
-                if (ACDPlayerState* CDPlayerState = Cast<ACDPlayerState>(player); IsValid(CDPlayerState))
+                if (player->IsABot()) continue;
+                if (ICDPlayerStateStatsProvider* CDPlayerState = Cast<ICDPlayerStateStatsProvider>(player))
                 {
                     FCDRecordMatchStatsInput RecordMatchStatsInput;
-                    FCDMatchStats MatchStats = CDPlayerState->GetRecordInput();
+                    FCDMatchStats MatchStats = CDPlayerState->GetPRecordInput();
                     FCDMatchData MatchData;
                     MatchData.Kill = MatchStats.Kill;
                     MatchData.Death = MatchStats.Death;
@@ -145,7 +153,7 @@ void AServer_GameMode::EndGame(WinState winState)
                     MatchData.Map = SessionGameState->GetRoomMap();
                     if (winState == ATEAMWIN)
                     {
-                        if (CDPlayerState->GetTeam() == ETeam::ET_ATeam)
+                        if (CDPlayerState->GetPTeam() == ETeam::ET_ATeam)
                         {
                             MatchStats.Totalwin = 1;
                             MatchData.Iswin = 1;
@@ -158,7 +166,7 @@ void AServer_GameMode::EndGame(WinState winState)
                     }
                     else if (winState == ATEAMLOSE)
                     {
-                        if (CDPlayerState->GetTeam() == ETeam::ET_BTeam)
+                        if (CDPlayerState->GetPTeam() == ETeam::ET_BTeam)
                         {
                             MatchStats.Totalwin = 1;
                             MatchData.Iswin = 1;
@@ -179,7 +187,7 @@ void AServer_GameMode::EndGame(WinState winState)
                         MatchStats.Totaldraw = 2;
                         MatchData.Iswin = 2;
                     }
-                    RecordMatchStatsInput.Username = CDPlayerState->GetPlayerName();
+                    RecordMatchStatsInput.Username = CDPlayerState->GetPUsername();
                     RecordMatchStatsInput.MatchData = MatchData;
                     RecordMatchStatsInput.MatchStats = MatchStats;
                     GameStatsManager->RecordMatchStats(RecordMatchStatsInput);
@@ -206,9 +214,13 @@ void AServer_GameMode::EndGame(WinState winState)
             {
                 FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
                 gameLiftSdkModule->ProcessEnding();
-                FPlatformMisc::RequestExit(false);
             }
         }
+    }
+    else
+    {
+        FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
+        gameLiftSdkModule->ProcessEnding();
     }
 }
 

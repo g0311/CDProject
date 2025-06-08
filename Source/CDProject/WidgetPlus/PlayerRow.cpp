@@ -23,7 +23,7 @@ void UPlayerRow::UpdateRow()
 	if (!PSRef) return;
 	
 	if (PlayerNameText)
-		PlayerNameText->SetText(FText::FromString(PSRef->GetPlayerName()));
+		PlayerNameText->SetText(FText::FromString(PSRef->GetUsername()));
 	
 	if (KillText)
 		KillText->SetText(FText::AsNumber(PSRef->GetKills()));

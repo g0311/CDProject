@@ -27,15 +27,14 @@ public:
 	void RoundWin(bool isRed);
 	void SetSecondHalf();
 	void SpawnBot();
-	void BalancedBot();
+	void InitiateBot();
 	void KickBot();
-	void InitBot(ACDCharacter* BotCharacter);
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
 //
 protected:
 	virtual void HandleMatchHasStarted() override;
 	virtual void RestartMatch(bool isInit = false) override;
-	virtual void PlayerEliminated(class ACDPlayerController* VictimController, ACDPlayerController* AttackerController) override;
+	virtual void PlayerEliminated(class AController* VictimController, AController* AttackerController) override;
 	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController) override;
 	
 	void InitializeTeamCount();
@@ -44,6 +43,7 @@ protected:
 	
 	TSet<class APlayerStart*> UsedStartPoints;
 
+	UPROPERTY(VisibleAnywhere)
 	int32 BotCount=0;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<ACDCharacter> AIBot;

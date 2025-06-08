@@ -20,11 +20,7 @@ ADeathMatchGameMode::ADeathMatchGameMode()
 void ADeathMatchGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
-	if (BotCount > 0)
-	{
-		KickBot();
-	}
+	if ( BotCount > MAX_PLAYER - _joinedClinetCount ){KickBot();}
 
 	ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	if (BGameState)
@@ -47,6 +43,23 @@ void ADeathMatchGameMode::Logout(AController* Exiting)
 	{
 		BGameState->AllPlayers.Remove(PlayerState);
 		UpdateAlivePlayers();
+	}
+}
+
+void ADeathMatchGameMode::HandleSeamlessTravelPlayer(AController*& C)
+{
+	Super::HandleSeamlessTravelPlayer(C);
+	
+	if ( BotCount > MAX_PLAYER - _joinedClinetCount ){KickBot();}
+
+	ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if (BGameState)
+	{
+		ACDPlayerState* PlayerState = C->GetPlayerState<ACDPlayerState>();
+		if (PlayerState && !BGameState->AllPlayers.Contains(PlayerState))
+		{
+			BGameState->AllPlayers.Add(PlayerState);
+		}
 	}
 }
 
