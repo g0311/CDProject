@@ -5,7 +5,6 @@
 
 #include "HttpModule.h"
 #include "JsonObjectConverter.h"
-#include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDServer/Data/API/APIData.h"
 #include "CDServer/Game/Server_GameMode.h"
 #include "CDServer/UI/HTTP/HTTPRequestManager.h"
@@ -13,7 +12,6 @@
 #include "Interfaces/IHttpRequest.h"
 #include "CDServer/GameplayTags/ServerTags.h"
 #include "CDServer/Player/CDLocalPlayerSubsystem.h"
-#include "CDServer/Player/CDSessionPlayerController.h"
 #include "Interfaces/IHttpResponse.h"
 
 void UGameStatsManager::RecordMatchStats(const FCDRecordMatchStatsInput& RecordMatchStatsInput)

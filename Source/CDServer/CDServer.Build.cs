@@ -25,8 +25,7 @@ public class CDServer : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
 			"Slate",
-			"SlateCore",
-			"CDProject",
+			"SlateCore"
 		});
 	}
 }

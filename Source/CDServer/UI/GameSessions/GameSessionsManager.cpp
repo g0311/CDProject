@@ -30,7 +30,7 @@ void UGameSessionsManager::QuickJoinGameSession(const FString& GameMode, const F
 	}
 	TMap<FString, FString> Params =
 		{
-		{TEXT("roomName"), TEXT(".")},
+		{TEXT("roomName"), TEXT("")},
 		{TEXT("isPrivate"), TEXT("false")},
 		{TEXT("isStarted"), TEXT("false")},
 		{TEXT("roomMap"), RoomMap},

@@ -3,11 +3,11 @@
 
 #include "CDAIController.h"
 
+#include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
-#include "CDProject/Types/Team.h"
-
+#include "CDServer/Player/Team.h"
 
 // Sets default values
 ACDAIController::ACDAIController()
@@ -43,6 +43,25 @@ ETeamAttitude::Type ACDAIController::GetTeamAttitudeTowards(const AActor& Other)
 	// 		return Super::GetTeamAttitudeTowards(*OtherPawn->GetController());
 	// 	}
 	// }
+}
+
+void ACDAIController::StopBehavior()
+{
+	if (UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(BrainComponent))
+	{
+		BTComp->StopTree();
+		StopMovement();
+		SetFocus(nullptr);
+	}
+}
+
+void ACDAIController::RestartBehavior()
+{
+	if (UBehaviorTreeComponent* BTComp = Cast<UBehaviorTreeComponent>(BrainComponent))
+	{
+		if (IsValid(BehaviorTree))
+			BTComp->StartTree(*BehaviorTree);
+	}
 }
 
 // Called when the game starts or when spawned

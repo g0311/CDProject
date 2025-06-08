@@ -71,12 +71,12 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FVector BeamEnd=ExtendedEnd;
 		if (FireHitResult.bBlockingHit)
 		{
-			if (FireHitResult.GetActor())
-				UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetActor()->GetName());
+			// if (FireHitResult.GetActor())
+			// 	UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetActor()->GetName());
 
 			BeamEnd=FireHitResult.ImpactPoint;
-			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHitResult.GetActor());
-			if (CDCharacter && OwnerController)
+			ACharacter* CDCharacter=Cast<ACharacter>(FireHitResult.GetActor());
+			if (CDCharacter && OwnerController && HasAuthority())
 			{
 				UGameplayStatics::ApplyPointDamage(
                 			CDCharacter,

@@ -19,8 +19,11 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
+	UFUNCTION(Client, Reliable)
+	void InitializeController();
+	virtual void InitializeController_Implementation();
 	//HUD
-
+	
 	void SetHUDTime();
 	void UpdateCharacterOverlay();
 	void SetHUDHealth(float Health);
@@ -76,9 +79,6 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerCheckMatchState();
 	
-	UFUNCTION(Server, Reliable)
-	void ServerSendClientJoined();
-
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
 
@@ -105,8 +105,6 @@ protected:
 
 	float TimeSyncRunningTime=0.f;
 	void CheckTimeSync(float DeltaTime);
-
-	
 private:
 	UPROPERTY()
 	class ACDHUD* CDHUD;
@@ -144,6 +142,7 @@ private:
 	UPROPERTY(Replicated)
 	float MatchStartTime = 0.f;
 	UPROPERTY(Replicated)
+	
 	float CooldownStartTime = 0.f;
 	
 	//State Variable
@@ -178,7 +177,8 @@ private:
 	bool bInitializeGold=false;
 
 private:
-	virtual void LeaveGame() /*override*/;	
+	virtual void LeaveGame() /*override*/;
+	
 
 public:
 	virtual void SetupInputComponent() override;

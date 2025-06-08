@@ -8,6 +8,7 @@
 #include "AbilitySystemComponent.h"
 #include "CDCharacterAttributeSet.h"
 #include "CDCharacterMovementComponent.h"
+#include "CDProject/AI/CDAIController.h"
 #include "CDProject/Anim/CDAnimInstance.h"
 #include "CDProject/Component//FootIKComponent.h"
 #include "CDProject/Component/CDSpringArmComponent.h"
@@ -17,8 +18,10 @@
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "CDServer/Player/Team.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/TextRenderComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Kismet/GameplayStatics.h"
@@ -49,16 +52,20 @@ ACDCharacter::ACDCharacter()
 	_armMesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPose;
 	GetMesh()->SetOwnerNoSee(true);
 	
+	_textRenderer = CreateDefaultSubobject<UTextRenderComponent>(TEXT("Name Text"));
+	_textRenderer->SetupAttachment(RootComponent);
+	
 	_combat = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
 	_combat->SetIsReplicated(true);
 	
 	_footIK = CreateDefaultSubobject<UFootIKComponent>(TEXT("FootIK"));
 	
+	AttributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
+	
 	_abilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 	_abilitySystemComponent->SetIsReplicated(true);
 	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
-	
-	_attributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
+	_abilitySystemComponent->AddAttributeSetSubobject(AttributeSet.Get());
 
 	//Minimap
 	MiniMapSpringArm=CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
@@ -100,6 +107,9 @@ void ACDCharacter::BeginPlay()
 	
 	if (HasAuthority())
 		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
+
+	OnRep_Team();
+	OnRep_UserName();
 }
 
 // Called every frame
@@ -141,6 +151,24 @@ void ACDCharacter::Tick(float DeltaTime)
 			SetActorRotation(SmoothRotation);
 		}
 	}
+
+	if (IsValid(_textRenderer))
+	{
+		if (APlayerController* LocalPlayerController = GetWorld()->GetFirstPlayerController(); IsValid(LocalPlayerController))
+		{
+			FVector CameraLocation;
+			FRotator CameraRotation;
+			LocalPlayerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
+
+			FVector TextLocation = _textRenderer->GetComponentLocation();
+			FVector DirectionToCamera = CameraLocation - TextLocation;
+			FRotator NewTextRotation = DirectionToCamera.Rotation();
+			
+			FRotator FlatRotation = FRotator(0.f, NewTextRotation.Yaw, 0.f);
+			_textRenderer->SetWorldRotation(FlatRotation);
+		}
+	}
+	
 	//Update Arm Mesh Location
 	UpdateArmMeshLocation(DeltaTime);
 }
@@ -202,9 +230,9 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	}
 
 	//cur Health Check
-	if (_attributeSet && _attributeSet->GetHealth() == 0)
+	if (AttributeSet && AttributeSet->GetHealth() == 0)
 	{
-		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+		return 0.f;
 	}
 
 	float finalDamage = DamageAmount;
@@ -247,8 +275,8 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
 	if (ACPC)
 	{
-		ACPC->SetHUDHealth(_attributeSet->GetHealth());
-		ACPC->SetHUDShield(_attributeSet->GetShield());
+		ACPC->SetHUDHealth(AttributeSet->GetHealth());
+		ACPC->SetHUDShield(AttributeSet->GetShield());
 	}
 	
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -260,6 +288,8 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 
 	DOREPLIFETIME(ACDCharacter, _controlRotation);
 	DOREPLIFETIME(ACDCharacter, _cameraRotation);
+	DOREPLIFETIME(ACDCharacter, _team);
+	DOREPLIFETIME(ACDCharacter, UserName);
 }
 
 void ACDCharacter::PossessedBy(AController* NewController)
@@ -276,10 +306,10 @@ void ACDCharacter::Reset()
 {
 	//ServerCall
 	//Super::Reset();
-	if (_attributeSet->GetHealth() > 0)
+	if (AttributeSet->GetHealth() > 0)
 	{ //Alive
 		_combat->Reset(false);
-		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		AttributeSet->SetHealth(AttributeSet->GetMaxHealth());
 		Multicast_Reset(true);
 		//ServerPart
 	}
@@ -287,7 +317,7 @@ void ACDCharacter::Reset()
 	{
 		//Dead
 		_combat->Reset(true);
-		_attributeSet->SetHealth(_attributeSet->GetMaxHealth());
+		AttributeSet->SetHealth(AttributeSet->GetMaxHealth());
 		Multicast_Reset(false);
 	}
 
@@ -317,13 +347,10 @@ void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 
 void ACDCharacter::SetTeam(ETeam team)
 {
-	UE_LOG(LogGameMode, Log, TEXT("Char Set Team Called"));
 	_team = team;
-	if (!GetMesh() || GetNetMode() == NM_DedicatedServer)
+	if (!GetMesh() || !GetArmMesh() || GetNetMode() == NM_DedicatedServer)
 		return;
 	
-	UMaterialInterface* RedMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_RED.M_UE4Man_Body_RED"));
-	UMaterialInterface* BlueMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/BP/Character/Base/UE4_Mannequin/Materials/M_UE4Man_Body_BLUE.M_UE4Man_Body_BLUE"));
 	if (!RedMaterial || !BlueMaterial)
 		return;
 	
@@ -339,6 +366,15 @@ void ACDCharacter::SetTeam(ETeam team)
 		break;
 	default:
 		break;
+	}
+}
+
+void ACDCharacter::SetUserName(const FString& Name)
+{
+	UserName = Name;
+	if (HasAuthority())
+	{
+		OnRep_UserName();
 	}
 }
 
@@ -362,13 +398,21 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 	{
 		APlayerController* controller = Cast<APlayerController>(GetController());
 		if (IsValid(controller))
+		{
 			DisableInput(controller);
+		}
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
 	}
 	if (HasAuthority())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Die Called In Server"));
+		if (ACDAIController* CDAIController = Cast<ACDAIController>(GetController()); IsValid(CDAIController))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("AI DIED!!"));
+			CDAIController->StopBehavior();
+		}
+		
 		//Drop All Weapon & Reset Tag & Clear Timer
 		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -378,21 +422,16 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 			ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
-				if (ACDPlayerController* attackerPlayerController = Cast<ACDPlayerController>(instigatorController))
+				GameMode->PlayerEliminated(GetController(), instigatorController);
+				
+				if (GameMode->GetCurMatchState() == ECurMatchState::EMS_InGame)
 				{
-					if (ACDPlayerController* victimPlayerController = Cast<ACDPlayerController>(GetController()))
+					ACDPlayerState* CDPlayerState = instigatorController->GetPlayerState<ACDPlayerState>();
+					if (IsValid(CDPlayerState))
 					{
-						GameMode->PlayerEliminated(victimPlayerController, attackerPlayerController);
-					}
-					if (GameMode->GetCurMatchState() == ECurMatchState::EMS_InGame)
-					{
-						ACDPlayerState* CDPlayerState = attackerPlayerController->GetPlayerState<ACDPlayerState>();
-						if (IsValid(CDPlayerState))
-						{
-							CDPlayerState->AddShot();
-							if (bIsHeadShot)
-								CDPlayerState->AddHeadShot();
-						}
+						CDPlayerState->AddShot();
+						if (bIsHeadShot)
+							CDPlayerState->AddHeadShot();
 					}
 				}
 			}
@@ -406,6 +445,30 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 
 	_isDead = true;
+
+	if (HasAuthority())
+	{
+		if (GetWorld() && GetWorld()->GetAuthGameMode())
+		{
+			if (ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				if (GameMode->GetCurMatchState() == ECurMatchState::EMS_None)
+				{
+					FTimerHandle TimerHandle;
+					GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode]()
+					{
+						if (IsValid(this) && IsValid(GameMode))
+						{
+							if (GameMode->GetCurMatchState() == ECurMatchState::EMS_None)
+							{
+								this->Reset();
+							}
+						}
+					}), 1.5f, false);
+				}
+			}
+		}
+	}
 }
 
 void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorController, bool bIsHeadShot)
@@ -457,20 +520,20 @@ void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 
 void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController, bool bIsHeadShot)
 {
-	if (_attributeSet == nullptr) return;
+	if (AttributeSet == nullptr) return;
 
-	float CurShield = _attributeSet->GetShield();
-	float CurHealth = _attributeSet->GetHealth();
+	float CurShield = AttributeSet->GetShield();
+	float CurHealth = AttributeSet->GetHealth();
 
 	if (CurShield > 0.f)
 	{
 		CurShield = FMath::Clamp(CurShield - FinalDamage, 0.f, 100.f);
-		_attributeSet->SetShield(CurShield);
+		AttributeSet->SetShield(CurShield);
 	}
 	else
 	{
 		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
-		_attributeSet->SetHealth(CurHealth);
+		AttributeSet->SetHealth(CurHealth);
 	}
 	
 	if (CurHealth == 0.f)
@@ -525,9 +588,36 @@ void ACDCharacter::UpdateArmMeshLocation(float DeltaTime)
 	_camera->SetFieldOfView(NewFOV);
 }
 
+void ACDCharacter::OnRep_Team()
+{
+	SetTeam(_team);	
+}
+
+void ACDCharacter::OnRep_UserName()
+{
+	if (IsValid(_textRenderer) && !UserName.IsEmpty())
+		_textRenderer->SetText(FText::FromString(UserName));
+}
+
 UCDSpringArmComponent* ACDCharacter::GetSpringArmComponent()
 {
 	return _springArm;
+}
+
+void ACDCharacter::DestroyAllWeapon()
+{
+	UCombatComponent* CombatComponent = GetCombatComponent();
+    if (IsValid(CombatComponent))
+    {
+    	for (int i = 0; i < CombatComponent->GetWeapons().Num(); i++)
+    	{
+    		if(IsValid(CombatComponent->GetWeapons()[i]))
+    		{
+    			CombatComponent->GetWeapons()[i]->Destroy();
+    			CombatComponent->GetWeapons()[i] = nullptr;
+    		}
+    	}
+    }
 }
 
 void ACDCharacter::Kill()
@@ -705,6 +795,42 @@ void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 	_combat->GetWeapon(weapon, isForce);
 }
 
+void ACDCharacter::ServerGiveWeapon_Implementation(const FWeaponStruct& WeaponData)
+{
+	if (!WeaponData.WeaponClass) return;
+	ACDPlayerState* PS = GetPlayerState<ACDPlayerState>();
+	if (!PS) return;
+
+	UWorld* World = GetWorld();
+	if (!World) return;
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	AWeapon* SpawnedWeapon = World->SpawnActor<AWeapon>(
+		WeaponData.WeaponClass,
+		GetActorLocation(),
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
+
+	if (SpawnedWeapon)
+	{
+		UE_LOG(LogTemp,Display,TEXT("Spawn Weapon!"))
+		GetCombatComponent()->GetWeapon(SpawnedWeapon, true);
+		PS->SpendGold(WeaponData.Cost);
+		
+		if (GetWorld() && GetWorld()->GetAuthGameMode())
+		{
+			if (ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				GameMode->AddDestroyableActor(SpawnedWeapon);
+			}
+		}
+	}
+}
+
 void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator control, FRotator camera)
 {
 	_controlRotation = control;
@@ -718,7 +844,7 @@ UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
 
 class UCDCharacterAttributeSet* ACDCharacter::GetAttributeSet()
 {
-	return _attributeSet;
+	return AttributeSet;
 }
 
 void ACDCharacter::InitializeAttributes()

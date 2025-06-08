@@ -75,20 +75,20 @@ void UCDGameInstanceSubsystem::InitGameLift(const FServerParameters& ServerParam
         UWorld* World = GEngine->GetWorldContexts()[0].World();
         if (World)
         {
-            if (bIsPrivate.Equals(TEXT("false"), ESearchCase::IgnoreCase))
-            {
-                AsyncTask(ENamedThreads::GameThread, [World = World, Url = FString(TEXT("/Game/Maps/") + RoomMode + TEXT("/") + RoomMap)]()
-                {
-                    if (World)
-                    {
-                        UE_LOG(LogTemp, Log, TEXT("Opening Level: %s"), *Url);
-                        UGameplayStatics::OpenLevel(World, FName(*Url), true);
-                    }
-                });
-                //On Game Map Loaded, Call Activate
-                //gameLiftSdkModule->ActivateGameSession();
-            }
-            else
+            // if (bIsPrivate.Equals(TEXT("false"), ESearchCase::IgnoreCase))
+            // {
+            //     AsyncTask(ENamedThreads::GameThread, [World = World, Url = FString(TEXT("/Game/Maps/") + RoomMode + TEXT("/") + RoomMap)]()
+            //     {
+            //         if (World)
+            //         {
+            //             UE_LOG(LogTemp, Log, TEXT("Opening Level: %s"), *Url);
+            //             UGameplayStatics::OpenLevel(World, FName(*Url), true);
+            //         }
+            //     });
+            //     //On Game Map Loaded, Call Activate
+            //     //gameLiftSdkModule->ActivateGameSession();
+            // }
+            // else
             {
                 AsyncTask(ENamedThreads::GameThread, [World, this]()
                 {

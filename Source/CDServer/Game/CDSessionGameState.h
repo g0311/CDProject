@@ -43,7 +43,7 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	FPlayerSessionInfoArray PlayerInfos;
 	//name, readystate, ping
 	UPROPERTY(Replicated)

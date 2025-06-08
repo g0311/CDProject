@@ -15,9 +15,6 @@ public:
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnShopButtonClicked(const FWeaponStruct& WeaponData);
-	UFUNCTION(Server, Reliable)
-	void ServerGiveWeaponToPlayer(const FWeaponStruct& WeaponData);
-
 	UPROPERTY(meta = (BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* RifleButton1;
 private:
@@ -45,5 +42,4 @@ private:
 
 	bool CanPurchase(const FWeaponStruct& WeaponData);
 	void GiveWeaponToPlayer(const FWeaponStruct& WeaponData);
-	
 };

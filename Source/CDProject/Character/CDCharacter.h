@@ -6,7 +6,8 @@
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "AbilitySystemInterface.h"
-#include "CDProject/Types/Team.h"
+#include "CDServer/Player/Team.h"
+#include "CDProject/Types/WeaponStruct.h"
 #include "CDCharacter.generated.h"
 
 #define  MAXSPEED 470.f
@@ -33,21 +34,26 @@ public:
 	
 	void UpdateVisibilityForSpectator(bool isWatching);
 	void SetTeam(ETeam team);
+	void SetUserName(const FString& Name);
 	void PlayFootStepSound();
 	UFUNCTION(Server, Reliable)
 	void ServerPlayFootStepSound();
 	class UCDSpringArmComponent* GetSpringArmComponent();
 
+	void DestroyAllWeapon();
 	void Kill();
 	void GiveC4();
-
 private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
 	class USoundCue* _footstepSound;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(ReplicatedUsing=OnRep_Team, VisibleAnywhere)
 	ETeam _team = ETeam::ET_NoTeam;
 
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Material")
+	class UMaterialInterface* RedMaterial;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Material")
+	class UMaterialInterface* BlueMaterial;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Dead(class AController* instigatorController, bool bIsHeadShot);
@@ -58,6 +64,10 @@ private:
 	void HandleDamage(float FinalDamage, class AController* instigatorController, bool bIsHeadShot);
 	void UpdateArmMeshLocation(float DeltaTime);
 
+	UFUNCTION()
+	void OnRep_Team();
+	UFUNCTION()
+	void OnRep_UserName();
 public:
 	bool _isDead = false;
 	bool bCanMove = true;;
@@ -75,7 +85,11 @@ private:
 	TObjectPtr<class UCombatComponent> _combat;
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UFootIKComponent> _footIK;
-
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<class UTextRenderComponent> _textRenderer;
+		UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_UserName)
+		FString UserName;
+	
 	//MinimapComponent
 	UPROPERTY(VisibleAnywhere, Category = "Minimap")
 	class USpringArmComponent* MiniMapSpringArm;
@@ -165,6 +179,8 @@ private:
 	float _mouseSensitivity = 1.f;
 public:
 	void GetWeapon(class AWeapon* weapon, bool isForce = false);
+	UFUNCTION(Server, Reliable)
+	void ServerGiveWeapon(const FWeaponStruct& WeaponData);
 	
 private:
 	//Network Property
@@ -184,7 +200,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
 	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class UCDCharacterAttributeSet> _attributeSet;
+	TObjectPtr<class UCDCharacterAttributeSet> AttributeSet;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")
 	TSubclassOf<class UGameplayEffect> _defaultAttributeEffect;

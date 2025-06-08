@@ -5,6 +5,8 @@
 
 #include <filesystem>
 
+#include "AIController.h"
+#include "EngineUtils.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
@@ -12,12 +14,11 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
+#include "CDProject/AI/CDAIController.h"
 #include "CDProject/GameState/CDGameState.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "CDServer/Game/CDGameInstanceSubsystem.h"
 #include "CDServer/Game/CDSessionGameState.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/PawnMovementComponent.h"
-#include "Runtime/Core/Tests/Containers/TestUtils.h"
 
 namespace MatchState
 {
@@ -29,7 +30,69 @@ namespace MatchState
 ARoundGameMode::ARoundGameMode()
 {
 	DefaultPawnClass = ACDCharacter::StaticClass();
-	//bDelayedStart=true;
+}
+
+void ARoundGameMode::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+	
+	if(ACDGameState* CDGameState = GetGameState<ACDGameState>(); IsValid(CDGameState))
+	{
+		if (IsRunningDedicatedServer())
+			_maxClientCount = CDGameState->GetPlayerInfos().Items.Num();
+		else
+			_maxClientCount = 2;
+	}
+	
+	if (ACDPlayerController* PC = Cast<ACDPlayerController>(NewPlayer))
+	{
+		PC->InitializeController();
+	}
+	
+	_joinedClinetCount++;
+	if (GetCurMatchState() == ECurMatchState::EMS_None && _joinedClinetCount >= _maxClientCount)
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle ,FTimerDelegate::CreateLambda([this]()
+		{
+			if (IsValid(this))
+				SetCurMatchState(ECurMatchState::EMS_Waiting, true);
+		}), 3.f, false);
+		if (ACDPlayerController* PC = Cast<ACDPlayerController>(NewPlayer))
+		{
+			PC->ShowAnnounceText(false);
+		}
+	}
+}
+
+void ARoundGameMode::HandleSeamlessTravelPlayer(AController*& C)
+{
+	Super::HandleSeamlessTravelPlayer(C);
+	
+	if(ACDGameState* CDGameState = GetGameState<ACDGameState>(); IsValid(CDGameState))
+	{
+		_maxClientCount = CDGameState->GetPlayerInfos().Items.Num();
+	}
+	
+	if (ACDPlayerController* PC = Cast<ACDPlayerController>(C))
+	{
+		PC->InitializeController();
+	}
+	
+	_joinedClinetCount++;
+	if (GetCurMatchState() == ECurMatchState::EMS_None && _joinedClinetCount >= _maxClientCount)
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle ,FTimerDelegate::CreateLambda([this]()
+		{
+			if (IsValid(this))
+				SetCurMatchState(ECurMatchState::EMS_Waiting, true);
+		}), 3.f, false);
+		if (ACDPlayerController* PC = Cast<ACDPlayerController>(C))
+		{
+			PC->ShowAnnounceText(false);
+		}
+	}
 }
 
 void ARoundGameMode::Tick(float DeltaSeconds)
@@ -70,13 +133,19 @@ void ARoundGameMode::BeginPlay()
 	Super::BeginPlay();
 	//LevelStartingTime=GetWorld()->GetTimeSeconds();
 	//StartMatch();
+	
+	UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstance()->GetSubsystem<UCDGameInstanceSubsystem>();
+	if (IsValid(GameInstanceSubsystem))
+	{
+		_maxClientCount = GameInstanceSubsystem->PlayerInfos.Items.Num();
+	}
 }
 
 void ARoundGameMode::OnCurMatchStateSet()
 {
-	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator();PCIter;++PCIter)
+	for (TActorIterator<AController> It(GetWorld()); It; ++It)
 	{
-		ACDPlayerController* PlayerController=Cast<ACDPlayerController> (*PCIter);
+		ACDPlayerController* PlayerController=Cast<ACDPlayerController> (*It);
 		if (PlayerController)
 		{
 			if(_curMatchState==ECurMatchState::EMS_Waiting)
@@ -96,14 +165,26 @@ void ARoundGameMode::OnCurMatchStateSet()
 				PlayerController->OnMatchStateSet(_curMatchState);
 			}
 		}
+		
+		if (ACDAIController* AIController = Cast<ACDAIController> (*It))
+		{
+			if(_curMatchState==ECurMatchState::EMS_Waiting)
+			{
+				AIController->StopBehavior();
+			}
+			else if(_curMatchState==ECurMatchState::EMS_InGame)
+			{
+				AIController->RestartBehavior();
+			}
+		}
 	}
 }
 
-void ARoundGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
-                                      ACDPlayerController* AttackerController)
+void ARoundGameMode::PlayerEliminated(class AController* VictimController,
+                                      AController* AttackerController)
 {
-		if (AttackerController==nullptr||AttackerController->PlayerState==nullptr) return;
-		if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
+	if (AttackerController==nullptr||AttackerController->PlayerState==nullptr) return;
+	if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
 	
@@ -114,16 +195,9 @@ void ARoundGameMode::PlayerEliminated(class ACDPlayerController* VictimControlle
 	if (VictimPlayerState)
 	{
 		VictimPlayerState->AddDeath();
-		VictimController->ClientSetPlayerAlive(false);
+		if (ACDPlayerController* ACDVictimController=Cast<ACDPlayerController>(VictimPlayerState->GetOwningController()))
+			ACDVictimController->ClientSetPlayerAlive(false);
 	}
-	// for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-	// {
-	// 	ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-	// 	if (CDPC)
-	// 	{//Need to Set Client RPC
-	// 		CDPC->UpdateKDOverlayData();
-	// 	}
-	// }
 }
 
 void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
@@ -144,29 +218,31 @@ void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* E
 
 void ARoundGameMode::RestartMatch(bool isInit)
 {
-	
-	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
+	for (TActorIterator<AController> It(GetWorld()); It; ++It)
 	{
-		AController* Controller = Cast<AController>(*PCIter);
+		AController* Controller = *It;
 		if (Controller)
 		{
-			if (ACDPlayerController* playerController=Cast<ACDPlayerController>(Controller))
+			if (ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter()))
 			{
-				playerController->ClientSetPlayerAlive(true);
-				if (ACDCharacter* Character = Cast<ACDCharacter>(Controller->GetCharacter()))
+				if (isInit)
 				{
-					if (isInit)
-						Character->Kill();
-					Character->Reset();
-					AActor* playerStart = FindPlayerStart(playerController);
-					if (playerStart)
-					{
-						Character->SetActorLocation(playerStart->GetActorLocation());
-						Character->SetActorRotation(playerStart->GetActorRotation());
-						Controller->SetControlRotation(playerStart->GetActorRotation());
-					}
+					Character->DestroyAllWeapon();
+					Character->Kill();
 				}
-				playerController->UpdateCharacterOverlay();
+				Character->Reset();
+				
+				AActor* playerStart = FindPlayerStart(Controller);
+				if (playerStart)
+				{
+					Character->SetActorLocation(playerStart->GetActorLocation());
+					Character->SetActorRotation(playerStart->GetActorRotation());
+					Controller->SetControlRotation(playerStart->GetActorRotation());
+				}
+			}
+			if (ACDPlayerController* PlayerController = Cast<ACDPlayerController>(Controller))
+			{
+				PlayerController->ClientSetPlayerAlive(true);
 			}
 		}
 	}
@@ -176,10 +252,10 @@ void ARoundGameMode::RestartMatch(bool isInit)
 		{
 			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
 				continue;
+			
 			actor->Destroy();
 		}
 	}
-	_createdActors.Empty();
 }
 
 AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
@@ -225,17 +301,6 @@ AActor* ARoundGameMode::FindPlayerStart_Implementation(AController* Player, cons
 	}
 
 	return Super::FindPlayerStart_Implementation(Player, IncomingName);
-}
-
-void ARoundGameMode::SendPlayerJoined()
-{
-	//need Refactor to check all player joined
-	_joinedClinetCount++;
-	if (_joinedClinetCount >= _maxClientCount)
-	{
-		SetCurMatchState(ECurMatchState::EMS_Waiting, true);
-	}
-	//게임 모드에서 체크 시 컨트롤러 초기화가 덜된 상태기 때문에 스테이트 on rep이 호출이 안됨
 }
 
 void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)

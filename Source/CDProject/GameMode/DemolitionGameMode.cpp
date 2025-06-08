@@ -4,13 +4,11 @@
 #include "DemolitionGameMode.h"
 
 #include "AIController.h"
-#include "aws/gamelift/server/model/Player.h"
-#include "CDProject/Character/CDAIEnemy.h"
+#include "EngineUtils.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/GameState/CDGameState.h"
-#include "CDProject/HUD/CDHUD.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDProject/Widget/ShopOverlay.h"
 #include "GameFramework/Character.h"
@@ -26,8 +24,10 @@ ADemolitionGameMode::ADemolitionGameMode()
 
 void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 {
+	Super::PostLogin(NewPlayer);
+	
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-	if (BotCount>0){KickBot();}
+	if ( BotCount > MAX_PLAYER - _joinedClinetCount ){KickBot();}
 	if (BGameState)
 	{
 		ACDPlayerState* BPState=NewPlayer->GetPlayerState<ACDPlayerState>();
@@ -37,18 +37,22 @@ void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 			{
 				BGameState->ATeam.AddUnique(BPState);
 				BPState->SetMatchTeam(ETeam::ET_ATeam);
-				BPState->SetTeam(ETeam::ET_RedTeam);
+				if (!BGameState->IsSecondHalf)
+					BPState->SetTeam(ETeam::ET_RedTeam);
+				else
+					BPState->SetTeam(ETeam::ET_BlueTeam);
 			}
 			else
 			{
 				BGameState->BTeam.AddUnique(BPState);
 				BPState->SetMatchTeam(ETeam::ET_BTeam);
-				BPState->SetTeam(ETeam::ET_BlueTeam);
+				if (!BGameState->IsSecondHalf)
+					BPState->SetTeam(ETeam::ET_BlueTeam);
+				else
+					BPState->SetTeam(ETeam::ET_RedTeam);
 			}
 		}
 	}
-	
-	Super::PostLogin(NewPlayer);
 }
 
 void ADemolitionGameMode::Logout(AController* Exiting)
@@ -75,22 +79,29 @@ void ADemolitionGameMode::HandleSeamlessTravelPlayer(AController*& C)
 	Super::HandleSeamlessTravelPlayer(C);
 	
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if ( BotCount > MAX_PLAYER - _joinedClinetCount ){KickBot();}
 	if (BGameState)
 	{
-		ACDPlayerState* BPState = C->GetPlayerState<ACDPlayerState>();
+		ACDPlayerState* BPState=C->GetPlayerState<ACDPlayerState>();
 		if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
 		{
 			if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
 			{
 				BGameState->ATeam.AddUnique(BPState);
 				BPState->SetMatchTeam(ETeam::ET_ATeam);
-				BPState->SetTeam(ETeam::ET_RedTeam);
+				if (!BGameState->IsSecondHalf)
+					BPState->SetTeam(ETeam::ET_RedTeam);
+				else
+					BPState->SetTeam(ETeam::ET_BlueTeam);
 			}
 			else
 			{
 				BGameState->BTeam.AddUnique(BPState);
 				BPState->SetMatchTeam(ETeam::ET_BTeam);
-				BPState->SetTeam(ETeam::ET_BlueTeam);
+				if (!BGameState->IsSecondHalf)
+					BPState->SetTeam(ETeam::ET_BlueTeam);
+				else
+					BPState->SetTeam(ETeam::ET_RedTeam);
 			}
 		}
 	}
@@ -121,23 +132,29 @@ void ADemolitionGameMode::RoundWin(bool isRed)
 		if (Cast<ACDGameState>(GameState))
 			Cast<ACDGameState>(GameState)->UpdateTeamScore(!isRed);
 	}
-	
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+
+	for (TActorIterator<AController> It(GetWorld()); It; ++It)
 	{
-		ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It);
-		if (CDPC)
+		AController* PC = *It;
+		if (PC)
 		{
-			ACDPlayerState* playerState = Cast<ACDPlayerState>(CDPC->PlayerState);
+			ACDPlayerState* playerState = Cast<ACDPlayerState>(PC->PlayerState);
 			if (playerState)
 			{
-				if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+				if (isRed)
 				{
-					playerState->AddGold(300);
+					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+						playerState->AddGold(800);
+					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+						playerState->AddGold(400);
 					UE_LOG(LogTemp, Display, TEXT("Red Team Win"));
 				}
-				else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+				else
 				{
-					playerState->AddGold(300);
+					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+						playerState->AddGold(800);
+					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+						playerState->AddGold(400);
 					UE_LOG(LogTemp, Display, TEXT("Blue Team Win"));
 				}
 			}
@@ -153,79 +170,27 @@ void ADemolitionGameMode::SetSecondHalf()
 		ACDGS->UpdateIsSecondHalf(true);
 	}
 	
-	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	for (TActorIterator<AController> It(GetWorld()); It; ++It)
 	{
-		if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(*It))
+		if (ACDPlayerState* CDPS = Cast<ACDPlayerState>((*It)->PlayerState))
 		{
-			if (ACDPlayerState* CDPS = Cast<ACDPlayerState>(CDPC->PlayerState))
-			{
-				CDPS->SwitchTeam();
-			}
+			CDPS->SwitchTeam();
 		}
 	}
 }
 
-void ADemolitionGameMode::BalancedBot()
+void ADemolitionGameMode::InitiateBot()
 {
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	
-	int FullCount=10;
-	int CurrentPlayers=BGameState->ATeam.Num()+BGameState->BTeam.Num();
+	int FullCount=MAX_PLAYER;
+	int CurrentPlayers=BGameState->GetPlayerInfos().Items.Num();
 	int BotsSpawnCount=FullCount-CurrentPlayers;
-	
 	UE_LOG(LogTemp, Warning, TEXT("Current Players -> %d, BotsSpawnCount -> %d"), CurrentPlayers, BotsSpawnCount);
-	
 	if (BGameState)
 	{
-		for (int i=0;i<BotsSpawnCount; i++) SpawnBot();
-	}
-
-	TArray<AActor*> ExtBot;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDCharacter::StaticClass(), ExtBot);
-	
-	for (AActor* Bot:ExtBot)
-	{
-		AAIController* BotController = Cast<AAIController>(Cast<APawn>(Bot)->GetController());
-		if (BotController)
-		{
-			ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
-			if (Bot->ActorHasTag("Bot"))//2nd Check for stable
-			{
-				int32 BotGold=BotState->GetGold();
-				if (BotGold>=1000&&ShopOverlay)
-				{
-					FName RowName="Rifle";
-					FWeaponStruct* WeaponData=WeaponDataTable->FindRow<FWeaponStruct>(RowName, TEXT("BotBuyWeapon"));
-					if (WeaponData)
-					{
-						ACDCharacter* BotCharacter = Cast<ACDCharacter>(BotController->GetCharacter());
-						if (!BotCharacter) return;
-						UCombatComponent* CombatComp = BotCharacter->GetCombatComponent();
-						if (!CombatComp) return;
-	
-						UWorld* World = GetWorld();
-						if (!World) return;
-						FActorSpawnParameters SpawnParams;
-						SpawnParams.Owner = BotCharacter;
-						SpawnParams.Instigator = BotCharacter;
-
-						AWeapon* SpawnedWeapon = World->SpawnActor<AWeapon>(
-							WeaponData->WeaponClass,
-							BotCharacter->GetActorLocation(),
-							FRotator::ZeroRotator,
-							SpawnParams
-						);
-
-						if (SpawnedWeapon)
-						{
-							CombatComp->GetWeapon(SpawnedWeapon, true);
-							BotState->SpendGold(WeaponData->Cost);
-						}
-					}
-				}
-			}
-		}
-		
+		for (int i=0;i<BotsSpawnCount; i++)
+			SpawnBot();
 	}
 }
 
@@ -236,30 +201,56 @@ void ADemolitionGameMode::KickBot()
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 	
 	TArray<AActor*> BotEnemies;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDCharacter::StaticClass(), BotEnemies);
-	
-	for (AActor* Bot:BotEnemies)
+	for (TObjectIterator<ACDCharacter> It; It; ++It)
 	{
-		AController* BotController = Bot->GetInstigatorController();
-		ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
-		if (Bot->ActorHasTag("Bot"))
+		if (ACDCharacter* Character = *It; IsValid(Character))
 		{
-			if (BGameState->ATeam.Contains(BotState))
+			AAIController* BotController = Cast<AAIController>(Character->GetInstigatorController());
+			if (!IsValid(BotController))
+				continue;
+			
+			ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
+			if (Character->ActorHasTag("Bot"))
 			{
-				BGameState->ATeam.Remove(BotState);
+				if (BGameState->ATeam.Contains(BotState))
+				{
+					BGameState->ATeam.Remove(BotState);
+				}
+				else if (BGameState->BTeam.Contains(BotState))
+				{
+					BGameState->BTeam.Remove(BotState);
+				}
 				InitializeTeamCount();
-				Bot->Destroy();
-				return;
-			}
-			else if (BGameState->BTeam.Contains(BotState))
-			{
-				BGameState->BTeam.Remove(BotState);
-				InitializeTeamCount();
-				Bot->Destroy();
+				Character->DestroyAllWeapon();
+				Character->Destroy();
+				BotState->Destroy();
 				return;
 			}
 		}
-	} 
+	}
+	
+	// UGameplayStatics::GetAllActorsOfClass(GetWorld(), ACDCharacter::StaticClass(), BotEnemies);
+	//
+	// for (AActor* Bot:BotEnemies)
+	// {
+	// 	AController* BotController = Bot->GetInstigatorController();
+	// 	ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
+	// 	if (Bot->ActorHasTag("Bot"))
+	// 	{
+	// 		if (BGameState->ATeam.Contains(BotState))
+	// 		{
+	// 			BGameState->ATeam.Remove(BotState);
+	// 		}
+	// 		else if (BGameState->BTeam.Contains(BotState))
+	// 		{
+	// 			BGameState->BTeam.Remove(BotState);
+	// 		}
+	// 	}
+	// 	InitializeTeamCount();
+	// 	Bot->Destroy();
+	// 	BotState->Destroy();
+	// 	return;
+	// }
 }
 
 void ADemolitionGameMode::SpawnBot()
@@ -300,98 +291,81 @@ void ADemolitionGameMode::SpawnBot()
 		}
 		AvailStartPoints.Add(BotTeamTag, TeamStarts);
 	}
-
 	FVector SpawnLocation = FVector::ZeroVector;
     FRotator SpawnRotation = FRotator::ZeroRotator;
-    APlayerStart* ChosenStart = nullptr;
-
     if (AvailStartPoints.Contains(BotTeamTag))
     {
         TArray<APlayerStart*>& TeamAvailStarts = AvailStartPoints[BotTeamTag];
         if (TeamAvailStarts.Num() > 0)
         {
             const int32 Index = FMath::RandRange(0, TeamAvailStarts.Num() - 1);
-            ChosenStart = TeamAvailStarts[Index];
+            APlayerStart* ChosenStart = TeamAvailStarts[Index];
             SpawnLocation = ChosenStart->GetActorLocation();
             SpawnRotation = ChosenStart->GetActorRotation();
         }
-        else
-        {
-            return;
-        }
     }
-    else
-    {
-        return;
-    }
-
-
+	
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn; 
 	//If Collision -> possible none Collision place spawn
-    AAIController* AIController = GetWorld()->SpawnActor<AAIController>(CDAIController, SpawnLocation, SpawnRotation, SpawnParams);
+    ACDAIController* AIController = GetWorld()->SpawnActor<ACDAIController>(CDAIController, SpawnLocation, SpawnRotation, SpawnParams);
     if (AIController)
     {
-        ACDCharacter* EnemyBot = GetWorld()->SpawnActor<ACDCharacter>(AIBot, SpawnLocation, SpawnRotation, SpawnParams);
-        if (EnemyBot)//PC->PS->Pawn->(Possess PC->Character)
-        {
-            ACDPlayerState* BotPlayerState = EnemyBot->GetPlayerState<ACDPlayerState>(); 
-            if (!BotPlayerState && AIController->PlayerState) 
-            {
-                BotPlayerState = Cast<ACDPlayerState>(AIController->PlayerState);
-            }
-            if (!BotPlayerState)
-            {
-            	UE_LOG(LogTemp, Warning, TEXT("PS is Not Spawn"));
-            	//AIController->InitPlayerState();//AI need PS
-            	return;
-            }
-
-
-            if (BotPlayerState)//AI Can't AutoPosses PS, PC
-            {
-                AIController->PlayerState = BotPlayerState; 
-                BotPlayerState->SetOwner(AIController);    
-                EnemyBot->Tags.Add(FName("Bot"));
+	    ACDPlayerState* BotPlayerState = Cast<ACDPlayerState>(AIController->PlayerState);
+    	if (BotPlayerState)
+    	{
+    		ACDCharacter* EnemyBot = GetWorld()->SpawnActor<ACDCharacter>(AIBot, SpawnLocation, SpawnRotation, SpawnParams);
+    		if (EnemyBot)//PC->PS->Pawn->(Possess PC->Character)
+    		{
+    			AIController->SetPawn(EnemyBot);
+    			AIController->PlayerState = BotPlayerState; 
+    			BotPlayerState->SetOwner(AIController);
+    			BotPlayerState->SetUsername(TEXT("Bot") + FString::FromInt(rand()));
+    			EnemyBot->SetUserName(BotPlayerState->GetUsername());
+    			EnemyBot->SetPlayerState(BotPlayerState);
+    			EnemyBot->Tags.Add(FName("Bot"));
             	
-                if (BotAssignedTeam == ETeam::ET_RedTeam)
-                {
-                    BotPlayerState->SetMatchTeam(ETeam::ET_ATeam); 
-                    BotPlayerState->SetTeam(ETeam::ET_RedTeam);
-                    BGameState->ATeam.AddUnique(BotPlayerState);
-                }
-                else // ET_BlueTeam
-                {
-                    BotPlayerState->SetMatchTeam(ETeam::ET_BTeam); 
-                    BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
-                    BGameState->BTeam.AddUnique(BotPlayerState);
-                }
-                UE_LOG(LogTemp, Log, TEXT("BotTeamTag -> %s"), *BotTeamTag);
+    			if (BotAssignedTeam == ETeam::ET_RedTeam)
+    			{
+    				BotPlayerState->SetMatchTeam(ETeam::ET_ATeam);
+    				if (!BGameState->IsSecondHalf)
+    					BotPlayerState->SetTeam(ETeam::ET_RedTeam);
+    				else
+    					BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
+    				BGameState->ATeam.AddUnique(BotPlayerState);
+    			}
+    			else // ET_BlueTeam
+    			{
+    				BotPlayerState->SetMatchTeam(ETeam::ET_BTeam); 
+    				if (!BGameState->IsSecondHalf)
+    					BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
+    				else
+    					BotPlayerState->SetTeam(ETeam::ET_RedTeam);
+    				BGameState->BTeam.AddUnique(BotPlayerState);
+    			}
+    			UE_LOG(LogTemp, Log, TEXT("BotTeamTag -> %s"), *BotTeamTag);
             	
-                AIController->Possess(EnemyBot);
-                
-                // InitializeTeamCount()
-            }
-            else
-            {
-                UE_LOG(LogTemp, Error, TEXT("Failed Controller"));
-                EnemyBot->Destroy();
-                AIController->Destroy();
-                BotCount--;
-                return;
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("Failed Pawn"));
-            AIController->Destroy();
-            BotCount--;
-        }
+    			AIController->Possess(EnemyBot);
+    		}
+    		else
+    		{
+    			UE_LOG(LogTemp, Error, TEXT("Failed Controller"));
+    			EnemyBot->Destroy();
+    			AIController->Destroy();
+    			BotCount--;
+    		}
+    	}
+    	else
+    	{
+    		UE_LOG(LogTemp, Error, TEXT("Failed Pawn"));
+    		AIController->Destroy();
+    		BotCount--;
+    	}
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed Anything"));
-        BotCount--;
+    	UE_LOG(LogTemp, Error, TEXT("Failed Anything"));
+    	BotCount--;
     }
 }
 
@@ -433,12 +407,12 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 	Super::HandleMatchHasStarted();
 
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-	BalancedBot();
+	InitiateBot();
 	if (BGameState)
 	{
 		for (auto PlayerState: BGameState->PlayerArray)//GameState->PlayerArray 가져올 수 있음.
 		{
-			ACDPlayerState* BPState=Cast<ACDPlayerState>(PlayerState.Get());
+			ACDPlayerState* BPState=Cast<ACDPlayerState>(PlayerState);
 			if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
 			{
 				if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
@@ -459,6 +433,8 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 
 void ADemolitionGameMode::RestartMatch(bool isInit)
 {
+	Super::RestartMatch(isInit);
+	
 	TArray<AController*> PlayerControllers;
 	for (FConstPlayerControllerIterator PCIter = GetWorld()->GetPlayerControllerIterator(); PCIter; ++PCIter)
 	{
@@ -476,7 +452,7 @@ void ADemolitionGameMode::RestartMatch(bool isInit)
 		{
 			ACDPlayerController* playerController=Cast<ACDPlayerController>(controller);
 			ACDCharacter* Character = Cast<ACDCharacter>(controller->GetCharacter());
-			if (Character && playerController)
+			if (playerController && Character)
 			{
 				if (Character->GetTeam() == ETeam::ET_RedTeam)
 				{
@@ -484,20 +460,55 @@ void ADemolitionGameMode::RestartMatch(bool isInit)
 					break;
 				}
 			}
-			if (isInit && controller->GetPlayerState<ACDPlayerState>())
+		}
+	}
+
+	for (TActorIterator<AAIController> It(GetWorld()); It; ++It)
+	{
+		AAIController* BotController = *It;
+		if (!BotController) continue;
+		ACDPlayerState* BotState = BotController->GetPlayerState<ACDPlayerState>();
+		if (!BotState) continue;
+		ACDCharacter* BotCharacter = Cast<ACDCharacter>(BotController->GetPawn());
+		if (!BotCharacter) continue;
+		UCombatComponent* CombatComp = BotCharacter->GetCombatComponent();
+		if (!CombatComp) continue;
+		
+		int32 BotGold=BotState->GetGold();
+		if (BotGold>=1000 && ShopOverlay && !CombatComp->GetWeapons()[0])
+		{
+			FName RowName="Rifle";
+			FWeaponStruct* WeaponData=WeaponDataTable->FindRow<FWeaponStruct>(RowName, TEXT("BotBuyWeapon"));
+			if (WeaponData)
 			{
-				controller->GetPlayerState<ACDPlayerState>()->SetGold(1000);
+				UWorld* World = GetWorld();
+				if (!World) continue;
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.Owner = BotCharacter;
+				SpawnParams.Instigator = BotCharacter;
+
+				AWeapon* SpawnedWeapon = World->SpawnActor<AWeapon>(
+					WeaponData->WeaponClass,
+					BotCharacter->GetActorLocation(),
+					FRotator::ZeroRotator,
+					SpawnParams
+				);
+
+				if (SpawnedWeapon)
+				{
+					CombatComp->GetWeapon(SpawnedWeapon, true);
+					BotState->SpendGold(WeaponData->Cost);
+				}
 			}
 		}
 	}
+	
 	InitializeTeamCount();
-
-	Super::RestartMatch(isInit);
 	//BalancedBot();//2번 반복?
 }
 
-void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimController,
-                                           ACDPlayerController* AttackerController)
+void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
+                                           AController* AttackerController)
 {
 	Super::PlayerEliminated(VictimController, AttackerController);
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
@@ -506,26 +517,28 @@ void ADemolitionGameMode::PlayerEliminated(class ACDPlayerController* VictimCont
 	
 	if (BGameState && VictimPlayerState)
 	{
-		if (AttackerPlayerState)
+		if (GetCurMatchState() != ECurMatchState::EMS_None)
 		{
-			AttackerPlayerState->AddGold(300);
+			if (AttackerPlayerState)
+			{
+				AttackerPlayerState->AddGold(300);
+			}
+			if (VictimPlayerState->GetTeam() == ETeam::ET_RedTeam)
+			{
+				if (CurRound < MaxRound / 2)	
+					BGameState->AliveATeam.Remove(VictimPlayerState);
+				else
+					BGameState->AliveBTeam.Remove(VictimPlayerState);
+			}
+			else if (VictimPlayerState->GetTeam() == ETeam::ET_BlueTeam)
+			{
+				if (CurRound < MaxRound / 2)
+					BGameState->AliveBTeam.Remove(VictimPlayerState);
+				else
+					BGameState->AliveATeam.Remove(VictimPlayerState);
+			}
 		}
-		if (VictimPlayerState->GetTeam() == ETeam::ET_RedTeam)
-		{
-			if (CurRound < MaxRound / 2)	
-				BGameState->AliveATeam.Remove(VictimPlayerState);
-			else
-				BGameState->AliveBTeam.Remove(VictimPlayerState);
-		}
-		else if (VictimPlayerState->GetTeam() == ETeam::ET_BlueTeam)
-		{
-			if (CurRound < MaxRound / 2)
-				BGameState->AliveBTeam.Remove(VictimPlayerState);
-			else
-				BGameState->AliveATeam.Remove(VictimPlayerState);
-		}
-		
-		if (GetCurMatchState() != ECurMatchState::EMS_CoolDown)
+		if (GetCurMatchState() == ECurMatchState::EMS_InGame)
 		{
 			if (BGameState->AliveBTeam.Num()==0)
 			{

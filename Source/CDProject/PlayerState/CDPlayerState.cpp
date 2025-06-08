@@ -3,6 +3,7 @@
 #include "CookOnTheFly.h"
 #include "Net/UnrealNetwork.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Controller/CDPlayerController.h"
 
 ACDPlayerState::ACDPlayerState()
 {
@@ -16,7 +17,7 @@ void ACDPlayerState::BeginPlay()
 		SetTeam(Team);
 }
 
-FCDMatchStats ACDPlayerState::GetRecordInput()
+FCDMatchStats ACDPlayerState::GetPRecordInput() const
 {
 	FCDMatchStats MatchStats;
 	MatchStats.Kill = Kills;
@@ -24,6 +25,16 @@ FCDMatchStats ACDPlayerState::GetRecordInput()
 	MatchStats.shot = TotalShot;
 	MatchStats.Headshot = HeadShot;
 	return MatchStats;
+}
+
+ETeam ACDPlayerState::GetPTeam() const
+{
+	return MatchTeam;
+}
+
+FString ACDPlayerState::GetPUsername() const
+{
+	return Name;
 }
 
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -73,6 +84,11 @@ bool ACDPlayerState::SpendGold(int32 Amount)
 	return false;
 }
 
+ETeam ACDPlayerState::GetTeam_Implementation() const
+{
+	return Team; 
+}
+
 void ACDPlayerState::SetTeam(ETeam NewTeam)
 {
 	Team = NewTeam;
@@ -98,23 +114,31 @@ void ACDPlayerState::SwitchTeam()
 
 void ACDPlayerState::OnRep_Team()
 {
-	ACDCharacter* Character = Cast<ACDCharacter>(GetPawn());
-	if (Character)
+	APawn* OwnerPawn = nullptr;
+	if (AController* OwnerController = Cast<AController>(GetOwner()))
+	{
+		OwnerPawn = OwnerController->GetPawn();
+	}
+
+	if (ACDCharacter* Character = Cast<ACDCharacter>(OwnerPawn))
 	{
 		Character->SetTeam(Team);
+		UE_LOG(LogTemp, Warning, TEXT("SetTeam Called"));
 	}
 }
+
 
 void ACDPlayerState::OnRep_Gold()
 {
 	//UE_LOG(LogTemp, Display, TEXT("Gold Updated: %d"), Gold);
 	OnGoldUpdated.Broadcast(Gold);
-
+	
 	//델리게이트 방식으로 리팩토링 필요
-	// if(ACDPlayerController* ACDPC = Cast<ACDPlayerController>(GetPlayerController()))
-	// {
-	// 	ACDPC->SetGold();
-	// }
+	
+	if(ACDPlayerController* ACDPC = Cast<ACDPlayerController>(GetPlayerController()))
+	{
+		ACDPC->SetGold(Gold);
+	}
 }
 
 void ACDPlayerState::OnRep_Kills()
