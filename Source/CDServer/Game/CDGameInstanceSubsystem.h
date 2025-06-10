@@ -30,6 +30,7 @@ private:
 
 public:
 	FPlayerSessionInfoArray PlayerInfos;
+	
 	//name, readystate, ping
 	
 	FString RoomMode;

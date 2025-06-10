@@ -92,7 +92,7 @@ void AServer_GameMode::Logout(AController* Exiting)
     {
         UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Empty"));
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-        gameLiftSdkModule->ProcessEnding();
+        TerminateProcess(gameLiftSdkModule, 200);
     }
 }
 
@@ -213,14 +213,14 @@ void AServer_GameMode::EndGame(WinState winState)
             else
             {
                 FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-                gameLiftSdkModule->ProcessEnding();
+                TerminateProcess(gameLiftSdkModule, 200);
             }
         }
     }
     else
     {
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-        gameLiftSdkModule->ProcessEnding();
+        TerminateProcess(gameLiftSdkModule, 200);
     }
 }
 
