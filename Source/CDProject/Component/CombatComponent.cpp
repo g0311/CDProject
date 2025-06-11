@@ -133,10 +133,6 @@ void UCombatComponent::Reset(bool isDead)
 		{
 			TimerManager.ClearTimer(_fireAimAbleTimerHandle);
 		}
-		if (TimerManager.IsTimerActive(_weaponVisibleTimerHandle))
-		{
-			TimerManager.ClearTimer(_weaponVisibleTimerHandle);
-		}
 	}
 }
 

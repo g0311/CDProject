@@ -43,6 +43,7 @@ public:
 	void DestroyAllWeapon();
 	void Kill();
 	void GiveC4();
+
 private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
@@ -182,6 +183,8 @@ private:
 public:
 	void GetWeapon(class AWeapon* weapon, bool isForce = false);
 	UFUNCTION(Server, Reliable)
+	void ServerGiveSheild(const FWeaponStruct& WeaponData);
+	UFUNCTION(Server, Reliable)
 	void ServerGiveWeapon(const FWeaponStruct& WeaponData);
 	
 private:
@@ -199,9 +202,9 @@ public:
 	
 private:
 	//GAS
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<class UAbilitySystemComponent> _abilitySystemComponent;
-	UPROPERTY(VisibleAnywhere)
+    UPROPERTY(VisibleAnywhere, Category = "GAS")
+	TObjectPtr<class UAbilitySystemComponent> AbilitySystemComponent;
+	UPROPERTY(VisibleAnywhere, Category = "GAS", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCDCharacterAttributeSet> AttributeSet;
 	
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta=(AllowPrivateAccess), Category = "Abilities")

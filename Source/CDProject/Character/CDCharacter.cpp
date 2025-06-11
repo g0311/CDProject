@@ -62,10 +62,10 @@ ACDCharacter::ACDCharacter()
 	
 	AttributeSet = CreateDefaultSubobject<UCDCharacterAttributeSet>(TEXT("AttributeSet"));
 	
-	_abilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
-	_abilitySystemComponent->SetIsReplicated(true);
-	_abilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
-	_abilitySystemComponent->AddAttributeSetSubobject(AttributeSet.Get());
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
+	AbilitySystemComponent->AddAttributeSetSubobject(AttributeSet.Get());
 
 	//Minimap
 	MiniMapSpringArm=CreateDefaultSubobject<USpringArmComponent>(TEXT("Minimap Spring Arm"));
@@ -295,9 +295,9 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 void ACDCharacter::PossessedBy(AController* NewController)
 { //Server Part
 	Super::PossessedBy(NewController);
-	if (_abilitySystemComponent)
+	if (AbilitySystemComponent)
 	{
-		_abilitySystemComponent->InitAbilityActorInfo(this, this);
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 		InitializeAttributes();
 	}
 }
@@ -522,6 +522,13 @@ void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 			EnableInput(PC);
 	}
 	_isDead = false;
+	
+	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
+	if (ACPC)
+	{
+		ACPC->SetHUDHealth(AttributeSet->GetHealth());
+		ACPC->SetHUDShield(AttributeSet->GetShield());
+	}
 }
 
 void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController, bool bIsHeadShot)
@@ -801,6 +808,21 @@ void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 	_combat->GetWeapon(weapon, isForce);
 }
 
+void ACDCharacter::ServerGiveSheild_Implementation(const FWeaponStruct& WeaponData)
+{
+	if (AttributeSet)
+	{
+		AttributeSet->SetShield(AttributeSet->GetMaxShield());
+		ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
+		ACDPlayerState* PS = GetPlayerState<ACDPlayerState>();
+		if (ACPC && PS)
+		{
+			ACPC->SetHUDShield(AttributeSet->GetShield());
+			PS->SpendGold(WeaponData.Cost);
+		}
+	}
+}
+
 void ACDCharacter::ServerGiveWeapon_Implementation(const FWeaponStruct& WeaponData)
 {
 	if (!WeaponData.WeaponClass) return;
@@ -845,7 +867,7 @@ void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator contro
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
 {
-	return _abilitySystemComponent;
+	return AbilitySystemComponent;
 }
 
 class UCDCharacterAttributeSet* ACDCharacter::GetAttributeSet()
@@ -855,13 +877,13 @@ class UCDCharacterAttributeSet* ACDCharacter::GetAttributeSet()
 
 void ACDCharacter::InitializeAttributes()
 {
-	FGameplayEffectContextHandle EffectContext = _abilitySystemComponent->MakeEffectContext();
+	FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
 	EffectContext.AddSourceObject(this);
 
-	FGameplayEffectSpecHandle NewHandle = _abilitySystemComponent->MakeOutgoingSpec(_defaultAttributeEffect, 0, EffectContext);
+	FGameplayEffectSpecHandle NewHandle = AbilitySystemComponent->MakeOutgoingSpec(_defaultAttributeEffect, 0, EffectContext);
 	if(NewHandle.IsValid())
 	{
 		FActiveGameplayEffectHandle ActiveHandle = 
-			_abilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
+			AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*NewHandle.Data.Get());
 	}
 }

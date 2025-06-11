@@ -24,6 +24,7 @@ void UShopOverlay::NativeConstruct()
 		PistolButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
 		SMGButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
 		ShotgunButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
+		ArmorButton1->OnShopButtonClicked.AddDynamic(this, &UShopOverlay::OnShopButtonClicked);
 	}
 }
 
@@ -31,7 +32,7 @@ void UShopOverlay::OnShopButtonClicked(const FWeaponStruct& WeaponData)
 {
 	if (CanPurchase(WeaponData))
 	{
-		GiveWeaponToPlayer(WeaponData);
+		GiveItemToPlayer(WeaponData);
 	}
 	else
 	{
@@ -57,14 +58,21 @@ bool UShopOverlay::CanPurchase(const FWeaponStruct& WeaponData)
 	}
 }
 
-void UShopOverlay::GiveWeaponToPlayer(const FWeaponStruct& WeaponData)
+void UShopOverlay::GiveItemToPlayer(const FWeaponStruct& WeaponData)
 {
 	if (!WeaponData.WeaponClass)
 	{
+		if (WeaponData.WeaponName == FName(TEXT("Shield")))
+		{
+			if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwningPlayerPawn()); IsValid(CDCharacter))
+			{
+				CDCharacter->ServerGiveSheild(WeaponData);
+			}
+			return;
+		}
 		UE_LOG(LogTemp, Display, TEXT("No WeaponClass"));
 		return;
 	}
-	ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwningPlayerPawn());
-	if (IsValid(CDCharacter))
+	if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwningPlayerPawn()); IsValid(CDCharacter))
 		CDCharacter->ServerGiveWeapon(WeaponData);
 }
