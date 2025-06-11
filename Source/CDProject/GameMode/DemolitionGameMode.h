@@ -24,12 +24,14 @@ public:
 	virtual void Logout(AController* Exiting) override;
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 	void SetMatchTime(float c4ExplodeTime);
-	void RoundWin(bool isRed);
+	void RoundWin(bool isRedTeam);
 	void SetSecondHalf();
 	void SpawnBot();
 	void InitiateBot();
 	void KickBot();
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
+
+	void SetC4Planted(bool tf);
 //
 protected:
 	virtual void HandleMatchHasStarted() override;
@@ -59,4 +61,9 @@ protected:
 	class AC4Weapon* _c4Weapon;
 	UPROPERTY(VisibleAnywhere)
 	class AProjectileC4* _cProjectile;
+
+private:
+	UPROPERTY(VisibleAnywhere)
+	bool bIsPlanted = false;
+	
 };

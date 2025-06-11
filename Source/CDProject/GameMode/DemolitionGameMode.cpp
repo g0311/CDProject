@@ -120,17 +120,17 @@ void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)
 	}
 }
 
-void ADemolitionGameMode::RoundWin(bool isRed)
+void ADemolitionGameMode::RoundWin(bool isRedTeam)
 {
 	if (CurRound < MaxRound / 2)
 	{
 		if (Cast<ACDGameState>(GameState))
-			Cast<ACDGameState>(GameState)->UpdateTeamScore(isRed);
+			Cast<ACDGameState>(GameState)->UpdateTeamScore(isRedTeam);
 	}
 	else
 	{
 		if (Cast<ACDGameState>(GameState))
-			Cast<ACDGameState>(GameState)->UpdateTeamScore(!isRed);
+			Cast<ACDGameState>(GameState)->UpdateTeamScore(!isRedTeam);
 	}
 
 	for (TActorIterator<AController> It(GetWorld()); It; ++It)
@@ -141,19 +141,19 @@ void ADemolitionGameMode::RoundWin(bool isRed)
 			ACDPlayerState* playerState = Cast<ACDPlayerState>(PC->PlayerState);
 			if (playerState)
 			{
-				if (isRed)
+				if (isRedTeam)
 				{
-					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRedTeam)
 						playerState->AddGold(800);
-					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRedTeam)
 						playerState->AddGold(400);
 					UE_LOG(LogTemp, Display, TEXT("Red Team Win"));
 				}
 				else
 				{
-					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRed)
+					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRedTeam)
 						playerState->AddGold(800);
-					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRed)
+					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRedTeam)
 						playerState->AddGold(400);
 					UE_LOG(LogTemp, Display, TEXT("Blue Team Win"));
 				}
@@ -372,11 +372,25 @@ void ADemolitionGameMode::SpawnBot()
 void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 {
 	CooldownStartTime = GetWorld()->GetTimeSeconds();
+	if (NewState == ECurMatchState::EMS_CoolDown && bIsPlanted)
+	{
+		RoundWin(true);
+	}
 	if (NewState == ECurMatchState::EMS_Waiting && CurRound == MaxRound / 2)
 	{
 		SetSecondHalf();
 	}
 	Super::SetCurMatchState(NewState, IsInit);
+}
+
+void ADemolitionGameMode::SetC4Planted(bool tf)
+{
+	if (bIsPlanted && !tf)
+	{
+		RoundWin(false);
+		SetMatchTime(0);
+	}
+	bIsPlanted = tf;
 }
 
 // void ADemolitionGameMode::InitBot(ACDCharacter* BotCharacter)

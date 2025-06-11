@@ -45,12 +45,12 @@ void AC4Weapon::Fire(const FVector& HitTarget)
 		//GameMode Set Time
 		if (GetWorld()->GetAuthGameMode())
 		{
-			ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
-			if (teamGameMode)
+			ADemolitionGameMode* DemolitionGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
+			if (DemolitionGameMode)
 			{
-				teamGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
-
-				teamGameMode->AddDestroyableActor(c4Projectile);
+				DemolitionGameMode->SetMatchTime(c4Projectile->GetDestroyTime());
+				DemolitionGameMode->AddDestroyableActor(c4Projectile);
+				DemolitionGameMode->SetC4Planted(true);
 			}
 		}
 		Destroy();
