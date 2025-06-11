@@ -15,22 +15,24 @@ public:
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnShopButtonClicked(const FWeaponStruct& WeaponData);
-	UPROPERTY(meta = (BindWidget), meta=(AllowPrivateAccess))
-	UShopButton* RifleButton1;
+
 private:
 	UPROPERTY(EditAnywhere, Category=Weapons)
 	UDataTable* WeaponDataTable;
 
 	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* PistolButton1;
-	
+	UPROPERTY(meta = (BindWidget), meta=(AllowPrivateAccess))
+	UShopButton* RifleButton1;
 	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* SniperButton1;
 	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* ShotgunButton1;
 	UPROPERTY(meta=(BindWidget), meta=(AllowPrivateAccess))
 	UShopButton* SMGButton1;
-
+	UPROPERTY(meta = (BindWidget), meta=(AllowPrivateAccess))
+	UShopButton* ArmorButton1;
+	
 	TMap<UButton*, FWeaponStruct> ButtonWeaponMap;
 
 	class ACDPlayerState* PS;
@@ -41,5 +43,5 @@ private:
 
 
 	bool CanPurchase(const FWeaponStruct& WeaponData);
-	void GiveWeaponToPlayer(const FWeaponStruct& WeaponData);
+	void GiveItemToPlayer(const FWeaponStruct& WeaponData);
 };

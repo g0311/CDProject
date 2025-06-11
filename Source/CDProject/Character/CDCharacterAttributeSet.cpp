@@ -32,7 +32,7 @@ void UCDCharacterAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& Old
 
 void UCDCharacterAttributeSet::OnRep_Shield(const FGameplayAttributeData& OldShield)
 {
-		UE_LOG(LogTemp, Log, TEXT("OnRep_Sh_Called!!"));
+	UE_LOG(LogTemp, Log, TEXT("OnRep_Sh_Called!!"));
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UCDCharacterAttributeSet, Shield, OldShield);
 	if (AActor* Owner = GetOwningActor())
 	{
@@ -42,7 +42,7 @@ void UCDCharacterAttributeSet::OnRep_Shield(const FGameplayAttributeData& OldShi
 			{
 				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PC))
 				{
-					CDPC->SetHUDShield(GetHealth());
+					CDPC->SetHUDShield(GetShield());
 				}
 			}
 		}

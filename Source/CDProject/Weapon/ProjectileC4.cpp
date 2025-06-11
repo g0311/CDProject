@@ -31,14 +31,14 @@ void AProjectileC4::Destroyed()
 		else
 		{
 			ExplodeDamage();
-			if (GetWorld()->GetAuthGameMode())
-			{
-				ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
-				if (teamGameMode && teamGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
-				{
-					teamGameMode->RoundWin(true);
-				}
-			}
+			// if (GetWorld()->GetAuthGameMode())
+			// {
+			// 	ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
+			// 	if (teamGameMode && teamGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
+			// 	{
+			// 		teamGameMode->RoundWin(true);
+			// 	}
+			// }
 			NetMulticastCreateExplodeEffect();
 		}
 	}
@@ -62,11 +62,12 @@ void AProjectileC4::Defused()
 
 		if (GetWorld()->GetAuthGameMode())
         {
-        	ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
-        	if (teamGameMode && teamGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
+        	ADemolitionGameMode* DemolitionGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
+        	if (DemolitionGameMode && DemolitionGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
         	{
-        		teamGameMode->RoundWin(false);
-        		teamGameMode->SetMatchTime(0);
+        		DemolitionGameMode->SetC4Planted(false);
+        		//DemolitionGameMode->RoundWin(false);
+        		//DemolitionGameMode->SetMatchTime(0);
         	}
         }
 	}

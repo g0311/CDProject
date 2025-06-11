@@ -16,6 +16,7 @@
 #include "TimerManager.h"
 #include "CDProject/AI/CDAIController.h"
 #include "CDProject/GameState/CDGameState.h"
+#include "CDProject/Weapon/C4Weapon.h"
 #include "CDProject/Weapon/Weapon.h"
 #include "CDServer/Game/CDGameInstanceSubsystem.h"
 #include "CDServer/Game/CDSessionGameState.h"
@@ -250,7 +251,7 @@ void ARoundGameMode::RestartMatch(bool isInit)
 	{
 		if (IsValid(actor))
 		{
-			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped)
+			if (Cast<AWeapon>(actor) && Cast<AWeapon>(actor)->GetWeaponState() != EWeaponState::EWS_Dropped && !Cast<AC4Weapon>(actor))
 				continue;
 			
 			actor->Destroy();
@@ -329,7 +330,6 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 	}
 	else if (_curMatchState == ECurMatchState::EMS_GameEnd)
 	{
-		//Shut Down Server After 30 sec
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this]()
 		{
