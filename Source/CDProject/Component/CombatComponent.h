@@ -32,7 +32,8 @@ public:
 
 	//Blueprint
 	UFUNCTION(BlueprintCallable, Category="Blueprint")
-	int ExcuteGetCurAmmo(){return GetCurAmmo();};
+	int ExcuteGetCurAmmo(){return GetCurAmmo();}
+	
 	UFUNCTION(BlueprintCallable, Category="Blueprint")
 	int ExcuteGetCarriedAmmo(){return GetCarriedAmmo();};
 	UFUNCTION(BlueprintCallable, Category="Blueprint")

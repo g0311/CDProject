@@ -333,9 +333,12 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 		}
 
 		UTexture2D* WeaponImage = Weapon->WeaponImage;
-		if (WeaponImage && CDHUD->CharacterOverlay->WeaponImage)
+		if (CDHUD->CharacterOverlay->WeaponImage)
 		{
-			CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(WeaponImage);
+			if (WeaponImage)
+				CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(WeaponImage);
+			else
+				CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(nullptr);
 		}
 	}
 	else

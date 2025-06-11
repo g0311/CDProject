@@ -116,6 +116,28 @@ void UCombatComponent::Reset(bool isDead)
 			}
 		}
 	}
+
+	if (GetWorld())
+	{
+		FTimerManager& TimerManager = GetWorld()->GetTimerManager();
+		if (TimerManager.IsTimerActive(_clientFireTimerHandle))
+		{
+			TimerManager.ClearTimer(_clientFireTimerHandle);
+		}
+		if (TimerManager.IsTimerActive(_c4TimerHandle))
+		{
+			ServerC4Defuse(false);
+			ServerC4Plant(false);
+		}
+		if (TimerManager.IsTimerActive(_fireAimAbleTimerHandle))
+		{
+			TimerManager.ClearTimer(_fireAimAbleTimerHandle);
+		}
+		if (TimerManager.IsTimerActive(_weaponVisibleTimerHandle))
+		{
+			TimerManager.ClearTimer(_weaponVisibleTimerHandle);
+		}
+	}
 }
 
 void UCombatComponent::DeadAction()

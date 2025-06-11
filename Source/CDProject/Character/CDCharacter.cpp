@@ -305,7 +305,6 @@ void ACDCharacter::PossessedBy(AController* NewController)
 void ACDCharacter::Reset()
 {
 	//ServerCall
-	//Super::Reset();
 	if (AttributeSet->GetHealth() > 0)
 	{ //Alive
 		_combat->Reset(false);
