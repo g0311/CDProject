@@ -47,6 +47,8 @@ private:
 	//Properties
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
 	class USoundCue* _footstepSound;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = true), Category = "Sound")
+	class USoundAttenuation* _soundAttenuaion;
 	UPROPERTY(ReplicatedUsing=OnRep_Team, VisibleAnywhere)
 	ETeam _team = ETeam::ET_NoTeam;
 

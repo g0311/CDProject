@@ -380,8 +380,15 @@ void ACDCharacter::SetUserName(const FString& Name)
 
 void ACDCharacter::PlayFootStepSound()
 {
-	if (_footstepSound)
-		UGameplayStatics::PlaySoundAtLocation(this, _footstepSound, GetActorLocation());
+	if (_footstepSound && _soundAttenuaion)
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			_footstepSound,
+			GetActorLocation(),
+			1.f,
+			1.f,
+			0.f,
+			_soundAttenuaion);
 }
 
 void ACDCharacter::ServerPlayFootStepSound_Implementation()
