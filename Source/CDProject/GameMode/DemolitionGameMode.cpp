@@ -578,30 +578,6 @@ void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
 	}
 }
 
-void ADemolitionGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
-{ //Unused
-	if (ElimmedCharacter)
-	{
-		ElimmedCharacter->Reset();
-		ElimmedCharacter->Destroy(); 
-	}
-	
-	ACDPlayerState* PS = ElimmedController->GetPlayerState<ACDPlayerState>();
-	FName TeamTag= PS->GetTeam() == ETeam::ET_RedTeam ? FName("Red") : FName("Blue");
-
-	TArray<AActor*> PlayerStarts;
-	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
-	for (AActor* Start : PlayerStarts)
-	{
-		APlayerStart* StartPoint = Cast<APlayerStart>(Start);
-		if (StartPoint && StartPoint->PlayerStartTag == TeamTag)
-		{
-			RestartPlayerAtPlayerStart(ElimmedController, StartPoint);
-			return;
-		}
-	}
-}
-
 void ADemolitionGameMode::InitializeTeamCount()
 {
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));

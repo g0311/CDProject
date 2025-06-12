@@ -463,6 +463,8 @@ void UCombatComponent::RequestChange(int idx)
 
 void UCombatComponent::SetWeaponVisible(bool tf)
 {
+	if (!IsValid(this))
+		return;
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
 
@@ -471,7 +473,9 @@ void UCombatComponent::SetWeaponVisible(bool tf)
 
 void UCombatComponent::SetBefWeaponVisible(bool tf)
 {
-	if (_befIndex == -1 || !_weapons[_befIndex] || _befIndex == _weaponIndex)
+	if (!IsValid(this))
+		return;
+	if (_befIndex < 0 || _befIndex > 4 || !_weapons[_befIndex] || _befIndex == _weaponIndex)
 	{
 		_befIndex = _weaponIndex;
 		return;
@@ -588,15 +592,16 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 	{
 		if (isPlanting && _isC4Area)
 		{
-			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this]
+			TWeakObjectPtr<UCombatComponent> WeakThis(this);
+			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([WeakThis]
 				{
-					if (!IsValid(this))
+					if (!WeakThis.IsValid())
 						return;
-					RequestFire();
+					WeakThis->RequestFire();
 					//In C4 Fire, GameMode Set Bomb Planted
-					ServerC4Plant(false);
-					_weapons[_weaponIndex] = nullptr;
-					ChangeToNextWeapon();
+					WeakThis->ServerC4Plant(false);
+					WeakThis->GetWeapons()[WeakThis->GetWeaponIndex()] = nullptr;
+					WeakThis->ChangeToNextWeapon();
 				}),
 				_fireDelay, false);
 			NetMulticastC4Plant(true, _fireDelay);
@@ -777,7 +782,7 @@ void UCombatComponent::Fire(FVector fireDir)
 		fireDir=fireDir-traceStart;
 	}
 	FVector traceEnd = traceStart + fireDir * 10000.f;
-	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Purple, false, 0.5);
+	//DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Purple, false, 0.5);
 
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(GetOwner());
@@ -790,7 +795,7 @@ void UCombatComponent::Fire(FVector fireDir)
 	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
 	{
 		NetMulticastFire(hit.Location);
-		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
+		//DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
 	}
 	else
 	{
@@ -802,6 +807,8 @@ void UCombatComponent::Fire(FVector fireDir)
 	InsertCombatState(CombatTags::State_Combat_Firing);
 	GetWorld()->GetTimerManager().SetTimer(_fireTimerHandle, FTimerDelegate::CreateLambda([this]()
 	{
+		if (!IsValid(this))
+			return;
 		RemoveCombatState(CombatTags::State_Combat_Firing);
 	}), _fireDelay, false);
 }
@@ -826,10 +833,13 @@ void UCombatComponent::Reload()
 	Aim(false);
 	if (GetCurWeaponType() != EWeaponType::EWT_Shotgun)
 	{
-		GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]()
+		TWeakObjectPtr<UCombatComponent> WeakThis(this);
+		GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([WeakThis]()
 	   {
-		   RemoveCombatState(CombatTags::State_Combat_Reloading);
-		   _weapons[_weaponIndex]->Reload();
+			if (!WeakThis.IsValid())
+				return;
+		   WeakThis->RemoveCombatState(CombatTags::State_Combat_Reloading);
+		   WeakThis->GetCurWeapon()->Reload();
 	   }), armAnim->GetReloadTime(),false);
 	}
 }
@@ -861,16 +871,22 @@ void UCombatComponent::ChangeWeapon(int idx)
 	}
 	
 	InsertCombatState(CombatTags::State_Combat_ChangingWeapon);
-	GetWorld()->GetTimerManager().SetTimer(_weaponVisibleTimerHandle, FTimerDelegate::CreateLambda([this]
+	TWeakObjectPtr<UCombatComponent> WeakThis(this);
+	GetWorld()->GetTimerManager().SetTimer(_weaponVisibleTimerHandle, FTimerDelegate::CreateLambda([WeakThis]
 	{
+		if (!WeakThis.IsValid())
+			return;
 		UE_LOG(LogGameplayTags, Warning, TEXT("Visible called"));
-		SetBefWeaponVisible(false);
-		SetWeaponVisible(true);
+		WeakThis->SetBefWeaponVisible(false);
+		WeakThis->SetWeaponVisible(true);
 	}),
 	0.5f, false);
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
+	
+	GetWorld()->GetTimerManager().SetTimer(_weaponChangeTimerHandle, FTimerDelegate::CreateLambda([WeakThis]
 	{
-		RemoveCombatState(CombatTags::State_Combat_ChangingWeapon);
+		if (!WeakThis.IsValid())
+			return;
+		WeakThis->RemoveCombatState(CombatTags::State_Combat_ChangingWeapon);
 	}),
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
@@ -1062,9 +1078,12 @@ void UCombatComponent::NetMulticastGrenadeReady_Implementation()
 
 	if (_playerCharacter && _playerCharacter->HasAuthority())
 	{
-		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([this]
+		TWeakObjectPtr<UCombatComponent> WeakThis(this);
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([WeakThis]
 		   {
-				InsertCombatState(CombatTags::State_Combat_GrenadeReady);
+				if (!WeakThis.IsValid())
+					return;
+				WeakThis->InsertCombatState(CombatTags::State_Combat_GrenadeReady);
 		   }), armAnim->GetGrenadeReadyTime(), false);
 	}
 }
@@ -1085,10 +1104,13 @@ void UCombatComponent::NetMulticastGrenadeThrow_Implementation()
 
 	if (_playerCharacter && _playerCharacter->HasAuthority())
 	{
-		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([this]
+		TWeakObjectPtr<UCombatComponent> WeakThis(this);
+		GetWorld()->GetTimerManager().SetTimer(_clientFireTimerHandle, FTimerDelegate::CreateLambda([WeakThis]
 		   {
-			   _weapons[_weaponIndex] = nullptr;
-			   ChangeToNextWeapon();
+				if (!WeakThis.IsValid())
+					return;
+				WeakThis->GetWeapons()[WeakThis->GetWeaponIndex()] = nullptr;
+				WeakThis->ChangeToNextWeapon();
 		   }), armAnim->GetGrenadeThrowTime() / 2, false);
 	}
 }

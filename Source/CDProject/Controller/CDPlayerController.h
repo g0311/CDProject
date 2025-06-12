@@ -184,6 +184,8 @@ public:
 	virtual void SetupInputComponent() override;
 	UFUNCTION(Client, Reliable)
 	void ClientSetPlayerAlive(bool isAlive);
+	UFUNCTION(Client, Reliable)
+	void ClientSetEnableInput(bool tf);
 	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Input")

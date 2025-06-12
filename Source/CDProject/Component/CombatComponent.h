@@ -49,6 +49,7 @@ public:
 	
 	
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
+	FORCEINLINE int GetWeaponIndex() { return _weaponIndex; }
 	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
 	int GetCurAmmo();
 	int GetCarriedAmmo();
@@ -99,6 +100,7 @@ private:
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
 	FTimerHandle _weaponVisibleTimerHandle;
+	FTimerHandle _weaponChangeTimerHandle;
 	FTimerHandle _c4TimerHandle;	
 	
 	UPROPERTY(VisibleAnywhere)

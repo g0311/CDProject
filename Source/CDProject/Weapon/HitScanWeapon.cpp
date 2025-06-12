@@ -32,7 +32,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start=SocketTransform.GetLocation();
 		FVector Direction = (HitTarget - Start).GetSafeNormal();
-		FVector ExtendedEnd = Start + Direction * 10000.f; // 예: 10000cm = 100m
+		FVector ExtendedEnd = Start + Direction * 10000.f;
 		
 		FCollisionQueryParams queryParams;
 		queryParams.AddIgnoredActor(this);
@@ -49,34 +49,36 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				queryParams);
 		};
 		
-		{
-			DrawDebugLine(
-			   GetWorld(),
-			   Start,
-			   ExtendedEnd,
-			   FColor::Green,
-			   false, 2.f, 0, 1.f
-		   );
-			DrawDebugSphere(
-				GetWorld(),
-				FireHitResult.Location,
-				10,
-				20,
-				FColor::Green,
-				false,
-				2.f
-			);
-		}
+		// {
+		// 	DrawDebugLine(
+		// 	   GetWorld(),
+		// 	   Start,
+		// 	   ExtendedEnd,
+		// 	   FColor::Green,
+		// 	   false, 2.f, 0, 1.f
+		//    );
+		// 	DrawDebugSphere(
+		// 		GetWorld(),
+		// 		FireHitResult.Location,
+		// 		10,
+		// 		20,
+		// 		FColor::Green,
+		// 		false,
+		// 		2.f
+		// 	);
+		// }
 		
 		FVector BeamEnd=ExtendedEnd;
 		if (FireHitResult.bBlockingHit)
 		{
-			// if (FireHitResult.GetActor())
-			// 	UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetActor()->GetName());
+			if (FireHitResult.GetActor())
+				UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetActor()->GetName());
+			if (FireHitResult.GetComponent())
+				UE_LOG(LogTemp, Log, TEXT("Hit Actor Name: %s"), *FireHitResult.GetComponent()->GetName());
 
 			BeamEnd=FireHitResult.ImpactPoint;
 			ACharacter* CDCharacter=Cast<ACharacter>(FireHitResult.GetActor());
-			if (CDCharacter && OwnerController && HasAuthority())
+			if (CDCharacter && HasAuthority())
 			{
 				UGameplayStatics::ApplyPointDamage(
                 			CDCharacter,
@@ -171,14 +173,14 @@ FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVe
 	FVector EndLoc=SphereCenter+RandomVector;
 	FVector ToEndLoc=EndLoc-TraceStart;
 
-	DrawDebugSphere(GetWorld(),SphereCenter,SphereRadius,12,FColor::Red,true);
-	DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
-	DrawDebugLine(
-		GetWorld(),
-		TraceStart,
-		FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size()),
-		FColor::Cyan,
-		true);
+	// DrawDebugSphere(GetWorld(),SphereCenter,SphereRadius,12,FColor::Red,true);
+	// DrawDebugSphere(GetWorld(), EndLoc, 4.f, 12, FColor::Orange, true);
+	// DrawDebugLine(
+	// 	GetWorld(),
+	// 	TraceStart,
+	// 	FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size()),
+	// 	FColor::Cyan,
+	// 	true);
 	return FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size());
 }
 

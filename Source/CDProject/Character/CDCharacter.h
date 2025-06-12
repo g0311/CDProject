@@ -31,6 +31,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void Reset() override;
+	virtual void BeginDestroy() override;
 	
 	void UpdateVisibilityForSpectator(bool isWatching);
 	void SetTeam(ETeam team);

@@ -33,7 +33,6 @@ public:
 		class AController* VictimController,
 		AController* AttackerController
 		);
-	virtual void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
 
 	ECurMatchState GetCurMatchState(){ return _curMatchState; }
 	void AddDestroyableActor(AActor* DestroyableActor) {_createdActors.Add(DestroyableActor);}

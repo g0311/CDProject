@@ -96,7 +96,7 @@ void ACDCharacter::BeginPlay()
 			MiniMapRenderTarget->RenderTargetFormat = RTF_RGBA8;
 			MiniMapRenderTarget->InitAutoFormat(256, 256);
 			MiniMapRenderTarget->ClearColor = FLinearColor::Transparent;
-			//SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
+			SceneCapture2D->TextureTarget = MiniMapRenderTarget;//Frame Drop
 		}
 	}
 	
@@ -326,6 +326,17 @@ void ACDCharacter::Reset()
 	}
 }
 
+void ACDCharacter::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+		GetWorld()->GetTimerManager().ClearAllTimersForObject(GetCombatComponent());
+	}
+}
+
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 {
 	if (isWatching)
@@ -402,23 +413,11 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 
 	if (IsLocallyControlled())
 	{
-		APlayerController* controller = Cast<APlayerController>(GetController());
-		if (IsValid(controller))
-		{
-			DisableInput(controller);
-		}
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
 	}
 	if (HasAuthority())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Die Called In Server"));
-		if (ACDAIController* CDAIController = Cast<ACDAIController>(GetController()); IsValid(CDAIController))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("AI DIED!!"));
-			CDAIController->StopBehavior();
-		}
-		
 		//Drop All Weapon & Reset Tag & Clear Timer
 		_combat->DeadAction();
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -451,30 +450,6 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 
 	_isDead = true;
-
-	if (HasAuthority())
-	{
-		if (GetWorld() && GetWorld()->GetAuthGameMode())
-		{
-			if (ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode()))
-			{
-				if (GameMode->GetCurMatchState() == ECurMatchState::EMS_None)
-				{
-					FTimerHandle TimerHandle;
-					GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, GameMode]()
-					{
-						if (IsValid(this) && IsValid(GameMode))
-						{
-							if (GameMode->GetCurMatchState() == ECurMatchState::EMS_None)
-							{
-								this->Reset();
-							}
-						}
-					}), 1.5f, false);
-				}
-			}
-		}
-	}
 }
 
 void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorController, bool bIsHeadShot)
@@ -517,18 +492,14 @@ void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 	_armMesh->SetVisibility(true);
 	if (IsLocallyControlled())
 	{
-		APlayerController* PC = Cast<APlayerController>(GetController());
-		if (IsValid(PC))
-			EnableInput(PC);
+		ACDPlayerController* ACPC = Cast<ACDPlayerController>(GetController());
+		if (IsValid(ACPC))
+		{
+			ACPC->SetHUDHealth(AttributeSet->GetHealth());
+			ACPC->SetHUDShield(AttributeSet->GetShield());
+		}
 	}
 	_isDead = false;
-	
-	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
-	if (ACPC)
-	{
-		ACPC->SetHUDHealth(AttributeSet->GetHealth());
-		ACPC->SetHUDShield(AttributeSet->GetShield());
-	}
 }
 
 void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorController, bool bIsHeadShot)

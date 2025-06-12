@@ -113,7 +113,7 @@ void AWeapon::SetWeaponVisible(bool tf)
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	DrawDebugSphere(GetWorld(), GetActorLocation(), 15, 10, FColor::Red, false);
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), 15, 10, FColor::Red, false);
 	if (AreaSphere && HasAuthority())
 	{
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereBeginOverlap);
@@ -179,6 +179,8 @@ void AWeapon::OnRep_WeaponVisible()
 {
 	GetWeaponMesh()->SetVisibility(WeaponVisible);
 	GetWeaponMesh3p()->SetVisibility(WeaponVisible);
+	if (WeaponVisible)
+		SetHUDAmmo();
 }
 
 void AWeapon::SpendAmmo()
