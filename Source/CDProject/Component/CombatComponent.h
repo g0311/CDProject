@@ -49,6 +49,7 @@ public:
 	
 	
 	FORCEINLINE TArray<AWeapon*> GetWeapons() { return _weapons; }
+	FORCEINLINE int GetWeaponIndex() { return _weaponIndex; }
 	FORCEINLINE void SetC4Area(bool tf) { _isC4Area = tf; }
 	int GetCurAmmo();
 	int GetCarriedAmmo();

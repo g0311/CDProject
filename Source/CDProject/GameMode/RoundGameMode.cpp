@@ -205,6 +205,8 @@ void ARoundGameMode::PlayerEliminated(class AController* VictimController,
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, VictimController]()
 		{
+			if (!IsValid(this))
+				return;
 			if (VictimController)
 			{
 				if (ACDCharacter* Character = Cast<ACDCharacter>(VictimController->GetCharacter()))

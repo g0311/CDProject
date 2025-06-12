@@ -326,6 +326,17 @@ void ACDCharacter::Reset()
 	}
 }
 
+void ACDCharacter::BeginDestroy()
+{
+	Super::BeginDestroy();
+
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+		GetWorld()->GetTimerManager().ClearAllTimersForObject(GetCombatComponent());
+	}
+}
+
 void ACDCharacter::UpdateVisibilityForSpectator(bool isWatching)
 {
 	if (isWatching)
