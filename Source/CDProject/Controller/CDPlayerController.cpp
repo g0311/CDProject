@@ -240,7 +240,6 @@ void ACDPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 		return;
 	if (IsValid(GetPawn()))
 	{
-		GetPawn()->EnableInput(this);
 		SetShowMouseCursor(false);
 	}
 	
@@ -680,20 +679,13 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		WaitingStartTime = time;
-		if (IsValid(GetCharacter()))
-		{
-			//GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_None);
-			GetCharacter()->DisableInput(this);
-		}
+		ClientSetPlayerAlive(true);
+		ClientSetEnableInput(false);
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = time;
-		if (IsValid(GetCharacter()))
-		{
-			//GetCharacter()->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-			GetCharacter()->EnableInput(this);
-		}
+		ClientSetEnableInput(true);
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
@@ -767,6 +759,17 @@ void ACDPlayerController::SetupInputComponent()
 	if (enhancedInputComponent)
 	{
 		enhancedInputComponent->BindAction(LeftClickAction, ETriggerEvent::Started, this, &ACDPlayerController::LMouseDown);
+	}
+}
+
+void ACDPlayerController::ClientSetEnableInput_Implementation(bool tf)
+{
+	if (IsValid(GetCharacter()))
+	{
+		if (tf)
+			GetCharacter()->EnableInput(this);
+		else
+			GetCharacter()->DisableInput(this);
 	}
 }
 

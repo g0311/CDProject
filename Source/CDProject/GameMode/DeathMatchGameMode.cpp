@@ -63,28 +63,6 @@ void ADeathMatchGameMode::HandleSeamlessTravelPlayer(AController*& C)
 	}
 }
 
-void ADeathMatchGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
-{
-	if (ElimmedCharacter)
-	{
-		ElimmedCharacter->Reset();
-		ElimmedCharacter->Destroy();
-	}
-
-	TArray<AActor*> PlayerStarts;
-	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
-
-	for (AActor* Start : PlayerStarts)
-	{
-		APlayerStart* StartPoint = Cast<APlayerStart>(Start);
-		if (StartPoint)
-		{
-			RestartPlayerAtPlayerStart(ElimmedController, StartPoint);
-			return;
-		}
-	}
-}
-
 void ADeathMatchGameMode::SpawnBot()
 {
 	if (!AIBot) return;

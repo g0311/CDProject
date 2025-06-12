@@ -777,7 +777,7 @@ void UCombatComponent::Fire(FVector fireDir)
 		fireDir=fireDir-traceStart;
 	}
 	FVector traceEnd = traceStart + fireDir * 10000.f;
-	DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Purple, false, 0.5);
+	//DrawDebugLine(GetWorld(), traceStart, traceEnd, FColor::Purple, false, 0.5);
 
 	FCollisionQueryParams queryParams;
 	queryParams.AddIgnoredActor(GetOwner());
@@ -790,7 +790,7 @@ void UCombatComponent::Fire(FVector fireDir)
 	if (GetWorld()->LineTraceSingleByChannel(hit, traceStart, traceEnd, ECC_GameTraceChannel1, queryParams))
 	{
 		NetMulticastFire(hit.Location);
-		DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
+		//DrawDebugSphere(GetWorld(), hit.Location, 20.f, 20, FColor::Red, false, 5.0f);
 	}
 	else
 	{
@@ -868,7 +868,8 @@ void UCombatComponent::ChangeWeapon(int idx)
 		SetWeaponVisible(true);
 	}),
 	0.5f, false);
-	GetWorld()->GetTimerManager().SetTimer(_fireAimAbleTimerHandle, FTimerDelegate::CreateLambda([this]
+	
+	GetWorld()->GetTimerManager().SetTimer(_weaponChangeTimerHandle, FTimerDelegate::CreateLambda([this]
 	{
 		RemoveCombatState(CombatTags::State_Combat_ChangingWeapon);
 	}),

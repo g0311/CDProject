@@ -99,6 +99,7 @@ private:
 	float _fireDelay = 0.23f;
 	FTimerHandle _fireAimAbleTimerHandle;
 	FTimerHandle _weaponVisibleTimerHandle;
+	FTimerHandle _weaponChangeTimerHandle;
 	FTimerHandle _c4TimerHandle;	
 	
 	UPROPERTY(VisibleAnywhere)

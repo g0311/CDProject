@@ -188,32 +188,60 @@ void ARoundGameMode::PlayerEliminated(class AController* VictimController,
 	if (VictimController==nullptr||VictimController->PlayerState==nullptr) return;
 	ACDPlayerState* AttackerPlayerState=AttackerController?Cast<ACDPlayerState>(AttackerController->PlayerState):nullptr;
 	ACDPlayerState* VictimPlayerState=VictimController?Cast<ACDPlayerState>(VictimController->PlayerState):nullptr;
-	
-	if (AttackerPlayerState)
-	{
-		AttackerPlayerState->AddKill();
-	}
-	if (VictimPlayerState)
-	{
-		VictimPlayerState->AddDeath();
-		if (ACDPlayerController* ACDVictimController=Cast<ACDPlayerController>(VictimPlayerState->GetOwningController()))
-			ACDVictimController->ClientSetPlayerAlive(false);
-	}
-}
 
-void ARoundGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
-{//Unused
-	if (ElimmedCharacter)
+	//Deactive Inputs
+	if (ACDAIController* CDAIController = Cast<ACDAIController>(VictimController); IsValid(CDAIController))
 	{
-		ElimmedCharacter->Reset();
-		ElimmedCharacter->Destroy();
+		CDAIController->StopBehavior();
 	}
-	if (ElimmedController)
+	if (ACDPlayerController* PlayerController = Cast<ACDPlayerController>(VictimController))
 	{
-		TArray<AActor*> PlayerStarts;
-		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
-		int32 SelectionPlayerStartingPoint=FMath::RandRange(0,PlayerStarts.Num()-1);
-		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[SelectionPlayerStartingPoint]);
+		PlayerController->ClientSetPlayerAlive(false);
+		PlayerController->ClientSetEnableInput(false);
+	}
+	
+	if (GetCurMatchState() == ECurMatchState::EMS_None)
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, VictimController]()
+		{
+			if (VictimController)
+			{
+				if (ACDCharacter* Character = Cast<ACDCharacter>(VictimController->GetCharacter()))
+				{
+					Character->Reset();
+				
+					AActor* playerStart = FindPlayerStart(VictimController);
+					if (playerStart)
+					{
+						Character->SetActorLocation(playerStart->GetActorLocation());
+						Character->SetActorRotation(playerStart->GetActorRotation());
+						VictimController->SetControlRotation(playerStart->GetActorRotation());
+					}
+				}
+				if (ACDPlayerController* PlayerController = Cast<ACDPlayerController>(VictimController))
+				{
+					PlayerController->ClientSetPlayerAlive(true);
+					PlayerController->ClientSetEnableInput(true);
+				}
+				if (ACDAIController* AIController = Cast<ACDAIController>(VictimController))
+				{
+					AIController->RestartBehavior();
+				}
+			}
+		}), 1.5f, false);
+	}
+	
+	if (GetCurMatchState() ==  ECurMatchState::EMS_InGame)
+	{
+		if (AttackerPlayerState)
+		{
+			AttackerPlayerState->AddKill();
+		}
+		if (VictimPlayerState)
+		{
+			VictimPlayerState->AddDeath();
+		}
 	}
 }
 
@@ -240,10 +268,6 @@ void ARoundGameMode::RestartMatch(bool isInit)
 					Character->SetActorRotation(playerStart->GetActorRotation());
 					Controller->SetControlRotation(playerStart->GetActorRotation());
 				}
-			}
-			if (ACDPlayerController* PlayerController = Cast<ACDPlayerController>(Controller))
-			{
-				PlayerController->ClientSetPlayerAlive(true);
 			}
 		}
 	}

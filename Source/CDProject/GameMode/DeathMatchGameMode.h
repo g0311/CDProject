@@ -19,7 +19,6 @@ public:
 	virtual void Logout(AController* Exiting) override;
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
 
-	void RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController);
 	void SpawnBot();
 	void BalancedBot();
 	void KickBot();
