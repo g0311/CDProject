@@ -53,6 +53,22 @@ void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 			}
 		}
 	}
+
+	if (!NewPlayer || !NewPlayer->GetPawn())
+		return;
+	if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(NewPlayer->GetPawn()))
+	{
+		if (GetWorld() && GetWorld()->GetAuthGameMode())
+		{
+			AActor* playerStart = GetWorld()->GetAuthGameMode()->FindPlayerStart(NewPlayer);
+			if (playerStart)
+			{
+				CDCharacter->SetActorLocation(playerStart->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+				CDCharacter->SetActorRotation(playerStart->GetActorRotation());
+				NewPlayer->SetControlRotation(playerStart->GetActorRotation());
+			}
+		}
+	}
 }
 
 void ADemolitionGameMode::Logout(AController* Exiting)
@@ -102,6 +118,22 @@ void ADemolitionGameMode::HandleSeamlessTravelPlayer(AController*& C)
 					BPState->SetTeam(ETeam::ET_BlueTeam);
 				else
 					BPState->SetTeam(ETeam::ET_RedTeam);
+			}
+		}
+	}
+	
+	if (!C || !C->GetPawn())
+		return;
+	if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(C->GetPawn()))
+	{
+		if (GetWorld() && GetWorld()->GetAuthGameMode())
+		{
+			AActor* playerStart = GetWorld()->GetAuthGameMode()->FindPlayerStart(C);
+			if (playerStart)
+			{
+				CDCharacter->SetActorLocation(playerStart->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+				CDCharacter->SetActorRotation(playerStart->GetActorRotation());
+				C->SetControlRotation(playerStart->GetActorRotation());
 			}
 		}
 	}
@@ -292,18 +324,18 @@ void ADemolitionGameMode::SpawnBot()
 		AvailStartPoints.Add(BotTeamTag, TeamStarts);
 	}
 	FVector SpawnLocation = FVector::ZeroVector;
-    FRotator SpawnRotation = FRotator::ZeroRotator;
-    if (AvailStartPoints.Contains(BotTeamTag))
-    {
-        TArray<APlayerStart*>& TeamAvailStarts = AvailStartPoints[BotTeamTag];
-        if (TeamAvailStarts.Num() > 0)
-        {
-            const int32 Index = FMath::RandRange(0, TeamAvailStarts.Num() - 1);
-            APlayerStart* ChosenStart = TeamAvailStarts[Index];
-            SpawnLocation = ChosenStart->GetActorLocation();
-            SpawnRotation = ChosenStart->GetActorRotation();
-        }
-    }
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+	if (AvailStartPoints.Contains(BotTeamTag))
+	{
+		TArray<APlayerStart*>& TeamAvailStarts = AvailStartPoints[BotTeamTag];
+		if (TeamAvailStarts.Num() > 0)
+		{
+			const int32 Index = FMath::RandRange(0, TeamAvailStarts.Num() - 1);
+			APlayerStart* ChosenStart = TeamAvailStarts[Index];
+			SpawnLocation = ChosenStart->GetActorLocation();
+			SpawnRotation = ChosenStart->GetActorRotation();
+		}
+	}
 	
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn; 
