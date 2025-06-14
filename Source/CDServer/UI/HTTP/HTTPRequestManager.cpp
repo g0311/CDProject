@@ -7,6 +7,7 @@
 #include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "JsonObjectConverter.h"
 #include "CDServer/Game/Server_GameMode.h"
+#include "GameFramework/HUD.h"
 #include "CDServer/UI/Portal/Interfaces/HUDManagement.h"
 
 UCDLocalPlayerSubsystem* UHTTPRequestManager::GetCDLocalPlayerSubsystem()
