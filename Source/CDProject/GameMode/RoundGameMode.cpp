@@ -216,7 +216,7 @@ void ARoundGameMode::PlayerEliminated(class AController* VictimController,
 					AActor* playerStart = FindPlayerStart(VictimController);
 					if (playerStart)
 					{
-						Character->SetActorLocation(playerStart->GetActorLocation());
+						Character->SetActorLocation(playerStart->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
 						Character->SetActorRotation(playerStart->GetActorRotation());
 						VictimController->SetControlRotation(playerStart->GetActorRotation());
 					}
@@ -266,7 +266,7 @@ void ARoundGameMode::RestartMatch(bool isInit)
 				AActor* playerStart = FindPlayerStart(Controller);
 				if (playerStart)
 				{
-					Character->SetActorLocation(playerStart->GetActorLocation());
+					Character->SetActorLocation(playerStart->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
 					Character->SetActorRotation(playerStart->GetActorRotation());
 					Controller->SetControlRotation(playerStart->GetActorRotation());
 				}

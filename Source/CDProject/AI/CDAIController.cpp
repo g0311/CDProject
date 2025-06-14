@@ -6,8 +6,10 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "CDProject/Character/CDCharacter.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "CDServer/Player/Team.h"
+#include "GameFramework/GameModeBase.h"
 
 // Sets default values
 ACDAIController::ACDAIController()
@@ -75,12 +77,10 @@ void ACDAIController::BeginPlay()
 void ACDAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	if (APlayerState* PS = GetPlayerState<APlayerState>())
+	if (ACDPlayerState* APS=Cast<ACDPlayerState>(PlayerState))
 	{
-		ACDPlayerState* APS=Cast<ACDPlayerState>(PS);
 		int32 TeamIdFromPS = APS->GetTeam()==ETeam::ET_RedTeam?1:2; 
 		SetGenericTeamId(FGenericTeamId(TeamIdFromPS));
 	}
-	
 }
 

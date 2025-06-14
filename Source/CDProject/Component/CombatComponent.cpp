@@ -838,8 +838,9 @@ void UCombatComponent::Reload()
 	   {
 			if (!WeakThis.IsValid())
 				return;
-		   WeakThis->RemoveCombatState(CombatTags::State_Combat_Reloading);
-		   WeakThis->GetCurWeapon()->Reload();
+		    WeakThis->RemoveCombatState(CombatTags::State_Combat_Reloading);
+			if (IsValid(WeakThis->GetCurWeapon()))
+			   WeakThis->GetCurWeapon()->Reload();
 	   }), armAnim->GetReloadTime(),false);
 	}
 }

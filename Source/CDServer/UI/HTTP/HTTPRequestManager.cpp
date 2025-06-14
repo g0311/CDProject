@@ -7,6 +7,8 @@
 #include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "JsonObjectConverter.h"
 #include "CDServer/Game/Server_GameMode.h"
+#include "GameFramework/HUD.h"
+#include "CDServer/UI/Portal/Interfaces/HUDManagement.h"
 
 UCDLocalPlayerSubsystem* UHTTPRequestManager::GetCDLocalPlayerSubsystem()
 {
@@ -70,4 +72,17 @@ FString UHTTPRequestManager::SerializeJsonContent(const TMap<FString, FString>& 
 	FJsonSerializer::Serialize(ContentJsonObject.ToSharedRef(), Writer);
 
 	return Content;
+}
+
+void UHTTPRequestManager::OnSignOut()
+{
+	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (IsValid(LocalPlayerController))
+	{
+		IHUDManagement* HUDManagementInterface = Cast<IHUDManagement>(LocalPlayerController->GetHUD());
+		if (HUDManagementInterface)
+		{
+			HUDManagementInterface->OnSignOut();
+		}
+	}
 }

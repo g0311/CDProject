@@ -313,8 +313,7 @@ void ACDCharacter::Reset()
 		//ServerPart
 	}
 	else
-	{
-		//Dead
+	{ //Dead
 		_combat->Reset(true);
 		AttributeSet->SetHealth(AttributeSet->GetMaxHealth());
 		Multicast_Reset(false);
