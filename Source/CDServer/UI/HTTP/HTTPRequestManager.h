@@ -26,5 +26,7 @@ protected:
 	FString ContainsError(TSharedPtr<FJsonObject> JsonObject);
 	void DumpMetaData(TSharedPtr<FJsonObject> JsonObject);
 
-	FString SerializeJsonContent(const TMap<FString, FString>& Params); 
+	FString SerializeJsonContent(const TMap<FString, FString>& Params);
+
+	void OnSignOut();
 };

@@ -208,15 +208,7 @@ void UPortalManager::SignOut_Response(FHttpRequestPtr Request, FHttpResponsePtr 
 		if (!ErrorType.IsEmpty())
 			return;
 
-		APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
-		if (IsValid(LocalPlayerController))
-		{
-			IHUDManagement* HUDManagementInterface = Cast<IHUDManagement>(LocalPlayerController->GetHUD());
-			if (HUDManagementInterface)
-			{
-				HUDManagementInterface->OnSignOut();
-			}
-		}
+		OnSignOut();
 	}
 }
 

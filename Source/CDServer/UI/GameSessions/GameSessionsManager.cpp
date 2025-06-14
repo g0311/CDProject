@@ -163,6 +163,10 @@ void UGameSessionsManager::FindOrCreateGameSession_Response(FHttpRequestPtr Requ
 		PrivateSessionCreateDelegate.Broadcast(TEXT(""), true);
 		return;
 	}
+	if (Response->GetResponseCode() == 401)
+	{
+		OnSignOut();
+	}
 
 	TSharedPtr<FJsonObject> JsonObject;
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
@@ -209,6 +213,10 @@ void UGameSessionsManager::CreatePrivateGameSession_Response(FHttpRequestPtr Req
 		PrivateSessionDelegate.Broadcast(TEXT(""), true);
 		PrivateSessionCreateDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
 		return;
+	}
+	if (Response->GetResponseCode() == 401)
+	{
+		OnSignOut();
 	}
 
 	TSharedPtr<FJsonObject> JsonObject;
@@ -338,6 +346,11 @@ void UGameSessionsManager::CreatePlayerSession_Response(FHttpRequestPtr Request,
 		PrivateSessionCreateDelegate.Broadcast(TEXT(""), true);
 		return;
 	}
+	if (Response->GetResponseCode() == 401)
+	{
+		OnSignOut();
+	}
+	
 	TSharedPtr<FJsonObject> JsonObject;
 	TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(Response->GetContentAsString());
 	if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
@@ -380,6 +393,10 @@ void UGameSessionsManager::GetGameSessions_Response(FHttpRequestPtr Request, FHt
 	{
 		OnGetSessionsRequestSucceeded.Broadcast(FCDDescribeGameSessionResult());
 		return;
+	}
+	if (Response->GetResponseCode() == 401)
+	{
+		OnSignOut();
 	}
 
 	TSharedPtr<FJsonObject> JsonObject;
