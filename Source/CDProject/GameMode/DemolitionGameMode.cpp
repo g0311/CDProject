@@ -124,6 +124,7 @@ void ADemolitionGameMode::HandleSeamlessTravelPlayer(AController*& C)
 	
 	if (!C || !C->GetPawn())
 		return;
+	
 	if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(C->GetPawn()))
 	{
 		if (GetWorld() && GetWorld()->GetAuthGameMode())

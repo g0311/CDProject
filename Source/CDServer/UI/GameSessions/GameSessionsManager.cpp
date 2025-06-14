@@ -26,12 +26,12 @@ void UGameSessionsManager::QuickJoinGameSession(const FString& GameMode, const F
 	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
 	if (IsValid(LocalPlayerSubsystem))
 	{
-		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().IdToken);	
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
 	}
 	TMap<FString, FString> Params =
 		{
 		{TEXT("roomName"), TEXT("")},
-		{TEXT("isPrivate"), TEXT("false")},
+		{TEXT("isPrivate"), TEXT("true")},
 		{TEXT("isStarted"), TEXT("false")},
 		{TEXT("roomMap"), RoomMap},
 		{TEXT("roomMode"), GameMode},
@@ -56,7 +56,7 @@ void UGameSessionsManager::FindGameSessions()
 	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
 	if (IsValid(LocalPlayerSubsystem))
 	{
-		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().IdToken);	
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
 	}
 
 	Request->ProcessRequest();
@@ -65,7 +65,7 @@ void UGameSessionsManager::FindGameSessions()
 void UGameSessionsManager::CreatePrivateGameSession(const FString& RoomName, const FString& RoomMode,
 	const FString& RoomMap)
 {
-	PrivateSessionDelegate.Broadcast(TEXT("Creating Game Session..."), false);
+	PrivateSessionCreateDelegate.Broadcast(TEXT("Creating Game Session..."), false);
 
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
 	Request->OnProcessRequestComplete().BindUObject(this, &UGameSessionsManager::CreatePrivateGameSession_Response);
@@ -79,7 +79,7 @@ void UGameSessionsManager::CreatePrivateGameSession(const FString& RoomName, con
 	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
 	if (IsValid(LocalPlayerSubsystem))
 	{
-		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().IdToken);
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);
 	}
 	TMap<FString, FString> Params =
 		{
@@ -122,7 +122,7 @@ void UGameSessionsManager::UpdateGameSession(const FString& GameSessionId, const
 	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
 	if (IsValid(LocalPlayerSubsystem))
 	{
-		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().IdToken);	
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
 	}
 	TMap<FString, FString> Params =
 		{
@@ -205,7 +205,7 @@ void UGameSessionsManager::CreatePrivateGameSession_Response(FHttpRequestPtr Req
 {
 	if (!bSucceeded)
 	{
-		JoinGameSessionMessageDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
+		JoinGameSessionMessageDelegate.Broadcast(TEXT(""), true);
 		PrivateSessionDelegate.Broadcast(TEXT(""), true);
 		PrivateSessionCreateDelegate.Broadcast(HTTPStatusMessages::SomethingWentWrong, true);
 		return;
@@ -315,7 +315,7 @@ void UGameSessionsManager::TryCreatePlayerSession(const FString& PlayerId, const
 	UCDLocalPlayerSubsystem* LocalPlayerSubsystem = GetCDLocalPlayerSubsystem();
 	if (IsValid(LocalPlayerSubsystem))
 	{
-		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().IdToken);	
+		Request->SetHeader("Authorization", LocalPlayerSubsystem->GetAuthResult().AccessToken);	
 	}
 	
 	TMap<FString, FString> Params =
