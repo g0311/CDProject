@@ -43,13 +43,10 @@ public:
 
 	//Minimap
 	UPROPERTY(meta=(BindWidget))
-	class UOverlay *MinimapBox;
+	class UCanvasPanel *MinimapBox;
 	
 	UPROPERTY(meta=(BindWidget))
 	class UImage* MiniMapImage;
-
-	UPROPERTY(meta=(BindWidget))
-	UTextBlock* MiniMapDebugText;
 	
 	//Weapon
 	UPROPERTY(meta=(BindWidget))

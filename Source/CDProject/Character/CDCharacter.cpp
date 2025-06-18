@@ -72,7 +72,11 @@ ACDCharacter::ACDCharacter()
 	MiniMapSpringArm->SetupAttachment(RootComponent);
 	MiniMapSpringArm->TargetArmLength = 1000.f; 
 	MiniMapSpringArm->SetRelativeLocation(FVector(0.f, 0.f, 1000.f));
-	MiniMapSpringArm->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+	MiniMapSpringArm->SetWorldRotation(FRotator(-90.f, 0, 0));
+	MiniMapSpringArm->bUsePawnControlRotation = false;	
+	MiniMapSpringArm->bInheritPitch = false;
+	MiniMapSpringArm->bInheritRoll = false;
+	MiniMapSpringArm->bInheritYaw = false;
 	
 	SceneCapture2D=CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture2D"));
 	SceneCapture2D->SetupAttachment(MiniMapSpringArm);
@@ -168,7 +172,8 @@ void ACDCharacter::Tick(float DeltaTime)
 			_textRenderer->SetWorldRotation(FlatRotation);
 		}
 	}
-	
+
+	//MiniMapSpringArm->SetWorldRotation({-90, 0, 0});
 	//Update Arm Mesh Location
 	UpdateArmMeshLocation(DeltaTime);
 }

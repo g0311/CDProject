@@ -3,11 +3,10 @@
 
 #include "CDPlayerController.h"
 
-#include <filesystem>
-
 #include "AbilitySystemComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CDSpringArmComponent.h"
@@ -22,13 +21,14 @@
 #include "CDProject/Widget/CharacterOverlay.h"
 #include "CDProject/Widget/KDOverlay.h"
 #include "CDProject/Widget/SniperScope.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/ProgressBar.h"
+#include "Components/SceneCaptureComponent2D.h"
 #include "Components/TextBlock.h"
 #include "Engine/TextureRenderTarget2D.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/GameMode.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -46,10 +46,14 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 
 	if (MatchState == ECurMatchState::EMS_None)
 		return;
-	
-	SetHUDTime();
-	//InitializeHUD();
-	CheckTimeSync(DeltaSeconds);
+
+	if (IsLocalController())
+	{
+		SetHUDTime();
+		//InitializeHUD();
+		CheckTimeSync(DeltaSeconds);
+		UpdateTeamMarkers();
+	}
 }
 
 void ACDPlayerController::OnPossess(APawn* InPawn)
@@ -86,8 +90,10 @@ void ACDPlayerController::InitializeController_Implementation()
 	CDHUD=Cast<ACDHUD>(GetHUD());
 	if (IsLocalController())
 	{
-		UpdateCharacterOverlay();
+		if (CDHUD)
+			CDHUD->AddCharacterOverlay();
 		ShowAnnounceText(true);
+		
 		UE_LOG(LogTemp, Warning, TEXT("Add Player Overlay"));
 	}
 	
@@ -406,25 +412,6 @@ void ACDPlayerController::SetHUDTime()
 	CountdownInt=SecondsLeft;
 }
 
-void ACDPlayerController::UpdateCharacterOverlay()
-{
-	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (!CDHUD)
-		return;
-	
-	CDHUD->AddCharacterOverlay();
-	//SetGold();
-	if (OwnedCharacter)
-	{
-		SetHUDWeaponAmmo(OwnedCharacter->GetCombatComponent()->GetCurAmmo());
-		SetHUDWeaponCarriedAmmo(OwnedCharacter->GetCombatComponent()->GetCarriedAmmo());
-		SetHUDWeaponInfo(OwnedCharacter->GetCombatComponent()->GetCurWeapon());
-		SetHUDHealth(OwnedCharacter->GetAttributeSet()->GetHealth());
-		SetHUDShield(OwnedCharacter->GetAttributeSet()->GetShield());
-	}
-	SetMinimap();
-}
-
 void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
@@ -465,9 +452,134 @@ void ACDPlayerController::SetMinimap()
 			MiniMapBrush.ImageSize = FVector2D(128, 128);
 			
 			CDHUD->CharacterOverlay->MiniMapImage->SetBrush(MiniMapBrush);
-
 		}
 	}
+}
+
+void ACDPlayerController::UpdateTeamMarkers()
+{
+    ACDCharacter* MyCharacter = Cast<ACDCharacter>(GetPawn());
+    if (!MyCharacter || !MyCharacter->GetCaptureTarget2D() || !GetWorld()) return;
+
+    FVector CaptureOrigin = MyCharacter->GetCaptureTarget2D()->GetComponentLocation();
+    float OrthoWidth = MyCharacter->GetCaptureTarget2D()->OrthoWidth;
+    float TextureSize = MyCharacter->GetMiniMapTarget() ? MyCharacter->GetMiniMapTarget()->SizeX : 256.f;
+
+    TArray<APawn*> CurrentTeamMembers;
+	
+	if (!CDHUD)
+		CDHUD = Cast<ACDHUD>(GetHUD());
+	if (!CDHUD) return;
+	
+	UCharacterOverlay* CharacterOverlay = CDHUD->CharacterOverlay;
+	for (APlayerState* playerState : GetWorld()->GetGameState()->PlayerArray)
+	{
+		if (!playerState) continue;
+		ACDCharacter* OtherCharacter = Cast<ACDCharacter>(playerState->GetPawn());
+		if (OtherCharacter && OtherCharacter != MyCharacter) 
+        {
+            if (OtherCharacter->GetTeam() == MyCharacter->GetTeam())
+            {
+            	if (OtherCharacter->_isDead)
+            		continue;
+            	
+                CurrentTeamMembers.Add(OtherCharacter);
+            	UUserWidget** FoundMarkerWidget = PlayerMarkers.Find(OtherCharacter);
+            	UUserWidget* MarkerWidget = FoundMarkerWidget ? *FoundMarkerWidget : nullptr;
+            	if (!MarkerWidget)
+                {
+                    if (!PlayerMarkerWidgetClass) continue;
+                    MarkerWidget = CreateWidget<UUserWidget>(this, PlayerMarkerWidgetClass);
+                	
+                	if (MarkerWidget)
+                    {
+                		CharacterOverlay->MinimapBox->AddChild(MarkerWidget);
+                        PlayerMarkers.Add(OtherCharacter, MarkerWidget);
+                        // MarkerWidget->MarkerIcon->SetBrushFromTexture(TeamIconTexture); // 마커 아이콘 설정
+                    }
+                }
+
+                if (MarkerWidget)
+                {
+                	UE_LOG(LogTemp, Warning, TEXT("Origin: %s  OrthoWidth: %f"), *CaptureOrigin.ToString(), OrthoWidth);
+
+                    FVector2D MinimapUV = ConvertWorldLocationToMinimapUV(
+                        OtherCharacter->GetActorLocation(),
+                        CaptureOrigin,
+                        OrthoWidth,
+                        TextureSize
+                    );
+                	UE_LOG(LogTemp, Warning, TEXT("UV: %s"), *MinimapUV.ToString());
+                	
+                    // UV 좌표를 위젯의 픽셀 좌표로 변환 (0~1 범위 -> 위젯 크기)
+                	FVector2D ImgSize = CharacterOverlay->MiniMapImage->GetDesiredSize();
+                	UE_LOG(LogTemp, Warning, TEXT("TextureSize: %f  ImageSize: %s"), TextureSize, *ImgSize.ToString());
+
+                    FVector2D WidgetPosition = MinimapUV * FVector2D(
+                    	300, 
+						300);
+                	UE_LOG(LogTemp, Warning, TEXT("OutputPosX: %f  OutputPosY: %f"), WidgetPosition.X, WidgetPosition.Y);
+
+                    // 위젯의 위치 설정 (UMG Canvas Panel의 위치 조정)
+                    // Pivot을 고려하여 마커가 중앙에 오도록 오프셋 조정
+                    UCanvasPanelSlot* CanvasSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(MarkerWidget);
+                    if (CanvasSlot)
+                    {
+	                    CanvasSlot->SetSize({10,10});
+                        // 마커 위젯의 크기를 고려하여 중앙에 배치
+                        FVector2D MarkerSize = MarkerWidget->GetDesiredSize(); // 실제 마커 위젯의 크기
+                        CanvasSlot->SetPosition(WidgetPosition - MarkerSize / 2.0f);
+                    	
+                        //CanvasSlot->SetVisibility(ESlateVisibility::Visible); // 보이게 설정
+                    }
+                }
+            }
+        }
+    }
+
+    // 더 이상 존재하지 않는 팀원 마커 제거
+    TArray<APawn*> PawnsToRemove;
+    for (auto& Elem : PlayerMarkers)
+    {
+        if (!CurrentTeamMembers.Contains(Elem.Key))
+        {
+            if (Elem.Value && Elem.Value->IsInViewport())
+            {
+                Elem.Value->RemoveFromParent();
+            }
+            PawnsToRemove.Add(Elem.Key);
+        }
+    }
+    for (APawn* pawn : PawnsToRemove)
+    {
+        PlayerMarkers.Remove(pawn);
+    }
+}
+
+FVector2D ACDPlayerController::ConvertWorldLocationToMinimapUV(
+	const FVector& InWorldLocation,
+	const FVector& CaptureOrigin,
+	float OrthoWidth,
+	float TextureSize)
+{
+	// 1. 캡처 원점 기준 상대 위치
+	FVector RelativeLocation = InWorldLocation - CaptureOrigin;
+
+	// 2. Z축 기준으로 90° 왼쪽(반시계) 회전
+	RelativeLocation = RelativeLocation.RotateAngleAxis(90.0f, FVector::UpVector);
+
+	// 3. OrthoWidth 절반
+	float HalfOrthoWidth = OrthoWidth * 0.5f;
+
+	// 4. 기존 정규화 (X→U, Y→V 매핑)
+	float NormX = -(RelativeLocation.X / HalfOrthoWidth) * 0.5f + 0.5f;
+	float NormY = -(RelativeLocation.Y / HalfOrthoWidth) * 0.5f + 0.5f;
+
+	// 5. 0~1 클램프
+	return {
+		FMath::Clamp(NormX, 0.f, 1.f),
+		FMath::Clamp(NormY, 0.f, 1.f)
+	};
 }
 
 void ACDPlayerController::SetGold(int32 NewGold)
@@ -541,7 +653,7 @@ void ACDPlayerController::RetryShowStoreWidget(bool bActivate)
 //120 -> 119 -> 118
 void ACDPlayerController::InitializeHUD()
 {
-	if (CharacterOverlay)
+	if (_CharacterOverlay)
 	{
 		// if (bInitializeHealth)SetHUDHealth(HUDHealth, HUDMaxHealth);
 		// if (bInitializeCarriedAmmo)SetHUDCarriedAmmo(HUDCarriedAmmo);
@@ -667,6 +779,7 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			SetHUDShield(_character->GetAttributeSet()->GetShield());
 		}
 	}
+	SetMinimap();
 	
 	FInputModeGameOnly InputModeData;
 	SetInputMode(InputModeData);
