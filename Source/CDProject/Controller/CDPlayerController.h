@@ -25,7 +25,6 @@ public:
 	//HUD
 	
 	void SetHUDTime();
-	void UpdateCharacterOverlay();
 	void SetHUDHealth(float Health);
 	void SetHUDShield(float Shield);
 	void SetHUDKill(float killcount);
@@ -41,6 +40,8 @@ public:
 	void SetGold(int32 NewGold);
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
+	void CreateKillLog(const FString& Killer, const FString& Victim);
+	void ShowHitOverlay();
 
 	UFUNCTION(Client,Reliable)
 	void Client_ShowStoreWidget(bool IsActivate);
@@ -90,6 +91,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	void UpdateTeamMarkers();
+	FVector2D ConvertWorldLocationToMinimapUV(const FVector& Vector, const FVector& CaptureOrigin, float OrthoWidth, float TextureSize);
 
 //Sync Time
 	UFUNCTION(Server, Reliable)
@@ -116,11 +119,17 @@ private:
 	TSubclassOf<class UKDOverlay> KDOverlay;
 	
 	UPROPERTY(EditAnywhere, Category="HUD")
-	TSubclassOf<class UCharacterOverlay> CharacterOverlay;
+	TSubclassOf<class UCharacterOverlay> _CharacterOverlay;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_MatchState)
 	ECurMatchState MatchState;
 
+	UPROPERTY(VisibleAnywhere)
+	TMap<class APawn*, class UUserWidget*> PlayerMarkers;
+	
+	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))
+	TSubclassOf<UUserWidget> PlayerMarkerWidgetClass;
+	
 	UFUNCTION()
 	void OnRep_MatchState();
 	UFUNCTION()

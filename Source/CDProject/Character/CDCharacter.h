@@ -92,7 +92,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UTextRenderComponent> _textRenderer;
 		UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_UserName)
-		FString UserName;
+		FString UserName = TEXT("DEFAULT");
 	
 	//MinimapComponent
 	UPROPERTY(VisibleAnywhere, Category = "Minimap")
@@ -128,6 +128,7 @@ public:
 	FORCEINLINE bool IsFirstPersonMesh(USkeletalMeshComponent* mesh) { return mesh == _armMesh; };
 	FORCEINLINE UCameraComponent* GetCamera() { return _camera; }
 	FORCEINLINE class UInputMappingContext* GetInputMapping() { return _inputMappingContext; }
+	FORCEINLINE USceneCaptureComponent2D* GetCaptureTarget2D() { return SceneCapture2D; }
 	FORCEINLINE UTextureRenderTarget2D* GetMiniMapTarget() { return MiniMapRenderTarget; }
 	FORCEINLINE ETeam GetTeam() { return _team; }
 	

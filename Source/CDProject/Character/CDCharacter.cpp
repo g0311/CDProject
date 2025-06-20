@@ -72,7 +72,11 @@ ACDCharacter::ACDCharacter()
 	MiniMapSpringArm->SetupAttachment(RootComponent);
 	MiniMapSpringArm->TargetArmLength = 1000.f; 
 	MiniMapSpringArm->SetRelativeLocation(FVector(0.f, 0.f, 1000.f));
-	MiniMapSpringArm->SetRelativeRotation(FRotator(-90.f, 0.f, 0.f));
+	MiniMapSpringArm->SetWorldRotation(FRotator(-90.f, 0, 0));
+	MiniMapSpringArm->bUsePawnControlRotation = false;	
+	MiniMapSpringArm->bInheritPitch = false;
+	MiniMapSpringArm->bInheritRoll = false;
+	MiniMapSpringArm->bInheritYaw = false;
 	
 	SceneCapture2D=CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("SceneCapture2D"));
 	SceneCapture2D->SetupAttachment(MiniMapSpringArm);
@@ -168,7 +172,8 @@ void ACDCharacter::Tick(float DeltaTime)
 			_textRenderer->SetWorldRotation(FlatRotation);
 		}
 	}
-	
+
+	//MiniMapSpringArm->SetWorldRotation({-90, 0, 0});
 	//Update Arm Mesh Location
 	UpdateArmMeshLocation(DeltaTime);
 }
@@ -409,11 +414,17 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-
+	_textRenderer->SetVisibility(false);
+	
 	if (IsLocallyControlled())
 	{
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
+		ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
+		if (IsValid(CDPlayerController))
+		{
+			CDPlayerController->ShowHitOverlay();
+		}
 	}
 	if (HasAuthority())
 	{
@@ -441,13 +452,23 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 			}
 		}
 	}
-		
+
+	if (GetWorld())
+	{
+		if (ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetWorld()->GetFirstPlayerController()); IsValid(CDPlayerController))
+		{
+			if (ACDCharacter* KillerCharacter = Cast<ACDCharacter>(CDPlayerController->GetPawn()); IsValid(KillerCharacter))
+			{
+				CDPlayerController->CreateKillLog(KillerCharacter->UserName, this->UserName);
+			}
+		}
+	}
+	
 	if (bodyAnim)
 		bodyAnim->PlayDeadMontage();
 	if (armAnim)
 		armAnim->PlayDeadMontage();
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-
 	_isDead = true;
 }
 
@@ -462,6 +483,17 @@ void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorCon
 	if (armAnim)
 	{
 		armAnim->PlayHitMontage();
+	}
+	
+	if (IsLocallyControlled())
+	{
+		//UnVisible Arm Mesh
+		GetArmMesh()->SetVisibility(false);
+		ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
+		if (IsValid(CDPlayerController))
+		{
+			CDPlayerController->ShowHitOverlay();
+		}
 	}
 	
 	ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
@@ -485,6 +517,8 @@ void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorCon
 
 void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 {
+	_textRenderer->SetVisibility(true);
+	
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);

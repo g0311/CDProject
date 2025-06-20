@@ -30,17 +30,17 @@ FString UHTTPRequestManager::ContainsError(TSharedPtr<FJsonObject> JsonObject)
 	{
 		FString ErrorType = JsonObject->HasField(TEXT("errorType")) ? JsonObject->GetStringField(TEXT("errorType")) : TEXT("Unknown Error"); 
 		FString ErrorMessage = JsonObject->HasField(TEXT("errorMessage")) ? JsonObject->GetStringField(TEXT("errorMessage")) : TEXT("Unknown Error Message");
-
+		
 		UE_LOG(LogCD_ServerLog, Error, TEXT("Error Type: %s"), *ErrorType);
 		UE_LOG(LogCD_ServerLog, Error, TEXT("Error Message: %s"), *ErrorMessage);
-
+		
 		return ErrorType;
 	}
 	else if (JsonObject->HasField(TEXT("$fault")))
 	{
 		FString ErrorType = JsonObject->HasField(TEXT("name")) ? JsonObject->GetStringField(TEXT("name")) : TEXT("Unknown Error"); 
 		UE_LOG(LogCD_ServerLog, Error, TEXT("Error Type: %s"), *ErrorType);
-
+		
 		return ErrorType;
 	}
 	
@@ -61,7 +61,7 @@ void UHTTPRequestManager::DumpMetaData(TSharedPtr<FJsonObject> JsonObject)
 FString UHTTPRequestManager::SerializeJsonContent(const TMap<FString, FString>& Params)
 {
 	TSharedPtr<FJsonObject> ContentJsonObject = MakeShareable(new FJsonObject());
-
+	
 	for (const auto& Param : Params)
 	{
 		ContentJsonObject->SetStringField(Param.Key, Param.Value);
@@ -70,7 +70,7 @@ FString UHTTPRequestManager::SerializeJsonContent(const TMap<FString, FString>& 
 	FString Content;
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Content);
 	FJsonSerializer::Serialize(ContentJsonObject.ToSharedRef(), Writer);
-
+	
 	return Content;
 }
 

@@ -23,7 +23,7 @@ public:
 	class UImage* TeamAColor;
 	UPROPERTY(meta = (BindWidget))
 	UImage* TeamBColor;
-	
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* ATeamBox;
@@ -33,7 +33,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Scoreboard")
 	TSubclassOf<UPlayerRow> PlayerRowClass;
-
 private:
 	UPROPERTY()
 	TArray<UPlayerRow*> PlayerRows;
