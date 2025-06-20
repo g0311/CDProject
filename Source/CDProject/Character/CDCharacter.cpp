@@ -523,6 +523,12 @@ void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorContro
 		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
 		AttributeSet->SetHealth(CurHealth);
 	}
+	ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
+	if (IsValid(CDPlayerController))
+	{
+		CDPlayerController->ShowHitOverlay();
+	}
+	
 	
 	if (CurHealth == 0.f)
 	{

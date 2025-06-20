@@ -40,6 +40,7 @@ public:
 	void SetGold(int32 NewGold);
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
+	void ShowHitOverlay();
 
 	UFUNCTION(Client,Reliable)
 	void Client_ShowStoreWidget(bool IsActivate);

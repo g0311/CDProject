@@ -23,6 +23,9 @@ public:
 	class UImage* TeamAColor;
 	UPROPERTY(meta = (BindWidget))
 	UImage* TeamBColor;
+
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	class UWidgetAnimation* Hit_Anim;
 	
 protected:
 	UPROPERTY(meta = (BindWidget))

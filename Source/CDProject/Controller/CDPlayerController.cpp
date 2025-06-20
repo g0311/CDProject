@@ -623,6 +623,22 @@ void ACDPlayerController::UpdateKDOverlayData()
 	}
 }
 
+void ACDPlayerController::ShowHitOverlay()
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD && CDHUD->KDOverlay && CDHUD->KDOverlay->Hit_Anim)
+	{
+		if (CDHUD->KDOverlay->IsPlayingAnimation())
+		{
+			CDHUD->KDOverlay->PlayAnimation(CDHUD->KDOverlay->Hit_Anim, 0.1f);
+		}
+		else
+		{
+			CDHUD->KDOverlay->PlayAnimation(CDHUD->KDOverlay->Hit_Anim);
+		}
+	}
+}
+
 void ACDPlayerController::Client_ShowStoreWidget_Implementation(bool IsActivate)
 {
 	ShowStoreWidget(IsActivate);
