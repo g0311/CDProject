@@ -24,9 +24,6 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UImage* TeamBColor;
 
-	UPROPERTY(meta = (BindWidget))
-	class UScrollBox* ScrollBox_KillLog;
-	
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* ATeamBox;

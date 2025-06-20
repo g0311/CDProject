@@ -414,11 +414,17 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-
+	_textRenderer->SetVisibility(false);
+	
 	if (IsLocallyControlled())
 	{
 		//UnVisible Arm Mesh
 		GetArmMesh()->SetVisibility(false);
+		ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
+		if (IsValid(CDPlayerController))
+		{
+			CDPlayerController->ShowHitOverlay();
+		}
 	}
 	if (HasAuthority())
 	{
@@ -479,6 +485,17 @@ void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorCon
 		armAnim->PlayHitMontage();
 	}
 	
+	if (IsLocallyControlled())
+	{
+		//UnVisible Arm Mesh
+		GetArmMesh()->SetVisibility(false);
+		ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
+		if (IsValid(CDPlayerController))
+		{
+			CDPlayerController->ShowHitOverlay();
+		}
+	}
+	
 	ARoundGameMode* GameMode = Cast<ARoundGameMode>(GetWorld()->GetAuthGameMode());
 	if (GameMode)
 	{
@@ -500,6 +517,8 @@ void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorCon
 
 void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 {
+	_textRenderer->SetVisibility(true);
+	
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
@@ -533,12 +552,6 @@ void ACDCharacter::HandleDamage(float FinalDamage, AController* instigatorContro
 		CurHealth = FMath::Clamp(CurHealth - FinalDamage, 0.f, 100.f);
 		AttributeSet->SetHealth(CurHealth);
 	}
-	ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
-	if (IsValid(CDPlayerController))
-	{
-		CDPlayerController->ShowHitOverlay();
-	}
-	
 	
 	if (CurHealth == 0.f)
 	{

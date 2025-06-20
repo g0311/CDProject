@@ -70,7 +70,9 @@ public:
 	class UWidgetAnimation* Hit_Anim;
 	
 	void CreateKillLog(const FString& Killer, const FString& Victim);
-	
+
+	UPROPERTY(meta=(BindWidget))
+	class UScrollBox* ScrollBox_KillLog;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UKillLogLine> KillLogLineClass;
 };

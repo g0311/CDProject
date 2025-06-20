@@ -501,7 +501,7 @@ void ACDPlayerController::UpdateTeamMarkers()
 
                 if (MarkerWidget)
                 {
-                	UE_LOG(LogTemp, Warning, TEXT("Origin: %s  OrthoWidth: %f"), *CaptureOrigin.ToString(), OrthoWidth);
+                	// UE_LOG(LogTemp, Warning, TEXT("Origin: %s  OrthoWidth: %f"), *CaptureOrigin.ToString(), OrthoWidth);
 
                     FVector2D MinimapUV = ConvertWorldLocationToMinimapUV(
                         OtherCharacter->GetActorLocation(),
@@ -509,16 +509,16 @@ void ACDPlayerController::UpdateTeamMarkers()
                         OrthoWidth,
                         TextureSize
                     );
-                	UE_LOG(LogTemp, Warning, TEXT("UV: %s"), *MinimapUV.ToString());
+                	// UE_LOG(LogTemp, Warning, TEXT("UV: %s"), *MinimapUV.ToString());
                 	
                     // UV 좌표를 위젯의 픽셀 좌표로 변환 (0~1 범위 -> 위젯 크기)
                 	FVector2D ImgSize = CharacterOverlay->MiniMapImage->GetDesiredSize();
-                	UE_LOG(LogTemp, Warning, TEXT("TextureSize: %f  ImageSize: %s"), TextureSize, *ImgSize.ToString());
+                	// UE_LOG(LogTemp, Warning, TEXT("TextureSize: %f  ImageSize: %s"), TextureSize, *ImgSize.ToString());
 
                     FVector2D WidgetPosition = MinimapUV * FVector2D(
                     	300, 
 						300);
-                	UE_LOG(LogTemp, Warning, TEXT("OutputPosX: %f  OutputPosY: %f"), WidgetPosition.X, WidgetPosition.Y);
+                	// UE_LOG(LogTemp, Warning, TEXT("OutputPosX: %f  OutputPosY: %f"), WidgetPosition.X, WidgetPosition.Y);
 
                     // 위젯의 위치 설정 (UMG Canvas Panel의 위치 조정)
                     // Pivot을 고려하여 마커가 중앙에 오도록 오프셋 조정
@@ -637,7 +637,7 @@ void ACDPlayerController::ShowHitOverlay()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD && CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->Hit_Anim)
 	{
-		if (CDHUD->KDOverlay->IsPlayingAnimation())
+		if (CDHUD->CharacterOverlay->IsPlayingAnimation())
 		{
 			CDHUD->CharacterOverlay->PlayAnimation(CDHUD->CharacterOverlay->Hit_Anim, 0.1f);
 		}

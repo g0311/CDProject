@@ -4,6 +4,7 @@
 #include "CharacterOverlay.h"
 
 #include "KillLogLine.h"
+#include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 
 void UCharacterOverlay::CreateKillLog(const FString& Killer, const FString& Victim)
@@ -13,5 +14,7 @@ void UCharacterOverlay::CreateKillLog(const FString& Killer, const FString& Vict
 		UKillLogLine* KillLogLine = CreateWidget<UKillLogLine>(this, KillLogLineClass);
 		KillLogLine->TextBlock_Killer->SetText(FText::FromString(Killer));
 		KillLogLine->TextBlock_Victim->SetText(FText::FromString(Victim));
+
+		ScrollBox_KillLog->AddChild(KillLogLine);
 	}
 }
