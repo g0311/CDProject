@@ -159,8 +159,6 @@ private:
 	TObjectPtr<class UInputAction> _dropWeaponAction;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> _interactAction;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<class UInputAction> _tabAction;
 	
 	void Move(const FInputActionValue& value);
 	void Look(const FInputActionValue& value);
@@ -177,8 +175,6 @@ private:
 	void RequestDropWeapon();
 	void RequestInteractStart();
 	void RequestInteractEnd();
-	void TabStart();
-	void TabEnd();
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 	float _mouseSensitivity = 1.f;

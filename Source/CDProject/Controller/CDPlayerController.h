@@ -203,11 +203,15 @@ private:
 	TArray<TObjectPtr<ACDCharacter>> TeamCharacters;
 	
 	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<class UInputMappingContext> DeadInputMappingContext;
+	TObjectPtr<class UInputMappingContext> DefaultInputMappingContext;
 	UPROPERTY(EditAnywhere, Category = "Input")
 	TObjectPtr<class UInputAction> LeftClickAction;
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<class UInputAction> _tabAction;
 	int32 CurPlayerIndex = 0;
 	void LMouseDown();
+	void TabStart();
+	void TabEnd();
 	
 };
 

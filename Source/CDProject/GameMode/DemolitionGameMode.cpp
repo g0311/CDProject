@@ -426,29 +426,6 @@ void ADemolitionGameMode::SetC4Planted(bool tf)
 	bIsPlanted = tf;
 }
 
-// void ADemolitionGameMode::InitBot(ACDCharacter* BotCharacter)
-// {
-// 	UE_LOG(LogTemp, Warning, TEXT("InitBot!"));
-// 	// ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-// 	// ACDPlayerState* BotPlayerState = BotCharacter->GetPlayerState<ACDPlayerState>();
-// 	//
-// 	// if (BGameState && BotPlayerState)
-// 	// {
-// 	// 	if (BGameState->BTeam.Num() >= BGameState->ATeam.Num())
-// 	// 	{
-// 	// 		BGameState->ATeam.AddUnique(BotPlayerState);
-// 	// 		BotPlayerState->SetMatchTeam(ETeam::ET_ATeam);
-// 	// 		BotPlayerState->SetTeam(ETeam::ET_RedTeam);
-// 	// 	}
-// 	// 	else
-// 	// 	{
-// 	// 		BGameState->BTeam.AddUnique(BotPlayerState);
-// 	// 		BotPlayerState->SetMatchTeam(ETeam::ET_BTeam);
-// 	// 		BotPlayerState->SetTeam(ETeam::ET_BlueTeam);
-// 	// 	}
-// 	// }
-// }
-
 void ADemolitionGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
