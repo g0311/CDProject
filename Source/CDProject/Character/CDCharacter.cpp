@@ -446,13 +446,23 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 			}
 		}
 	}
-		
+
+	if (GetWorld())
+	{
+		if (ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetWorld()->GetFirstPlayerController()); IsValid(CDPlayerController))
+		{
+			if (ACDCharacter* KillerCharacter = Cast<ACDCharacter>(CDPlayerController->GetPawn()); IsValid(KillerCharacter))
+			{
+				CDPlayerController->CreateKillLog(KillerCharacter->UserName, this->UserName);
+			}
+		}
+	}
+	
 	if (bodyAnim)
 		bodyAnim->PlayDeadMontage();
 	if (armAnim)
 		armAnim->PlayDeadMontage();
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-
 	_isDead = true;
 }
 

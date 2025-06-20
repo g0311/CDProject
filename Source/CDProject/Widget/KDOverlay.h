@@ -24,8 +24,8 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	UImage* TeamBColor;
 
-	UPROPERTY(meta=(BindWidgetAnim), Transient)
-	class UWidgetAnimation* Hit_Anim;
+	UPROPERTY(meta = (BindWidget))
+	class UScrollBox* ScrollBox_KillLog;
 	
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -36,7 +36,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Scoreboard")
 	TSubclassOf<UPlayerRow> PlayerRowClass;
-
 private:
 	UPROPERTY()
 	TArray<UPlayerRow*> PlayerRows;

@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "KillLogLine.h"
 #include "CDProject/GameState/CDGameState.h"
 #include "CDServer/Player/Team.h"
 #include "Components/Image.h"

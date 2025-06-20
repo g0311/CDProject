@@ -65,4 +65,12 @@ public:
 	//Timer
 	UPROPERTY(meta=(BindWidget))
 	UTextBlock* MatchCountdownText;
+
+	UPROPERTY(meta=(BindWidgetAnim), Transient)
+	class UWidgetAnimation* Hit_Anim;
+	
+	void CreateKillLog(const FString& Killer, const FString& Victim);
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UKillLogLine> KillLogLineClass;
 };

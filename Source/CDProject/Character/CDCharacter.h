@@ -92,7 +92,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<class UTextRenderComponent> _textRenderer;
 		UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_UserName)
-		FString UserName;
+		FString UserName = TEXT("DEFAULT");
 	
 	//MinimapComponent
 	UPROPERTY(VisibleAnywhere, Category = "Minimap")

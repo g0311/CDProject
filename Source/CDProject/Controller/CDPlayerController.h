@@ -40,6 +40,7 @@ public:
 	void SetGold(int32 NewGold);
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
+	void CreateKillLog(const FString& Killer, const FString& Victim);
 	void ShowHitOverlay();
 
 	UFUNCTION(Client,Reliable)

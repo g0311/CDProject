@@ -623,18 +623,27 @@ void ACDPlayerController::UpdateKDOverlayData()
 	}
 }
 
+void ACDPlayerController::CreateKillLog(const FString& Killer, const FString& Victim)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD && CDHUD->CharacterOverlay)
+	{
+		CDHUD->CharacterOverlay->CreateKillLog(Killer, Victim);
+	}
+}
+
 void ACDPlayerController::ShowHitOverlay()
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	if (CDHUD && CDHUD->KDOverlay && CDHUD->KDOverlay->Hit_Anim)
+	if (CDHUD && CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->Hit_Anim)
 	{
 		if (CDHUD->KDOverlay->IsPlayingAnimation())
 		{
-			CDHUD->KDOverlay->PlayAnimation(CDHUD->KDOverlay->Hit_Anim, 0.1f);
+			CDHUD->CharacterOverlay->PlayAnimation(CDHUD->CharacterOverlay->Hit_Anim, 0.1f);
 		}
 		else
 		{
-			CDHUD->KDOverlay->PlayAnimation(CDHUD->KDOverlay->Hit_Anim);
+			CDHUD->CharacterOverlay->PlayAnimation(CDHUD->CharacterOverlay->Hit_Anim);
 		}
 	}
 }
