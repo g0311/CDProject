@@ -21,17 +21,23 @@ struct FPlayerSessionInfo : public FFastArraySerializerItem
 	
 	UPROPERTY()
 	FString NetIdStr;
+
+	UPROPERTY()
+	bool bIsHost;
+
+	UPROPERTY()
+	int Index;
 	
 	bool operator==(const FPlayerSessionInfo& Other) const
 	{
 		return PlayerSessionId == Other.PlayerSessionId;
 	}
 
-	FPlayerSessionInfo(const FString& InSessionId, const FString& InUsername, bool bInReady, int32 InPing, const FString& InNetIdStr)
-	: PlayerSessionId(InSessionId), Username(InUsername), ReadyState(bInReady), Ping(InPing), NetIdStr(InNetIdStr)
+	FPlayerSessionInfo(const FString& InSessionId, const FString& InUsername, bool bInReady, int32 InPing, const FString& InNetIdStr, bool bInIsHost)
+	: PlayerSessionId(InSessionId), Username(InUsername), ReadyState(bInReady), Ping(InPing), NetIdStr(InNetIdStr), bIsHost(bInIsHost), Index(-1)
 	{}
 	FPlayerSessionInfo()
-	: ReadyState(false), Ping(-1)
+	: ReadyState(false), Ping(-1), bIsHost(false), Index(-1)
 	{}
 };
 
@@ -51,7 +57,33 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 	
 	void AddPlayer(FPlayerSessionInfo Info)
 	{
-		int32 Index = Items.Add(Info);
+		//점유 중인 인덱스 저장
+		TSet<int32> UsedIndices;
+		for (const FPlayerSessionInfo& Existing : Items)
+		{
+			UsedIndices.Add(Existing.Index);
+		}
+
+		//비점유 중 가장 낮은 인덱스 탐색
+		int32 AssignedIndex = -1;
+		for (int32 i = 0; i <= 5; i++)
+		{
+			if (!UsedIndices.Contains(i))
+			{
+				AssignedIndex = i;
+				break;
+			}
+		}
+		//비점유 X시 처리
+		if (AssignedIndex == -1)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No available index for new player!"));
+			return;
+		}
+
+		//Info에 인덱스 설정 후 추가
+		Info.Index = AssignedIndex;
+		Items.Add(Info);
 		MarkArrayDirty();
 	}
 
@@ -61,6 +93,11 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 		if (Index != INDEX_NONE)
 		{
 			Items.RemoveAt(Index);
+			if (Info.bIsHost && !Items.IsEmpty())
+			{ //호스트 퇴장 시 들어온 순서대로 호스트 권한 이동
+				Items[0].bIsHost = true;
+				Items[0].ReadyState = false;
+			}
 			MarkArrayDirty();
 		}
 	}
@@ -110,11 +147,17 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 		return true;
 	}
 
-	bool IsPlayerHost(const FString& PlayerSessionId)
+	bool IsPlayerHost(const FString& PlayerSessionId) const
 	{
-		if (Items[0].PlayerSessionId == PlayerSessionId)
+		for (auto& item : Items)
 		{
-			return true;
+			if (PlayerSessionId == item.PlayerSessionId)
+			{
+				if (item.bIsHost)
+				{
+					return true;
+				}
+			}
 		}
 		return false;
 	}

@@ -25,6 +25,7 @@ public:
 	
 	const FString& GetRoomMode();
 	const FString& GetRoomMap();
+	const FString& GetRoomName();
 	void SetRoomMode(const FString& PlayerSessionId, const FString& NextRoomMode);
 	void SetRoomMap(const FString& PlayerSessionId, const FString& NextRoomMap);
 
@@ -39,6 +40,7 @@ public:
 
 	void UpdateProperty(FString Mode, FString Map, FString Name, FString Private, FString SessionId);
 	void PushProperty();
+
 protected:
 	virtual void BeginPlay() override;
 

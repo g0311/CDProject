@@ -79,9 +79,20 @@ IK_TraceInfo UFootIKComponent::IK_FootTrace(float traceDistance, FName socket)
 	EDrawDebugTrace::Type eDebug = EDrawDebugTrace::None;
 	if (bDebug == true) eDebug = EDrawDebugTrace::ForOneFrame;
  
-	bool bResult = UKismetSystemLibrary::LineTraceSingle(GetWorld(), line_Start, line_End,
-		UEngineTypes::ConvertToTraceType(ECC_Visibility), true, ignore, eDebug, hitResult, true);
- 
+	// bool bResult = UKismetSystemLibrary::LineTraceSingle(GetWorld(), line_Start, line_End,
+ //    		UEngineTypes::ConvertToTraceType(ECC_Visibility), true, ignore, eDebug, hitResult, true);
+	bool bResult = UKismetSystemLibrary::SphereTraceSingle(
+	GetWorld(),
+	line_Start,
+	line_End,
+	8.f,  // 스피어 반경, 필요에 따라 조절 (발 넓이 기준으로 8~15 정도 많이 씀)
+	UEngineTypes::ConvertToTraceType(ECC_Visibility),
+	true,
+	ignore,
+	eDebug,
+	hitResult,
+	true
+);
 	//! Set ImpactNormal and Offset from HitResult
 	traceInfo.impactLocation = hitResult.ImpactNormal;
 	if (hitResult.IsValidBlockingHit() == true)
@@ -98,6 +109,7 @@ IK_TraceInfo UFootIKComponent::IK_FootTrace(float traceDistance, FName socket)
 
 void UFootIKComponent::IK_Update_FootOffset(float deltaTime, float targetValue, float* effectorValue, float interpSpeed)
 {
+	interpSpeed = (targetValue > *effectorValue) ? 25.f : 15.f;  // 올라갈 땐 빠르게, 내려갈 땐 천천히
 	float fInterpValue = UKismetMathLibrary::FInterpTo(*effectorValue, targetValue, deltaTime, interpSpeed);
 	*effectorValue = fInterpValue;
 }

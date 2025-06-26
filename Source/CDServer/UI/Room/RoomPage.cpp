@@ -10,6 +10,7 @@
 #include "CDServer/Player/CDSessionPlayerController.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
+#include "Components/Image.h"
 #include "Components/TextBlock.h"
 
 void URoomPage::NativeConstruct()
@@ -25,7 +26,14 @@ void URoomPage::NativeConstruct()
 	WBP_Room_Player_Lines.Add(WBP_Room_Player_Line4);
 	WBP_Room_Player_Lines.Add(WBP_Room_Player_Line5);
 	WBP_Room_Player_Lines.Add(WBP_Room_Player_Line6);
-
+	for (auto& line : WBP_Room_Player_Lines)
+	{
+		if (line && line->Button_Kick)
+		{
+			line->Button_Kick->OnClicked.AddDynamic(line, &URoomPlayerLine::OnKickButtonClicked);
+		}
+	}
+	
 	for (auto Mode : MapData->GetModes())
 	{
 		Dropdown_Map->AddOption(Mode);
@@ -37,47 +45,62 @@ void URoomPage::NativeConstruct()
 	Dropdown_Map->OnSelectionChanged.AddDynamic(this, &URoomPage::OnDropdownSelectionChanged);
 }
 
-void URoomPage::UpdatePlayerList(const TArray<FPlayerSessionInfo> Infos, const FString& RoomMode, const FString& RoomMap)
+void URoomPage::UpdatePlayerList(const FPlayerSessionInfoArray& Infos, const FString& RoomName, const FString& RoomMode, const FString& RoomMap)
 {
 	//Update Player Line
-	int idx = 0;
-	for (; idx < Infos.Num(); idx++)
+ 	for (int i = 0; i < WBP_Room_Player_Lines.Num(); i++)
 	{
-		WBP_Room_Player_Lines[idx]->TextBlock_Level->SetText(FText::FromString(TEXT("")));
-		WBP_Room_Player_Lines[idx]->TextBlock_Name->SetText(FText::FromString(Infos[idx].Username));
-		if (Infos[idx].ReadyState && idx != 0)
-			WBP_Room_Player_Lines[idx]->TextBlock_Ready->SetText(FText::FromString(TEXT("READY")));
+		WBP_Room_Player_Lines[i]->ResetUI();
+	}
+	
+	for (int i = 0; i < Infos.Items.Num(); i++)
+	{
+		WBP_Room_Player_Lines[Infos.Items[i].Index]->SetInfo(Infos.Items[i]);
+		
+		WBP_Room_Player_Lines[Infos.Items[i].Index]->TextBlock_Name->SetText(FText::FromString(Infos.Items[i].Username));
+		if (Infos.Items[i].ReadyState)
+		{
+			WBP_Room_Player_Lines[Infos.Items[i].Index]->TextBlock_Ready->SetText(FText::FromString(TEXT("READY")));
+		}
 		else
-			WBP_Room_Player_Lines[idx]->TextBlock_Ready->SetText(FText::FromString(TEXT("")));
-		WBP_Room_Player_Lines[idx]->TextBlock_Ping->SetText(FText::FromString(FString::FromInt(Infos[idx].Ping)));
+		{
+			WBP_Room_Player_Lines[Infos.Items[i].Index]->TextBlock_Ready->SetText(FText::FromString(TEXT("")));
+		}
+		if (Infos.Items[i].bIsHost)
+		{
+			WBP_Room_Player_Lines[Infos.Items[i].Index]->Image_HostIcon->SetVisibility(ESlateVisibility::Visible);
+		}
+		WBP_Room_Player_Lines[Infos.Items[i].Index]->TextBlock_Ping->SetText(FText::FromString(FString::FromInt(Infos.Items[i].Ping)));
 	}
-	for (; idx < WBP_Room_Player_Lines.Num(); idx++)
-	{
-		WBP_Room_Player_Lines[idx]->TextBlock_Level->SetText(FText::GetEmpty());
-		WBP_Room_Player_Lines[idx]->TextBlock_Name->SetText(FText::GetEmpty());
-		WBP_Room_Player_Lines[idx]->TextBlock_Ready->SetText(FText::GetEmpty());
-		WBP_Room_Player_Lines[idx]->TextBlock_Ping->SetText(FText::GetEmpty());
-	}
-
+	
 	//Update Room Options
+	TextBlock_RoomName->SetText(FText::FromString(RoomName));
 	Dropdown_Mode->SetSelectedOption(RoomMode);
 	Dropdown_Map->SetSelectedOption(RoomMap);
-
+	
 	//Update Room Host
 	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
 	ACDSessionPlayerController* SessionPlayerController = Cast<ACDSessionPlayerController>(LocalPlayerController);
 	ULocalPlayer* LocalPlayer = LocalPlayerController->GetLocalPlayer();
-	if (!Infos.IsEmpty() && IsValid(SessionPlayerController) && IsValid(LocalPlayer))
+	if (!Infos.Items.IsEmpty() && IsValid(SessionPlayerController) && IsValid(LocalPlayer))
 	{
 		if (LocalPlayer->GetSubsystem<UCDLocalPlayerSubsystem>())
 		{
 			const FString PlayerSessionId = SessionPlayerController->GetPlayerSessionId();
-			if (Infos[0].PlayerSessionId == PlayerSessionId)
+			if (Infos.IsPlayerHost(PlayerSessionId))
 			{
 				//Activate Select Map & Mode
 				Dropdown_Mode->SetIsEnabled(true);
 				Dropdown_Map->SetIsEnabled(true);
 				TextBlock_ReadyButton->SetText(FText::FromString(TEXT("Start")));
+
+				for (int i = 0; i < Infos.Items.Num(); i++)
+				{
+					if (!Infos.Items[i].bIsHost)
+					{
+						WBP_Room_Player_Lines[Infos.Items[i].Index]->Button_Kick->SetVisibility(ESlateVisibility::Visible);
+					}
+				}
 			}
 			else
 			{
@@ -121,7 +144,7 @@ void URoomPage::OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Ty
 	
 	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
 	if (IsValid(LocalPlayerController))
-	{
+	{ 
 		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
 		{
 			CDPC->Server_UpdateSession(Dropdown_Mode->GetSelectedOption(), Dropdown_Map->GetSelectedOption());

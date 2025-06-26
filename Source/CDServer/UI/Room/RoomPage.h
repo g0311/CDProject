@@ -47,7 +47,7 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<class UMapData> MapData;
 	
-	void UpdatePlayerList(const TArray<FPlayerSessionInfo> Infos, const FString& RoomMode, const FString& RoomMap);
+	void UpdatePlayerList(const FPlayerSessionInfoArray& Infos, const FString& RoomName, const FString& RoomMode, const FString& RoomMap);
 protected:
 	virtual void NativeConstruct() override;
 

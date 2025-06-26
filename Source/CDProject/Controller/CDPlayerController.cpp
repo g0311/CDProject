@@ -50,7 +50,6 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 	if (IsLocalController())
 	{
 		SetHUDTime();
-		//InitializeHUD();
 		CheckTimeSync(DeltaSeconds);
 		UpdateTeamMarkers();
 	}

@@ -36,6 +36,7 @@ public:
 	
 	void StartGame();
 	void EndGame(WinState winState);
+	void KickPlayer(const FString& PlayerSessionId);
 	class UCDGameInstanceSubsystem* GetGameInstanceSubsystem();
 	
 	UPROPERTY(EditDefaultsOnly)
@@ -59,3 +60,4 @@ private:
 	UPROPERTY()
 	TObjectPtr<class UCDGameInstanceSubsystem> CDGameInstanceSubsystem;
 };
+

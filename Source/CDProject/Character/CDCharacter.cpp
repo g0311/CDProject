@@ -198,7 +198,6 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		//Need Server Request
 		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Started, this, &ACDCharacter::RequestFireStart);
 		enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestFireEnd);
-		//enhancedInputComponent->BindAction(_fireAction, ETriggerEvent::Triggered, this, &ACDCharacter::RequestFire);
 		enhancedInputComponent->BindAction(_aimAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestAim);
 		enhancedInputComponent->BindAction(_reloadAction, ETriggerEvent::Completed, this, &ACDCharacter::RequestReload);
 		enhancedInputComponent->BindAction(_changeWeaponActions[0], ETriggerEvent::Started, this, &ACDCharacter::RequestChangeWeapon, 0);

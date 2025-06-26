@@ -70,7 +70,7 @@ private:
     UPROPERTY(Replicated,VisibleAnywhere, Category = "Player Stats",meta = (AllowPrivateAccess = "true"))
     ETeam MatchTeam = ETeam::ET_NoTeam;
     UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
-    FString Name;
+    FString Name = TEXT("DEFAULT");
     UPROPERTY(ReplicatedUsing = OnRep_Gold, EditAnywhere, Category = "Player Stats")
     int32 Gold = 0;
 

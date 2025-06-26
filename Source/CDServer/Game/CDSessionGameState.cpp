@@ -4,6 +4,8 @@
 #include "CDSessionGameState.h"
 #include "CDGameInstanceSubsystem.h"
 #include "Server_GameMode.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 ACDSessionGameState::ACDSessionGameState()
@@ -21,6 +23,10 @@ void ACDSessionGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 void ACDSessionGameState::AddPlayerInfo(FPlayerSessionInfo playerInfo)
 {
+    if (PlayerInfos.Items.IsEmpty())
+    {
+        playerInfo.bIsHost = true;
+    }
     PlayerInfos.AddPlayer(playerInfo);
 }
 
@@ -34,14 +40,6 @@ void ACDSessionGameState::RemovePlayerInfo(const FString& PlayerSessionId)
             break;
         }
     }
-    // for (int32 i = PlayerInfos.Items.Num() - 1; i >= 0; --i)
-    // {
-    //     if (PlayerInfos.Items[i].PlayerSessionId == PlayerSessionId)
-    //     {
-    //         PlayerInfos.Items.RemoveAt(i);
-    //         return;
-    //     }
-    // }
 }
 
 FPlayerSessionInfoArray& ACDSessionGameState::GetPlayerInfos()
@@ -57,6 +55,11 @@ const FString& ACDSessionGameState::GetRoomMode()
 const FString& ACDSessionGameState::GetRoomMap()
 {
     return RoomMap;
+}
+
+const FString& ACDSessionGameState::GetRoomName()
+{
+    return RoomName;
 }
 
 void ACDSessionGameState::SetRoomMode(const FString& PlayerSessionId, const FString& NextRoomMode)

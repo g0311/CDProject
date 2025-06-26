@@ -5,6 +5,8 @@
 
 #include "CDServer/Game/CDGameInstanceSubsystem.h"
 #include "CDServer/Game/CDSessionGameState.h"
+#include "CDServer/Game/Server_GameMode.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 void ACDSessionPlayerController::Server_PlayerReady_Implementation(bool ShouldReset)
@@ -31,13 +33,24 @@ void ACDSessionPlayerController::Server_UpdateSession_Implementation(const FStri
 	}
 }
 
-void ACDSessionPlayerController::Server_LeaveSession_Implementation()
+void ACDSessionPlayerController::Server_KickSession_Implementation(const FString& playerSessionId)
 {
 	if (GetWorld())
 	{
 		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 		{
-			SessionGameState->Server_LeaveSession(PlayerSessionId);
+			if (SessionGameState->GetPlayerInfos().IsPlayerHost(PlayerSessionId))
+			{
+				AServer_GameMode* GameMode = Cast<AServer_GameMode>(GetWorld()->GetAuthGameMode());
+				if (GameMode)
+				{
+					GameMode->KickPlayer(playerSessionId);
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Player Kicked Called From Non Host Client(%s)!!!"), *PlayerSessionId);
+			}
 		}
 	}
 }
