@@ -92,8 +92,9 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 		int32 Index = Items.Find(Info);
 		if (Index != INDEX_NONE)
 		{
+			bool IsHost = Info.bIsHost;
 			Items.RemoveAt(Index);
-			if (Info.bIsHost && !Items.IsEmpty())
+			if (IsHost && !Items.IsEmpty())
 			{ //호스트 퇴장 시 들어온 순서대로 호스트 권한 이동
 				Items[0].bIsHost = true;
 				Items[0].ReadyState = false;
