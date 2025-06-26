@@ -24,6 +24,9 @@ public:
 	
 	UFUNCTION(Server,Reliable)
 	void Server_KickSession(const FString& playerSessionId);
+	
+	UFUNCTION(Server,Reliable)
+	void Server_SetTeam(bool isRed);
 
 	const FString& GetPlayerSessionId() const;
 	void SetPlayerSessionId(const FString& playerSessionId);

@@ -26,12 +26,17 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UTextBlock> TextBlock_ReadyButton;
 
+	
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UButton> Button_RedTeam;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class URoomPlayerLine> WBP_Room_Player_Line1;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class URoomPlayerLine> WBP_Room_Player_Line2;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class URoomPlayerLine> WBP_Room_Player_Line3;
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UButton> Button_BlueTeam;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class URoomPlayerLine> WBP_Room_Player_Line4;
 	UPROPERTY(meta=(BindWidget))
@@ -56,6 +61,10 @@ private:
 	void OnLeaveButtonClicked();
 	UFUNCTION()
 	void OnReadyButtonClicked();
+	UFUNCTION()
+	void OnRedTeamButtonClicked();
+	UFUNCTION()
+	void OnBlueTeamButtonClicked();
 	UFUNCTION()
 	void OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 

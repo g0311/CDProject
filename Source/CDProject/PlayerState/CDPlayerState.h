@@ -52,6 +52,8 @@ public:
     virtual FCDMatchStats GetPRecordInput() const override;
     virtual ETeam GetPTeam() const override;
     virtual FString GetPUsername() const override;
+    virtual void SetPTeam(ETeam team) override;
+    virtual void SetPName(const FString& name) override;
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     

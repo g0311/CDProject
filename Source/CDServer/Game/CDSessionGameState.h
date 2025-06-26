@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CDServer/Data/Player/FPlayerSessionInfo.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
 #include "GameFramework/GameState.h"
 #include "CDSessionGameState.generated.h"
 
@@ -33,10 +34,13 @@ public:
 	bool IsPrivate();
 	
 	UFUNCTION()
-	void Server_LeaveSession(const FString& PlayerSessionId);
+	void LeaveSession(const FString& PlayerSessionId);
 
 	UFUNCTION()
-	void Server_PlayerReady(const FString& PlayerSessionId, bool ShouldReset = false);
+	void PlayerReady(const FString& PlayerSessionId, bool ShouldReset = false);
+
+	UFUNCTION()
+	void ChangeTeam(const FString& PlayerSessionId, bool bIsRed);
 
 	void UpdateProperty(FString Mode, FString Map, FString Name, FString Private, FString SessionId);
 	void PushProperty();

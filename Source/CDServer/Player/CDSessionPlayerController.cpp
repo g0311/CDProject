@@ -6,8 +6,14 @@
 #include "CDServer/Game/CDGameInstanceSubsystem.h"
 #include "CDServer/Game/CDSessionGameState.h"
 #include "CDServer/Game/Server_GameMode.h"
-#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
+
+void ACDSessionPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACDSessionPlayerController, PlayerSessionId);
+}
 
 void ACDSessionPlayerController::Server_PlayerReady_Implementation(bool ShouldReset)
 {
@@ -15,7 +21,7 @@ void ACDSessionPlayerController::Server_PlayerReady_Implementation(bool ShouldRe
 	{
 		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 		{
-			SessionGameState->Server_PlayerReady(PlayerSessionId, ShouldReset);
+			SessionGameState->PlayerReady(PlayerSessionId, ShouldReset);
 		}
 	}
 }
@@ -55,11 +61,15 @@ void ACDSessionPlayerController::Server_KickSession_Implementation(const FString
 	}
 }
 
-void ACDSessionPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+void ACDSessionPlayerController::Server_SetTeam_Implementation(bool isRed)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ACDSessionPlayerController, PlayerSessionId);
+	if (GetWorld())
+	{
+		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+		{
+			SessionGameState->ChangeTeam(PlayerSessionId, isRed);
+		}
+	}
 }
 
 const FString& ACDSessionPlayerController::GetPlayerSessionId() const

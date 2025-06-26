@@ -19,6 +19,8 @@ void URoomPage::NativeConstruct()
 
 	Button_Leave->OnClicked.AddDynamic(this, &URoomPage::OnLeaveButtonClicked);
 	Button_Ready->OnClicked.AddDynamic(this, &URoomPage::OnReadyButtonClicked);
+	Button_RedTeam->OnClicked.AddDynamic(this, &URoomPage::OnRedTeamButtonClicked);
+	Button_BlueTeam->OnClicked.AddDynamic(this, &URoomPage::OnBlueTeamButtonClicked);
 
 	WBP_Room_Player_Lines.Add(WBP_Room_Player_Line1);
 	WBP_Room_Player_Lines.Add(WBP_Room_Player_Line2);
@@ -129,6 +131,28 @@ void URoomPage::OnReadyButtonClicked()
 		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
 		{
 			CDPC->Server_PlayerReady(false);
+		}
+	}
+}
+
+void URoomPage::OnRedTeamButtonClicked()
+{
+	if (APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld()); IsValid(LocalPlayerController))
+	{
+		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
+		{
+			CDPC->Server_SetTeam(true);
+		}
+	}
+}
+
+void URoomPage::OnBlueTeamButtonClicked()
+{
+	if (APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld()); IsValid(LocalPlayerController))
+	{
+		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
+		{
+			CDPC->Server_SetTeam(false);
 		}
 	}
 }

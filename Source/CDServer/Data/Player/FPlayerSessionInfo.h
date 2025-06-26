@@ -163,6 +163,21 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 		return false;
 	}
 
+	bool IsPlayerATeam(const FString& PlayerSessionId) const
+	{
+		for (auto& item : Items)
+		{
+			if (PlayerSessionId == item.PlayerSessionId)
+			{
+				if (item.Index >= 0 && item.Index < 3)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
 	void Log()
 	{
 		UE_LOG(LogTemp, Log, TEXT("Info Log Called!!"));
