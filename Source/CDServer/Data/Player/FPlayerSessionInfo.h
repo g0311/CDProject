@@ -162,7 +162,7 @@ struct FPlayerSessionInfoArray : public FFastArraySerializer
 		}
 		return false;
 	}
-
+	
 	bool IsPlayerATeam(const FString& PlayerSessionId) const
 	{
 		for (auto& item : Items)

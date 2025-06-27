@@ -45,6 +45,8 @@ public:
 	void UpdateProperty(FString Mode, FString Map, FString Name, FString Private, FString SessionId);
 	void PushProperty();
 
+	APlayerState* GetPlayerState(const FString& PlayerSessionId);
+	void SetPlayerStateInfos(const FPlayerSessionInfo& playerInfo);
 protected:
 	virtual void BeginPlay() override;
 

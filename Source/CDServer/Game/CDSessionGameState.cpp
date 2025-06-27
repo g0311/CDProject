@@ -4,6 +4,7 @@
 #include "CDSessionGameState.h"
 #include "CDGameInstanceSubsystem.h"
 #include "Server_GameMode.h"
+#include "CDServer/Player/CDPlayerStateStatsProvider.h"
 #include "Net/UnrealNetwork.h"
 
 ACDSessionGameState::ACDSessionGameState()
@@ -26,6 +27,7 @@ void ACDSessionGameState::AddPlayerInfo(FPlayerSessionInfo playerInfo)
         playerInfo.bIsHost = true;
     }
     PlayerInfos.AddPlayer(playerInfo);
+    SetPlayerStateInfos(playerInfo);
 }
 
 void ACDSessionGameState::RemovePlayerInfo(const FString& PlayerSessionId)
@@ -164,7 +166,9 @@ void ACDSessionGameState::ChangeTeam(const FString& PlayerSessionId, bool bIsRed
     }
 
     TargetInfo->Index = NewIndex;
-
+    
+    SetPlayerStateInfos(*TargetInfo);
+    
     UE_LOG(LogTemp, Log, TEXT("ChangeTeam: Player %s moved to %s team at index %d"),
         *PlayerSessionId, bIsRed ? TEXT("Red") : TEXT("Blue"), NewIndex);
 }
@@ -211,5 +215,36 @@ void ACDSessionGameState::PushProperty()
             GameInstanceSubsystem->bIsPrivate = bIsPrivate;
             GameInstanceSubsystem->GameSessionId = GameSessionId;
         }
+    }
+}
+
+APlayerState* ACDSessionGameState::GetPlayerState(const FString& PlayerSessionId)
+{
+    for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+    {
+        ACDSessionPlayerController* PC = Cast<ACDSessionPlayerController>(*It);
+        if (PC && PC->GetPlayerSessionId() == PlayerSessionId)
+        {
+            return PC->PlayerState;
+        }
+    }
+    return nullptr;
+}
+
+void ACDSessionGameState::SetPlayerStateInfos(const FPlayerSessionInfo& playerInfo)
+{
+    APlayerState* PS = GetPlayerState(playerInfo.PlayerSessionId);
+    ICDPlayerStateStatsProvider* CDPlayerStateStatsProvider = Cast<ICDPlayerStateStatsProvider>(PS);
+    if (CDPlayerStateStatsProvider)
+    {
+        if(PlayerInfos.IsPlayerATeam(playerInfo.PlayerSessionId))
+        {
+            CDPlayerStateStatsProvider->SetPTeam(ETeam::ET_ATeam);
+        }
+        else
+        {
+            CDPlayerStateStatsProvider->SetPTeam(ETeam::ET_BTeam);
+        }
+        CDPlayerStateStatsProvider->SetPName(playerInfo.Username);
     }
 }
