@@ -5,6 +5,7 @@
 #include "CDGameInstanceSubsystem.h"
 #include "Server_GameMode.h"
 #include "CDServer/Player/CDPlayerStateStatsProvider.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 ACDSessionGameState::ACDSessionGameState()
@@ -224,7 +225,7 @@ APlayerState* ACDSessionGameState::GetPlayerState(const FString& PlayerSessionId
     {
         ACDSessionPlayerController* PC = Cast<ACDSessionPlayerController>(*It);
         if (PC && PC->GetPlayerSessionId() == PlayerSessionId)
-        {
+        {z
             return PC->PlayerState;
         }
     }

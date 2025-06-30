@@ -66,16 +66,16 @@ APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemote
         Username = FGuid::NewGuid().ToString();
     }
     
+    if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(PlayerController); IsValid(CDPC))
+    {
+        CDPC->SetPlayerSessionId(PlayerSessionId);
+    }
+    
     if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
     {
         SessionGameState->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr, false));
         SessionGameState->GetPlayerInfos().Log();
         //하고 있던거 => 플레이어 스테이트에 이름이랑 팀 저장시키기
-    }
-    
-    if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(PlayerController); IsValid(CDPC))
-    {
-        CDPC->SetPlayerSessionId(PlayerSessionId);
     }
     
     return PlayerController;
