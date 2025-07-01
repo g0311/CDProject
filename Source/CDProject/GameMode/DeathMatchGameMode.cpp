@@ -1,6 +1,7 @@
 #include "DeathMatchGameMode.h"
 
 #include "AIController.h"
+#include "CDProject/AI/CDAIController.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
@@ -29,6 +30,7 @@ void ADeathMatchGameMode::PostLogin(APlayerController* NewPlayer)
 		if (PlayerState && !BGameState->AllPlayers.Contains(PlayerState))
 		{
 			BGameState->AllPlayers.Add(PlayerState);
+			PlayerState->SetTeam(ETeam::ET_NoTeam);
 		}
 	}
 }
@@ -59,6 +61,7 @@ void ADeathMatchGameMode::HandleSeamlessTravelPlayer(AController*& C)
 		if (PlayerState && !BGameState->AllPlayers.Contains(PlayerState))
 		{
 			BGameState->AllPlayers.Add(PlayerState);
+			PlayerState->SetTeam(ETeam::ET_NoTeam);
 		}
 	}
 }
@@ -101,6 +104,8 @@ void ADeathMatchGameMode::SpawnBot()
 	{
 		AIController->PlayerState = BotPlayerState;
 		BotPlayerState->SetOwner(AIController);
+		BotPlayerState->SetUsername(TEXT("Bot") + FString::FromInt(rand()));
+		BotCharacter->SetUserName(BotPlayerState->GetUsername());
 
 		ACDGameState* BGameState = Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 		if (BGameState)
@@ -203,6 +208,55 @@ void ADeathMatchGameMode::UpdateAlivePlayers()
 	{
 		BGameState->AlivePlayers = BGameState->AllPlayers;
 	}
+}
+
+void ADeathMatchGameMode::PlayerEliminated(class AController* VictimController, AController* AttackerController)
+{
+	Super::PlayerEliminated(VictimController, AttackerController);
+	
+	if (GetCurMatchState() == ECurMatchState::EMS_InGame)
+	{
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this, VictimController]()
+		{
+			if (!IsValid(this))
+				return;
+			if (VictimController)
+			{
+				if (ACDCharacter* Character = Cast<ACDCharacter>(VictimController->GetCharacter()))
+				{
+					Character->Reset();
+					//Character->GiveRandomWeapon();
+				
+					AActor* playerStart = FindPlayerStart(VictimController);
+					if (playerStart)
+					{
+						Character->SetActorLocation(playerStart->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
+						Character->SetActorRotation(playerStart->GetActorRotation());
+						VictimController->SetControlRotation(playerStart->GetActorRotation());
+					}
+				}
+				if (ACDPlayerController* PlayerController = Cast<ACDPlayerController>(VictimController))
+				{
+					PlayerController->ClientSetPlayerAlive(true);
+					PlayerController->ClientSetEnableInput(true);
+				}
+				if (ACDAIController* AIController = Cast<ACDAIController>(VictimController))
+				{
+					AIController->RestartBehavior();
+				}
+			}
+		}), 1.5f, false);
+	}
+}
+
+void ADeathMatchGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
+{
+	if (NewState == ECurMatchState::EMS_CoolDown)
+	{
+		CurRound++;
+	}
+	Super::SetCurMatchState(NewState, IsInit);
 }
 
 void ADeathMatchGameMode::HandleMatchHasStarted()

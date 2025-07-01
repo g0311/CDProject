@@ -255,7 +255,8 @@ void ADemolitionGameMode::InitiateBot()
 	
 	if (BGameState)
 	{
-		for (int i=0;i<MAX_PLAYER; i++)
+		int SpawnCount = MAX_PLAYER - _joinedClinetCount;
+		for (int i=0;i<SpawnCount; i++)
 			SpawnBot();
 	}
 }

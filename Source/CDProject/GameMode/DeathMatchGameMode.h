@@ -24,8 +24,10 @@ public:
 	void KickBot();
 	void UpdateAlivePlayers();
 	// void InitBot(ACDCharacter* BotCharacter);
-protected:
+	virtual void PlayerEliminated(class AController* VictimController, AController* AttackerController) override;
+	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false);
 
+protected:
 	void InitializeTeamCount();
 	
 	virtual void HandleMatchHasStarted() override;

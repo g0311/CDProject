@@ -48,8 +48,10 @@ public:
 	float WarmUpTime=10.f;
 	float Countdown=10.f;
 	bool bNotifiedCooldown=false;
-	
+
+	UPROPERTY(EditAnywhere)
 	int32 MaxRound=4;
+	UPROPERTY(VisibleAnywhere)
 	int32 CurRound=0;
 	bool bTeamsMatch=false;
 

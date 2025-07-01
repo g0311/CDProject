@@ -134,6 +134,7 @@ void ARoundGameMode::BeginPlay()
 	Super::BeginPlay();
 	//LevelStartingTime=GetWorld()->GetTimeSeconds();
 	//StartMatch();
+	MatchTime = defaultMatchTime;
 	
 	UCDGameInstanceSubsystem* GameInstanceSubsystem = GetGameInstance()->GetSubsystem<UCDGameInstanceSubsystem>();
 	if (IsValid(GameInstanceSubsystem))
@@ -344,17 +345,17 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 		WaitingStartTime = GetWorld()->GetTimeSeconds();
 		RestartMatch(IsInit);
 	}
-	else if (_curMatchState == ECurMatchState::EMS_InGame)
+	if (_curMatchState == ECurMatchState::EMS_InGame)
 	{
 		MatchStartTime = GetWorld()->GetTimeSeconds();
 		UE_LOG(LogGameMode, Log, TEXT("EMS_InGame"));
 	}
-	else if (_curMatchState == ECurMatchState::EMS_CoolDown)
+	if (_curMatchState == ECurMatchState::EMS_CoolDown)
 	{
 		CooldownStartTime = GetWorld()->GetTimeSeconds();
 		UE_LOG(LogGameMode, Log, TEXT("EMS_CoolDown"));
 	}
-	else if (_curMatchState == ECurMatchState::EMS_GameEnd)
+	if (_curMatchState == ECurMatchState::EMS_GameEnd)
 	{
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this]()
@@ -371,7 +372,7 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 						EndGame(WinState::ATEAMLOSE);		
 				}
 			}
-		}), 5.f, false);
+		}), 10.f, false);
 	}
 	OnCurMatchStateSet();
 }

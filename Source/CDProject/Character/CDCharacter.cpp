@@ -14,6 +14,7 @@
 #include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
+#include "CDProject/GameMode/DeathMatchGameMode.h"
 #include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -226,9 +227,12 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	}
 	ETeam playerTeam = playerState->GetTeam();
 	ETeam causerTeam = causerPlayerState->GetTeam();
-	if (playerTeam == causerTeam)
+	if (GetWorld() && !Cast<ADeathMatchGameMode>(GetWorld()->GetAuthGameMode()))
 	{
-		return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+		if (playerTeam == causerTeam)
+		{
+			return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+		}
 	}
 
 	//cur Health Check
@@ -484,8 +488,6 @@ void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorCon
 	
 	if (IsLocallyControlled())
 	{
-		//UnVisible Arm Mesh
-		GetArmMesh()->SetVisibility(false);
 		ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
 		if (IsValid(CDPlayerController))
 		{

@@ -11,6 +11,7 @@
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
+#include "CDProject/GameMode/DeathMatchGameMode.h"
 #include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/GameState/CDGameState.h"
 #include "CDProject/HUD/CDHUD.h"
@@ -102,7 +103,7 @@ void ACDPlayerController::InitializeController_Implementation()
 		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
 	}
 	
-	ServerCheckMatchState();	
+	ServerCheckMatchState();
 }
 
 void ACDPlayerController::ServerCheckMatchState_Implementation()
@@ -228,7 +229,8 @@ void ACDPlayerController::HandleWaiting()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		ShowStoreWidget(true);
+		if (GetWorld() && !Cast<ADeathMatchGameMode>(GetWorld()->GetAuthGameMode()))
+			ShowStoreWidget(true);
 
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
@@ -857,12 +859,11 @@ void ACDPlayerController::OnRep_MatchState()
 	else if (MatchState == ECurMatchState::EMS_GameEnd)
 	{
 		//Show Game End UI
-		
-		
-		// if (IsLocalController())
-		// {
-		// 	UGameplayStatics::OpenLevel(this, FName("Menu"));
-		// }
+		if (CDHUD->Announcement)
+		{
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString("Waiting For Travel..."));
+		}
 	}
 }
 
