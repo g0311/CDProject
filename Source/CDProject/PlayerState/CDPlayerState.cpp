@@ -37,6 +37,16 @@ FString ACDPlayerState::GetPUsername() const
 	return Name;
 }
 
+void ACDPlayerState::SetPTeam(ETeam team)
+{
+	MatchTeam = team;
+}
+
+void ACDPlayerState::SetPName(const FString& name)
+{
+	Name = name;
+}
+
 void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

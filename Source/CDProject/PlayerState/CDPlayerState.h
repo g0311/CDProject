@@ -52,6 +52,8 @@ public:
     virtual FCDMatchStats GetPRecordInput() const override;
     virtual ETeam GetPTeam() const override;
     virtual FString GetPUsername() const override;
+    virtual void SetPTeam(ETeam team) override;
+    virtual void SetPName(const FString& name) override;
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     
@@ -70,7 +72,7 @@ private:
     UPROPERTY(Replicated,VisibleAnywhere, Category = "Player Stats",meta = (AllowPrivateAccess = "true"))
     ETeam MatchTeam = ETeam::ET_NoTeam;
     UPROPERTY(Replicated, VisibleAnywhere, Category = "Player Stats")
-    FString Name;
+    FString Name = TEXT("DEFAULT");
     UPROPERTY(ReplicatedUsing = OnRep_Gold, EditAnywhere, Category = "Player Stats")
     int32 Gold = 0;
 

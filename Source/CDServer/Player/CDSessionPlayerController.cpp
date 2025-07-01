@@ -5,7 +5,15 @@
 
 #include "CDServer/Game/CDGameInstanceSubsystem.h"
 #include "CDServer/Game/CDSessionGameState.h"
+#include "CDServer/Game/Server_GameMode.h"
 #include "Net/UnrealNetwork.h"
+
+void ACDSessionPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACDSessionPlayerController, PlayerSessionId);
+}
 
 void ACDSessionPlayerController::Server_PlayerReady_Implementation(bool ShouldReset)
 {
@@ -13,7 +21,7 @@ void ACDSessionPlayerController::Server_PlayerReady_Implementation(bool ShouldRe
 	{
 		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 		{
-			SessionGameState->Server_PlayerReady(PlayerSessionId, ShouldReset);
+			SessionGameState->PlayerReady(PlayerSessionId, ShouldReset);
 		}
 	}
 }
@@ -31,22 +39,37 @@ void ACDSessionPlayerController::Server_UpdateSession_Implementation(const FStri
 	}
 }
 
-void ACDSessionPlayerController::Server_LeaveSession_Implementation()
+void ACDSessionPlayerController::Server_KickSession_Implementation(const FString& playerSessionId)
 {
 	if (GetWorld())
 	{
 		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 		{
-			SessionGameState->Server_LeaveSession(PlayerSessionId);
+			if (SessionGameState->GetPlayerInfos().IsPlayerHost(PlayerSessionId))
+			{
+				AServer_GameMode* GameMode = Cast<AServer_GameMode>(GetWorld()->GetAuthGameMode());
+				if (GameMode)
+				{
+					GameMode->KickPlayer(playerSessionId);
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Player Kicked Called From Non Host Client(%s)!!!"), *PlayerSessionId);
+			}
 		}
 	}
 }
 
-void ACDSessionPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+void ACDSessionPlayerController::Server_SetTeam_Implementation(bool isATeam)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ACDSessionPlayerController, PlayerSessionId);
+	if (GetWorld())
+	{
+		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
+		{
+			SessionGameState->ChangeTeam(PlayerSessionId, isATeam);
+		}
+	}
 }
 
 const FString& ACDSessionPlayerController::GetPlayerSessionId() const

@@ -74,7 +74,6 @@ void UKDOverlay::ClearScoreboard()
 			PlayerRow->RemoveFromParent();
 		}
 	}
-
 	PlayerRows.Empty();
 
 	if (ATeamBox)

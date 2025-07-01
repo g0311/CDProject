@@ -54,9 +54,18 @@ APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemote
     }
 
     const FString NetIdStr = UniqueId.IsValid() ? UniqueId->ToString() : TEXT("Unknown");
-    const FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
-    const FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
+    FString Username = UGameplayStatics::ParseOption(Options, TEXT("Username"));
+    FString PlayerSessionId = UGameplayStatics::ParseOption(Options, TEXT("PlayerSessionId"));
 
+    if (PlayerSessionId.IsEmpty())
+    {
+        PlayerSessionId = FGuid::NewGuid().ToString();
+    }
+    if (Username.IsEmpty())
+    {
+        Username = FGuid::NewGuid().ToString();
+    }
+    
     if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(PlayerController); IsValid(CDPC))
     {
         CDPC->SetPlayerSessionId(PlayerSessionId);
@@ -64,7 +73,7 @@ APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemote
     
     if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
     {
-        SessionGameState->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr));
+        SessionGameState->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr, false));
         SessionGameState->GetPlayerInfos().Log();
     }
     
@@ -75,20 +84,17 @@ void AServer_GameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
 
-    if (!IsRunningDedicatedServer())
-        return;
-    
     ACDSessionPlayerController* PlayerController = Cast<ACDSessionPlayerController>(Exiting);
     if (IsValid(PlayerController))
     {
         const FString PlayerSessionId = PlayerController->GetPlayerSessionId();
         if (ACDSessionGameState* SessionGameState = GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
         {
-            SessionGameState->Server_LeaveSession(PlayerSessionId);
+            SessionGameState->LeaveSession(PlayerSessionId);
         }
     }
     
-    if (GetNumPlayers() == 0)
+    if (IsRunningDedicatedServer() && GetNumPlayers() == 0)
     {
         UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Empty"));
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
@@ -126,8 +132,8 @@ void AServer_GameMode::StartGame()
             {
                 FString url = TEXT("/Game/Maps/") + SessionGameState->GetRoomMode() + TEXT("/") + SessionGameState->GetRoomMap();
                 UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
-                GetWorld()->ServerTravel(url, false);
-                GetWorld()->SeamlessTravel(url);
+                GetWorld()->ServerTravel(url);
+                //GetWorld()->SeamlessTravel(url);
             }
         }
     }
@@ -221,6 +227,22 @@ void AServer_GameMode::EndGame(WinState winState)
     {
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
         TerminateProcess(gameLiftSdkModule, 200);
+    }
+}
+
+void AServer_GameMode::KickPlayer(const FString& PlayerSessionId)
+{
+    if (!GetWorld()) return;
+    for (FConstControllerIterator It = GetWorld()->GetControllerIterator(); It; ++It)
+    {
+        ACDSessionPlayerController* PC = Cast<ACDSessionPlayerController>(*It);
+        if (PC && PC->GetPlayerSessionId() == PlayerSessionId)
+        {
+            if (UNetConnection* NetConnection = Cast<UNetConnection>(PC->GetNetConnection()))
+            {
+                NetConnection->Close();
+            }
+        }
     }
 }
 

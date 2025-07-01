@@ -50,7 +50,6 @@ void ACDPlayerController::Tick(float DeltaSeconds)
 	if (IsLocalController())
 	{
 		SetHUDTime();
-		//InitializeHUD();
 		CheckTimeSync(DeltaSeconds);
 		UpdateTeamMarkers();
 	}
@@ -778,7 +777,8 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 		{
 			if (subSystem && CDCharacter)
 			{
-				subSystem->AddMappingContext(CDCharacter->GetInputMapping(), 0);
+				subSystem->AddMappingContext(CDCharacter->GetInputMapping(), 1);
+				subSystem->AddMappingContext(DefaultInputMappingContext, 0);
 			}
 
 			if (CDCharacter->GetAbilitySystemComponent())
@@ -897,6 +897,8 @@ void ACDPlayerController::SetupInputComponent()
 	if (enhancedInputComponent)
 	{
 		enhancedInputComponent->BindAction(LeftClickAction, ETriggerEvent::Started, this, &ACDPlayerController::LMouseDown);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Started, this, &ACDPlayerController::TabStart);
+		enhancedInputComponent->BindAction(_tabAction, ETriggerEvent::Completed, this, &ACDPlayerController::TabEnd);
 	}
 }
 
@@ -918,7 +920,10 @@ void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
 		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
 		if (subSystem)
 		{
-			subSystem->AddMappingContext(DeadInputMappingContext, 1);
+			if(ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetPawn()); IsValid(CDCharacter))
+			{
+				subSystem->RemoveMappingContext(CDCharacter->GetInputMapping());
+			}
 		}
 		if(ACDGameState* GameState = Cast<ACDGameState>(GetWorld()->GetGameState()))
 		{
@@ -944,7 +949,10 @@ void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
 		UEnhancedInputLocalPlayerSubsystem* subSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()); 
 		if (subSystem)
 		{
-			subSystem->RemoveMappingContext(DeadInputMappingContext);
+			if(ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetPawn()); IsValid(CDCharacter))
+			{
+				subSystem->AddMappingContext(CDCharacter->GetInputMapping(), 1);
+			}
 		}
 		TeamCharacters.Empty();
 		CurPlayerIndex = 0;
@@ -969,6 +977,16 @@ void ACDPlayerController::LMouseDown()
 		}
 	} 
 	while (CurPlayerIndex != StartIndex);
+}
+
+void ACDPlayerController::TabStart()
+{
+	ShowKDOverlay(true);
+}
+
+void ACDPlayerController::TabEnd()
+{
+	ShowKDOverlay(false);
 }
 
 void ACDPlayerController::ShowSniperScope()

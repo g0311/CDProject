@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "CDServer/Data/Player/FPlayerSessionInfo.h"
+#include "CDServer/Player/CDSessionPlayerController.h"
 #include "GameFramework/GameState.h"
 #include "CDSessionGameState.generated.h"
 
@@ -25,6 +26,7 @@ public:
 	
 	const FString& GetRoomMode();
 	const FString& GetRoomMap();
+	const FString& GetRoomName();
 	void SetRoomMode(const FString& PlayerSessionId, const FString& NextRoomMode);
 	void SetRoomMap(const FString& PlayerSessionId, const FString& NextRoomMap);
 
@@ -32,13 +34,19 @@ public:
 	bool IsPrivate();
 	
 	UFUNCTION()
-	void Server_LeaveSession(const FString& PlayerSessionId);
+	void LeaveSession(const FString& PlayerSessionId);
 
 	UFUNCTION()
-	void Server_PlayerReady(const FString& PlayerSessionId, bool ShouldReset = false);
+	void PlayerReady(const FString& PlayerSessionId, bool ShouldReset = false);
+
+	UFUNCTION()
+	void ChangeTeam(const FString& PlayerSessionId, bool IsATeam);
 
 	void UpdateProperty(FString Mode, FString Map, FString Name, FString Private, FString SessionId);
 	void PushProperty();
+
+	APlayerState* GetPlayerState(const FString& PlayerSessionId);
+	void SetPlayerStateInfos(const FPlayerSessionInfo& playerInfo);
 protected:
 	virtual void BeginPlay() override;
 

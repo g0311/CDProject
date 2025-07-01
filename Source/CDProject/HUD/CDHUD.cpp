@@ -163,11 +163,11 @@ void ACDHUD::AddKDOverlay(bool IsActivate)
 			if (!KDOverlay)
 			{
 				KDOverlay = CreateWidget<UKDOverlay>(PlayerController, KDOverlayClass);
-				KDOverlay->SetupScoreboard();
 			}
 			if (KDOverlay && !KDOverlay->IsInViewport())
 			{
 				KDOverlay->AddToViewport();
+				KDOverlay->SetupScoreboard();
 			}
 		}
 		else

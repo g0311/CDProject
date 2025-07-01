@@ -23,7 +23,10 @@ public:
 	void Server_UpdateSession(const FString& RoomMode, const FString& RoomMap);
 	
 	UFUNCTION(Server,Reliable)
-	void Server_LeaveSession();
+	void Server_KickSession(const FString& playerSessionId);
+	
+	UFUNCTION(Server,Reliable)
+	void Server_SetTeam(bool isATeam);
 
 	const FString& GetPlayerSessionId() const;
 	void SetPlayerSessionId(const FString& playerSessionId);
