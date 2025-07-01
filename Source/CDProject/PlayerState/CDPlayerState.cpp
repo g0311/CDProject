@@ -39,7 +39,7 @@ FString ACDPlayerState::GetPUsername() const
 
 void ACDPlayerState::SetPTeam(ETeam team)
 {
-	Team = team;
+	MatchTeam = team;
 }
 
 void ACDPlayerState::SetPName(const FString& name)

@@ -122,7 +122,7 @@ void ACDSessionGameState::PlayerReady(const FString& PlayerSessionId, bool Shoul
     }
 }
 
-void ACDSessionGameState::ChangeTeam(const FString& PlayerSessionId, bool bIsRed)
+void ACDSessionGameState::ChangeTeam(const FString& PlayerSessionId, bool IsATeam)
 {
     TSet<int32> UsedIndices;
     for (const FPlayerSessionInfo& Existing : PlayerInfos.Items)
@@ -131,8 +131,8 @@ void ACDSessionGameState::ChangeTeam(const FString& PlayerSessionId, bool bIsRed
     }
     int32 NewIndex = -1;
 
-    int32 StartIndex = bIsRed ? 0 : 3;
-    int32 EndIndex   = bIsRed ? 2 : 5;
+    int32 StartIndex = IsATeam ? 0 : 3;
+    int32 EndIndex   = IsATeam ? 2 : 5;
 
     FPlayerSessionInfo* TargetInfo = PlayerInfos.Items.FindByPredicate(
         [&](const FPlayerSessionInfo& Info) { return Info.PlayerSessionId == PlayerSessionId; });
@@ -144,7 +144,7 @@ void ACDSessionGameState::ChangeTeam(const FString& PlayerSessionId, bool bIsRed
     }
 
     // 이미 같은 팀이면 무시
-    if ((bIsRed && TargetInfo->Index <= 2) || (!bIsRed && TargetInfo->Index >= 3))
+    if ((IsATeam && TargetInfo->Index <= 2) || (!IsATeam && TargetInfo->Index >= 3))
     {
         UE_LOG(LogTemp, Log, TEXT("ChangeTeam: Already in desired team."));
         return;
@@ -171,7 +171,7 @@ void ACDSessionGameState::ChangeTeam(const FString& PlayerSessionId, bool bIsRed
     SetPlayerStateInfos(*TargetInfo);
     
     UE_LOG(LogTemp, Log, TEXT("ChangeTeam: Player %s moved to %s team at index %d"),
-        *PlayerSessionId, bIsRed ? TEXT("Red") : TEXT("Blue"), NewIndex);
+        *PlayerSessionId, IsATeam ? TEXT("Red") : TEXT("Blue"), NewIndex);
 }
 
 void ACDSessionGameState::UpdateProperty(FString Mode, FString Map, FString Name, FString Private, FString SessionId)
@@ -225,7 +225,7 @@ APlayerState* ACDSessionGameState::GetPlayerState(const FString& PlayerSessionId
     {
         ACDSessionPlayerController* PC = Cast<ACDSessionPlayerController>(*It);
         if (PC && PC->GetPlayerSessionId() == PlayerSessionId)
-        {z
+        {
             return PC->PlayerState;
         }
     }

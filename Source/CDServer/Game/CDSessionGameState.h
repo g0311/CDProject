@@ -40,7 +40,7 @@ public:
 	void PlayerReady(const FString& PlayerSessionId, bool ShouldReset = false);
 
 	UFUNCTION()
-	void ChangeTeam(const FString& PlayerSessionId, bool bIsRed);
+	void ChangeTeam(const FString& PlayerSessionId, bool IsATeam);
 
 	void UpdateProperty(FString Mode, FString Map, FString Name, FString Private, FString SessionId);
 	void PushProperty();

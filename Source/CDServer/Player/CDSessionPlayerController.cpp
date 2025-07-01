@@ -61,13 +61,13 @@ void ACDSessionPlayerController::Server_KickSession_Implementation(const FString
 	}
 }
 
-void ACDSessionPlayerController::Server_SetTeam_Implementation(bool isRed)
+void ACDSessionPlayerController::Server_SetTeam_Implementation(bool isATeam)
 {
 	if (GetWorld())
 	{
 		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 		{
-			SessionGameState->ChangeTeam(PlayerSessionId, isRed);
+			SessionGameState->ChangeTeam(PlayerSessionId, isATeam);
 		}
 	}
 }

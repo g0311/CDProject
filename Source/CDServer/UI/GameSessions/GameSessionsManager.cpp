@@ -111,7 +111,7 @@ void UGameSessionsManager::JoinPrivateGameSession(const FString& GameSessionId)
 void UGameSessionsManager::UpdateGameSession(const FString& GameSessionId, const FString& GameMap, const FString& GameMode, const FString& IsStarted)
 {
 	TSharedRef<IHttpRequest> Request = FHttpModule::Get().CreateRequest();
-	Request->OnProcessRequestComplete().BindUObject(this, &UGameSessionsManager::UpdateGameSession_Response);
+	//Request->OnProcessRequestComplete().BindUObject(this, &UGameSessionsManager::UpdateGameSession_Response);
 
 	check(APIData);
 	const FString APIUrl = APIData->GetAPIEndpoint(ServerTags::GameSessionAPI::UpdateGameSession);

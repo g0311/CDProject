@@ -75,7 +75,6 @@ APlayerController* AServer_GameMode::Login(UPlayer* NewPlayer, ENetRole InRemote
     {
         SessionGameState->AddPlayerInfo(FPlayerSessionInfo(PlayerSessionId, Username, false, 0, NetIdStr, false));
         SessionGameState->GetPlayerInfos().Log();
-        //하고 있던거 => 플레이어 스테이트에 이름이랑 팀 저장시키기
     }
     
     return PlayerController;
@@ -133,8 +132,8 @@ void AServer_GameMode::StartGame()
             {
                 FString url = TEXT("/Game/Maps/") + SessionGameState->GetRoomMode() + TEXT("/") + SessionGameState->GetRoomMap();
                 UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
-                GetWorld()->ServerTravel(url, false);
-                GetWorld()->SeamlessTravel(url);
+                GetWorld()->ServerTravel(url);
+                //GetWorld()->SeamlessTravel(url);
             }
         }
     }
