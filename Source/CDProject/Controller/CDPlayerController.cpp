@@ -11,6 +11,7 @@
 #include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
+#include "CDProject/GameMode/DeathMatchGameMode.h"
 #include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/GameState/CDGameState.h"
 #include "CDProject/HUD/CDHUD.h"
@@ -75,16 +76,17 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACDPlayerController, MatchState);
+	DOREPLIFETIME(ACDPlayerController, MatchTime);
+	DOREPLIFETIME(ACDPlayerController, WarmupTime);
+	DOREPLIFETIME(ACDPlayerController, CooldownTime);
+	DOREPLIFETIME(ACDPlayerController, CountStartTime);
 	DOREPLIFETIME(ACDPlayerController, HUDGoldCount);
 	DOREPLIFETIME(ACDPlayerController, HUDDeathCount);
 	DOREPLIFETIME(ACDPlayerController, HUDKillCount);
-	DOREPLIFETIME(ACDPlayerController, WaitingStartTime);
-	DOREPLIFETIME(ACDPlayerController, MatchStartTime);
-	DOREPLIFETIME(ACDPlayerController, CooldownStartTime);
 	DOREPLIFETIME(ACDPlayerController, HUDCharID);
 }
 
-void ACDPlayerController::InitializeController_Implementation()
+void ACDPlayerController::InitializeController()
 {
 	CDHUD=Cast<ACDHUD>(GetHUD());
 	if (IsLocalController())
@@ -102,39 +104,18 @@ void ACDPlayerController::InitializeController_Implementation()
 		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
 	}
 	
-	ServerCheckMatchState();	
+	ServerRPC_UpdateMatchState();
 }
 
-void ACDPlayerController::ServerCheckMatchState_Implementation()
+void ACDPlayerController::ServerRPC_UpdateMatchState_Implementation()
 {
 	ARoundGameMode* GameMode=Cast<ARoundGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GameMode)
 	{
 		WarmupTime=GameMode->WarmUpTime;
 		MatchTime = GameMode->MatchTime;
-		LevelStartingTime = GameMode->WaitingStartTime;
 		CooldownTime=GameMode->CooldownTime;
 		MatchState = GameMode->GetCurMatchState();
-		if (!IsLocalController())
-			ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
-		else
-			ClientJoinMidgame_Implementation(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
-	}
-}
-//GameMode is accessible only on the server
-
-void ACDPlayerController::ClientJoinMidgame_Implementation(ECurMatchState StateOfMatch, float Warmup, float Match,
-	float Cooldown,float StartingTime)
-{
-	WarmupTime = Warmup;
-	MatchTime = Match;
-	LevelStartingTime = StartingTime;
-	CooldownTime=Cooldown;
-	MatchState = StateOfMatch;
-	OnMatchStateSet(MatchState);
-	if (CDHUD && MatchState == ECurMatchState::EMS_Waiting)
-	{
-		CDHUD->AddAnnouncement();
 	}
 }
 
@@ -152,9 +133,9 @@ void ACDPlayerController::ClientSetMatchState_Implementation(ECurMatchState stat
 void ACDPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	if (!HasAuthority() || (HasAuthority() && IsLocalController()))
+	if (IsLocalController())
 	{
-		InitializeController_Implementation();
+		InitializeController();
 	}
 }
 
@@ -228,7 +209,8 @@ void ACDPlayerController::HandleWaiting()
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD)
 	{
-		ShowStoreWidget(true);
+		if (GetWorld() && !Cast<ADeathMatchGameMode>(GetWorld()->GetAuthGameMode()))
+			ShowStoreWidget(true);
 
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
@@ -270,7 +252,7 @@ void ACDPlayerController::HandleCooldown()
 		if (CDHUD->Announcement&&CDHUD->Announcement->AnnouncementText&&CDHUD->Announcement->AnnouncementCountdown)
 		{
 			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
-			FString AnnouncementText("");
+			FString AnnouncementText("Waiting For Next Round");
 			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 		}
 	}
@@ -387,15 +369,15 @@ void ACDPlayerController::SetHUDTime()
 	
 	if (MatchState == ECurMatchState::EMS_Waiting)
 	{
-		TimeLeft = WaitingStartTime + WarmupTime - GetServerTime();
+		TimeLeft = CountStartTime + WarmupTime - GetServerTime();
 	}
 	else if (MatchState == ECurMatchState::EMS_InGame)
 	{
-		TimeLeft = MatchStartTime + MatchTime - GetServerTime();
+		TimeLeft = CountStartTime + MatchTime - GetServerTime();
 	}
 	else if (MatchState == ECurMatchState::EMS_CoolDown)
 	{
-		TimeLeft = CooldownStartTime + CooldownTime - GetServerTime();
+		TimeLeft = CountStartTime + CooldownTime - GetServerTime();
 	}
 	else if (MatchState == ECurMatchState::EMS_None || MatchState == ECurMatchState::EMS_GameEnd)
 	{
@@ -811,23 +793,24 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 	SetShowMouseCursor(false);
 }
 
-void ACDPlayerController::OnMatchStateSet(ECurMatchState State, bool bTeamsMatch, float time)
+void ACDPlayerController::OnMatchStateSet(ECurMatchState State, float time)
 {
 	MatchState=State;
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
-		WaitingStartTime = time;
+		CountStartTime = time;
 		ClientSetPlayerAlive(true);
 		ClientSetEnableInput(false);
 	}
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
-		MatchStartTime = time;
+		CountStartTime = time;
+		ServerRPC_UpdateMatchState();
 		ClientSetEnableInput(true);
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)
 	{
-		CooldownStartTime = time;
+		CountStartTime = time;
 	}
 	else if (MatchState==ECurMatchState::EMS_GameEnd)
 	{
@@ -857,12 +840,11 @@ void ACDPlayerController::OnRep_MatchState()
 	else if (MatchState == ECurMatchState::EMS_GameEnd)
 	{
 		//Show Game End UI
-		
-		
-		// if (IsLocalController())
-		// {
-		// 	UGameplayStatics::OpenLevel(this, FName("Menu"));
-		// }
+		if (CDHUD->Announcement)
+		{
+			CDHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString("Game Ended...\nWaiting For Travel..."));
+		}
 	}
 }
 

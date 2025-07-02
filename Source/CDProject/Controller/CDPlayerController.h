@@ -19,9 +19,7 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void OnPossess(APawn* InPawn) override;
 	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
-	UFUNCTION(Client, Reliable)
 	void InitializeController();
-	virtual void InitializeController_Implementation();
 	//HUD
 	
 	void SetHUDTime();
@@ -72,17 +70,14 @@ public:
 	//KDO Overlay
 	void ShowKDOverlay(bool isShowing);
 	
-	void OnMatchStateSet(ECurMatchState State, bool bTeamsMatch=false, float time = 0);
+	void OnMatchStateSet(ECurMatchState State, float time = 0);
 	void HandleWaiting();
 	void HandleMatchHasStarted(bool bTeamsMatch=false);
 	void HandleCooldown();
 
 	UFUNCTION(Server, Reliable)
-	void ServerCheckMatchState();
+	void ServerRPC_UpdateMatchState();
 	
-	UFUNCTION(Client, Reliable)
-	void ClientJoinMidgame(ECurMatchState StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime);
-
 	UFUNCTION(Client, Reliable)
 	void ClientSetMatchTime(float matchTime);
 
@@ -140,19 +135,15 @@ private:
 	void OnRep_HUDDeathCount();
 	
 	//MatchVariable
-	float LevelStartingTime=0.f;//Purchase Item Time
+	UPROPERTY(Replicated)
 	float MatchTime=120.f;
+	UPROPERTY(Replicated)
 	float WarmupTime=0.f;
+	UPROPERTY(Replicated)
 	float CooldownTime=0.f;
+	UPROPERTY(Replicated)
+	float CountStartTime = 0.f;
 	int32 CountdownInt=0;
-
-	UPROPERTY(Replicated)
-	float WaitingStartTime = 0.f;
-	UPROPERTY(Replicated)
-	float MatchStartTime = 0.f;
-	UPROPERTY(Replicated)
-	
-	float CooldownStartTime = 0.f;
 	
 	//State Variable
 	float HUDHealth;
@@ -161,9 +152,6 @@ private:
 	float HUDCarriedAmmo;
 	float HUDWeaponAmmo;
 	class Aweapon* HUDWeaponInfo;
-	
-
-
 	
 	//Match KDState
 	UPROPERTY(ReplicatedUsing=OnRep_HUDGoldCount)

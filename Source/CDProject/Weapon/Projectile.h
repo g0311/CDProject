@@ -56,7 +56,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	void StartDestroyTimer();
-	void FinishedDestroyTimer();
+	virtual void FinishedDestroyTimer();
 	void SpawnTrailSystem();
 	void ExplodeDamage();
 

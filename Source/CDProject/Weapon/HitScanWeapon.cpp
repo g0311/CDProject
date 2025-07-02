@@ -109,11 +109,15 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			
 			if (BeamParticleSystem)
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(
+				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
 					World,
 					BeamParticleSystem,
 					SocketTransform
-					);
+				);
+				if (Beam)
+				{
+					Beam->SetVectorParameter(FName("Target"), BeamEnd);
+				}
 			}
 			if (MuzzleFlash)
 			{

@@ -179,13 +179,13 @@ void ADemolitionGameMode::HandleSeamlessTravelPlayer(AController*& C)
 
 void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)
 {
-	MatchTime = c4ExplodeTime - WarmUpTime - WaitingStartTime + GetWorld()->GetTimeSeconds();
+	MatchTime = c4ExplodeTime - (CountStartTime - GetWorld()->GetTimeSeconds());
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
 		ACDPlayerController* PC = Cast<ACDPlayerController>(It->Get());
 		if (PC)
 		{
-			PC->ClientSetMatchTime(MatchTime);
+			PC->ServerRPC_UpdateMatchState();
 		}
 	}
 }
@@ -255,7 +255,8 @@ void ADemolitionGameMode::InitiateBot()
 	
 	if (BGameState)
 	{
-		for (int i=0;i<MAX_PLAYER; i++)
+		int SpawnCount = MAX_PLAYER - _joinedClinetCount;
+		for (int i=0;i<SpawnCount; i++)
 			SpawnBot();
 	}
 }
@@ -423,7 +424,7 @@ void ADemolitionGameMode::SpawnBot()
 
 void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 {
-	CooldownStartTime = GetWorld()->GetTimeSeconds();
+	CountStartTime = GetWorld()->GetTimeSeconds();
 	if (NewState == ECurMatchState::EMS_CoolDown && bIsPlanted)
 	{
 		RoundWin(true);
@@ -590,7 +591,7 @@ void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
 				else
 					RoundWin(false);
 				
-				CooldownStartTime = GetWorld()->GetTimeSeconds();
+				CountStartTime = GetWorld()->GetTimeSeconds();
 				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 			else if (BGameState->AliveATeam.Num()==0)
@@ -600,7 +601,7 @@ void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
 				else
 					RoundWin(true);
 				
-				CooldownStartTime = GetWorld()->GetTimeSeconds();
+				CountStartTime = GetWorld()->GetTimeSeconds();
 				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 		}

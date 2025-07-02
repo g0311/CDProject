@@ -4,15 +4,11 @@
 #include "C4Weapon.h"
 
 #include "Projectile.h"
-#include "VectorTypes.h"
-//#include "AssetTypeActions/AssetDefinition_SoundBase.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/DemolitionGameMode.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Net/UnrealNetwork.h"
 
 AC4Weapon::AC4Weapon()
 {

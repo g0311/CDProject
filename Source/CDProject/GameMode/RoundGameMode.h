@@ -40,22 +40,22 @@ public:
 	//InGame Variable
 	UPROPERTY(EditDefaultsOnly)
 	float defaultMatchTime = 90.f;//	//1 Round in Matching Time
+	UPROPERTY(VisibleAnywhere)
 	float MatchTime = 90.f;
-	
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime=10.f;
 	UPROPERTY(EditDefaultsOnly)
 	float WarmUpTime=10.f;
 	float Countdown=10.f;
 	bool bNotifiedCooldown=false;
-	
+
+	UPROPERTY(EditAnywhere)
 	int32 MaxRound=4;
+	UPROPERTY(VisibleAnywhere)
 	int32 CurRound=0;
 	bool bTeamsMatch=false;
 
-	float WaitingStartTime = 0.f;
-	float MatchStartTime = 0.f;
-	float CooldownStartTime = 0.f;
+	float CountStartTime = 0.f;
 
 	int _joinedClinetCount = 0;
 	int _maxClientCount = 2; //6

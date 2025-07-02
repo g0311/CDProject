@@ -220,6 +220,19 @@ void AServer_GameMode::EndGame(WinState winState)
             {
                 FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
                 TerminateProcess(gameLiftSdkModule, 200);
+                if (IsRunningDedicatedServer())
+                {
+                    FPlatformMisc::RequestExit(false);
+                }
+                else
+                {
+                    UWorld* World = GEngine->GetWorldContexts()[0].World();
+                    if (World)
+                    {
+                        FString url = TEXT("/Game/Maps/ServerDefaultMap");
+                        UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
+                    }
+                }
             }
         }
     }
@@ -227,6 +240,13 @@ void AServer_GameMode::EndGame(WinState winState)
     {
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
         TerminateProcess(gameLiftSdkModule, 200);
+        
+        UWorld* World = GEngine->GetWorldContexts()[0].World();
+        if (World)
+        {
+            FString url = TEXT("/Game/Maps/ServerDefaultMap");
+            UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
+        }
     }
 }
 

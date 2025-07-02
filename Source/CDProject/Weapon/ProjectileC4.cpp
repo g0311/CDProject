@@ -6,6 +6,7 @@
 #include "CDProject/GameMode/RoundGameMode.h"
 #include "CDProject/GameMode/DemolitionGameMode.h"
 #include "Net/UnrealNetwork.h"
+#include "Sound/SoundCue.h"
 
 
 // Sets default values
@@ -28,20 +29,8 @@ void AProjectileC4::Destroyed()
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
 		}
-		else
-		{
-			ExplodeDamage();
-			// if (GetWorld()->GetAuthGameMode())
-			// {
-			// 	ADemolitionGameMode* teamGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
-			// 	if (teamGameMode && teamGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
-			// 	{
-			// 		teamGameMode->RoundWin(true);
-			// 	}
-			// }
-			NetMulticastCreateExplodeEffect();
-		}
 	}
+	Super::Super::Destroyed();
 }
 
 void AProjectileC4::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -66,8 +55,6 @@ void AProjectileC4::Defused()
         	if (DemolitionGameMode && DemolitionGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
         	{
         		DemolitionGameMode->SetC4Planted(false);
-        		//DemolitionGameMode->RoundWin(false);
-        		//DemolitionGameMode->SetMatchTime(0);
         	}
         }
 	}
@@ -90,8 +77,16 @@ void AProjectileC4::BeginPlay()
 	SpawnTrailSystem();
 	if (HasAuthority())
 		StartDestroyTimer();
-
 }
+
+void AProjectileC4::FinishedDestroyTimer()
+{
+	ExplodeDamage();
+	NetMulticastCreateExplodeEffect();
+	
+	Super::FinishedDestroyTimer();
+}
+
 // Called every frame
 void AProjectileC4::Tick(float DeltaTime)
 {
@@ -102,6 +97,7 @@ void AProjectileC4::NetMulticastCreateExplodeEffect_Implementation()
 {
 	if (!IsValid(this))
 		return;
-
-	Super::Destroyed();
+	
+	if (ImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorLocation(), FRotator::ZeroRotator);
+	if (ImpactSound) UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 }
