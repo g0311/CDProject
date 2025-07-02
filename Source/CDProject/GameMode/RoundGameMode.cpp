@@ -45,11 +45,6 @@ void ARoundGameMode::PostLogin(APlayerController* NewPlayer)
 			_maxClientCount = 2;
 	}
 	
-	if (ACDPlayerController* PC = Cast<ACDPlayerController>(NewPlayer))
-	{
-		PC->InitializeController();
-	}
-	
 	_joinedClinetCount++;
 	if (GetCurMatchState() == ECurMatchState::EMS_None && _joinedClinetCount >= _maxClientCount)
 	{
@@ -75,11 +70,6 @@ void ARoundGameMode::HandleSeamlessTravelPlayer(AController*& C)
 		_maxClientCount = CDGameState->GetPlayerInfos().Items.Num();
 	}
 	
-	if (ACDPlayerController* PC = Cast<ACDPlayerController>(C))
-	{
-		PC->InitializeController();
-	}
-	
 	_joinedClinetCount++;
 	if (GetCurMatchState() == ECurMatchState::EMS_None && _joinedClinetCount >= _maxClientCount)
 	{
@@ -102,7 +92,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	
 	if (_curMatchState==ECurMatchState::EMS_Waiting)
 	{
-		Countdown=FMath::CeilToInt(WaitingStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
+		Countdown=FMath::CeilToInt(CountStartTime + WarmUpTime-GetWorld()->GetTimeSeconds());
 		//UE_LOG(LogGameMode, Log, TEXT("Countdown %f"), Countdown);
 		if (Countdown<=0.1f)
 		{
@@ -111,7 +101,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	}
 	else if (_curMatchState==ECurMatchState::EMS_InGame)
 	{
-		Countdown=MatchStartTime + MatchTime-GetWorld()->GetTimeSeconds();
+		Countdown = CountStartTime + MatchTime - GetWorld()->GetTimeSeconds();
 		if (Countdown<=0.1f)
 		{
 			SetCurMatchState(ECurMatchState::EMS_CoolDown);
@@ -119,7 +109,7 @@ void ARoundGameMode::Tick(float DeltaSeconds)
 	}
 	else if (_curMatchState==ECurMatchState::EMS_CoolDown)
 	{
-		Countdown=CooldownStartTime + CooldownTime-GetWorld()->GetTimeSeconds();
+		Countdown = CountStartTime + CooldownTime-GetWorld()->GetTimeSeconds();
 		//UE_LOG(LogGameMode, Log, TEXT("%f %f %f"), CooldownTime, CooldownStartTime, GetWorld()->GetTimeSeconds());
 		if (Countdown<=0.1f)
 		{
@@ -152,15 +142,15 @@ void ARoundGameMode::OnCurMatchStateSet()
 		{
 			if(_curMatchState==ECurMatchState::EMS_Waiting)
 			{
-				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, WaitingStartTime);
+				PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);
 			}
 			else if(_curMatchState==ECurMatchState::EMS_InGame)
 			{
-				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, MatchStartTime);			
+				PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);			
 			}
 			else if (_curMatchState==ECurMatchState::EMS_CoolDown)
 			{
-				PlayerController->OnMatchStateSet(_curMatchState, bTeamsMatch, CooldownStartTime);
+				PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);
 			}
 			else if (_curMatchState==ECurMatchState::EMS_GameEnd)
 			{
@@ -250,6 +240,7 @@ void ARoundGameMode::PlayerEliminated(class AController* VictimController,
 
 void ARoundGameMode::RestartMatch(bool isInit)
 {
+	MatchTime = defaultMatchTime;
 	for (TActorIterator<AController> It(GetWorld()); It; ++It)
 	{
 		AController* Controller = *It;
@@ -341,18 +332,17 @@ void ARoundGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 	_curMatchState = NewState;
 	if (_curMatchState == ECurMatchState::EMS_Waiting)
 	{
-		MatchTime = defaultMatchTime;
-		WaitingStartTime = GetWorld()->GetTimeSeconds();
+		CountStartTime = GetWorld()->GetTimeSeconds();
 		RestartMatch(IsInit);
 	}
 	if (_curMatchState == ECurMatchState::EMS_InGame)
 	{
-		MatchStartTime = GetWorld()->GetTimeSeconds();
+		CountStartTime = GetWorld()->GetTimeSeconds();
 		UE_LOG(LogGameMode, Log, TEXT("EMS_InGame"));
 	}
 	if (_curMatchState == ECurMatchState::EMS_CoolDown)
 	{
-		CooldownStartTime = GetWorld()->GetTimeSeconds();
+		CountStartTime = GetWorld()->GetTimeSeconds();
 		UE_LOG(LogGameMode, Log, TEXT("EMS_CoolDown"));
 	}
 	if (_curMatchState == ECurMatchState::EMS_GameEnd)
