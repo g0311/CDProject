@@ -29,11 +29,6 @@ void AProjectileC4::Destroyed()
 		{
 			GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
 		}
-		else
-		{
-			ExplodeDamage();
-			NetMulticastCreateExplodeEffect();
-		}
 	}
 	Super::Super::Destroyed();
 }
@@ -60,8 +55,6 @@ void AProjectileC4::Defused()
         	if (DemolitionGameMode && DemolitionGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
         	{
         		DemolitionGameMode->SetC4Planted(false);
-        		//DemolitionGameMode->RoundWin(false);
-        		//DemolitionGameMode->SetMatchTime(0);
         	}
         }
 	}
@@ -84,8 +77,16 @@ void AProjectileC4::BeginPlay()
 	SpawnTrailSystem();
 	if (HasAuthority())
 		StartDestroyTimer();
-
 }
+
+void AProjectileC4::FinishedDestroyTimer()
+{
+	ExplodeDamage();
+	NetMulticastCreateExplodeEffect();
+	
+	Super::FinishedDestroyTimer();
+}
+
 // Called every frame
 void AProjectileC4::Tick(float DeltaTime)
 {

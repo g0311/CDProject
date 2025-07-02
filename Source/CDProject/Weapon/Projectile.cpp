@@ -9,6 +9,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "CDProject/GameMode/RoundGameMode.h"
+#include "DamageType/DamageType_Explode.h"
 
 // Sets default values
 AProjectile::AProjectile()
@@ -104,7 +105,7 @@ void AProjectile::ExplodeDamage()
 					DamageInnerRadius,
 					DamageOuterRadius,
 					1.f,
-					UDamageType::StaticClass(),
+					UDamageType_Explode::StaticClass(),
 					TArray<AActor*>(),
 					this,
 					FiringController

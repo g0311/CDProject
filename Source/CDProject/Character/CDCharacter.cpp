@@ -19,6 +19,7 @@
 #include "CDProject/PlayerState/CDPlayerState.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CDProject/Weapon/Weapon.h"
+#include "CDProject/Weapon/DamageType/DamageType_Explode.h"
 #include "CDServer/Player/Team.h"
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/CapsuleComponent.h"
@@ -215,74 +216,87 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
-	//Team Check
-	if (!EventInstigator)
-		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	if (DamageEvent.DamageTypeClass->IsChildOf(UDamageType_Explode::StaticClass()))
+	{
+		HandleDamage(DamageAmount, EventInstigator, false);
 	
-	ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
-	ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
-	if (!playerState || !causerPlayerState)
-	{
-		return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	}
-	ETeam playerTeam = playerState->GetTeam();
-	ETeam causerTeam = causerPlayerState->GetTeam();
-	if (GetWorld() && !Cast<ADeathMatchGameMode>(GetWorld()->GetAuthGameMode()))
-	{
-		if (playerTeam == causerTeam)
+		ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
+		if (ACPC)
 		{
-			return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+			ACPC->SetHUDHealth(AttributeSet->GetHealth());
+			ACPC->SetHUDShield(AttributeSet->GetShield());
 		}
 	}
-
-	//cur Health Check
-	if (AttributeSet && AttributeSet->GetHealth() == 0)
+	else
 	{
-		return 0.f;
-	}
+		if (!EventInstigator)
+			return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	
+		ACDPlayerState* causerPlayerState = EventInstigator->GetPlayerState<ACDPlayerState>();
+		ACDPlayerState* playerState = GetPlayerState<ACDPlayerState>();
+		if (!playerState || !causerPlayerState)
+		{
+			return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+		}
+		ETeam playerTeam = playerState->GetTeam();
+		ETeam causerTeam = causerPlayerState->GetTeam();
+		if (GetWorld() && !Cast<ADeathMatchGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			if (playerTeam == causerTeam)
+			{
+				return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+			}
+		}
 
-	float finalDamage = DamageAmount;
-	bool bIsHeadShot = false;
-	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
-	{
-		const FPointDamageEvent* pointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
-		USkeletalMeshComponent* MeshComp = GetMesh();
-		FName Bone = pointEvent->HitInfo.BoneName;
-		UE_LOG(LogTemp, Log, TEXT("Comp: %s, Bone: %s"), *pointEvent->HitInfo.Component->GetName(), *Bone.ToString());
+		//cur Health Check
+		if (AttributeSet && AttributeSet->GetHealth() == 0)
+		{
+			return 0.f;
+		}
+
+		float finalDamage = DamageAmount;
+		bool bIsHeadShot = false;
+		if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+		{
+			const FPointDamageEvent* pointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+			USkeletalMeshComponent* MeshComp = GetMesh();
+			FName Bone = pointEvent->HitInfo.BoneName;
+			UE_LOG(LogTemp, Log, TEXT("Comp: %s, Bone: %s"), *pointEvent->HitInfo.Component->GetName(), *Bone.ToString());
 		
-		FName ParentBone = MeshComp->GetParentBone(Bone);
-		while (ParentBone != NAME_None)
-		{
-			if (ParentBone.ToString().Contains("head") ||
-				ParentBone.ToString().Contains("neck"))
+			FName ParentBone = MeshComp->GetParentBone(Bone);
+			while (ParentBone != NAME_None)
 			{
-				finalDamage *= 2.f;
-				bIsHeadShot = true;
-				break;
-			}
-			if (ParentBone.ToString().Contains("upperarm"))
-			{
-				finalDamage *= 0.5f;
-				break;
-			}
-			if (ParentBone.ToString().Contains("thigh"))
-			{
-				finalDamage *= 0.75f;
-				break;
-			}
+				if (ParentBone.ToString().Contains("head") ||
+					ParentBone.ToString().Contains("neck"))
+				{
+					finalDamage *= 2.f;
+					bIsHeadShot = true;
+					break;
+				}
+				if (ParentBone.ToString().Contains("upperarm"))
+				{
+					finalDamage *= 0.5f;
+					break;
+				}
+				if (ParentBone.ToString().Contains("thigh"))
+				{
+					finalDamage *= 0.75f;
+					break;
+				}
 			
-			ParentBone = MeshComp->GetParentBone(ParentBone);
+				ParentBone = MeshComp->GetParentBone(ParentBone);
+			}
 		}
-	}
-	//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
-	HandleDamage(finalDamage, EventInstigator, bIsHeadShot);
+		//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
+		HandleDamage(finalDamage, EventInstigator, bIsHeadShot);
 	
-	//for listen server
-	ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
-	if (ACPC)
-	{
-		ACPC->SetHUDHealth(AttributeSet->GetHealth());
-		ACPC->SetHUDShield(AttributeSet->GetShield());
+		//for listen server
+		ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
+		if (ACPC)
+		{
+			ACPC->SetHUDHealth(AttributeSet->GetHealth());
+			ACPC->SetHUDShield(AttributeSet->GetShield());
+		}
 	}
 	
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);

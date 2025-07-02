@@ -140,22 +140,7 @@ void ARoundGameMode::OnCurMatchStateSet()
 		ACDPlayerController* PlayerController=Cast<ACDPlayerController> (*It);
 		if (PlayerController)
 		{
-			if(_curMatchState==ECurMatchState::EMS_Waiting)
-			{
-				PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);
-			}
-			else if(_curMatchState==ECurMatchState::EMS_InGame)
-			{
-				PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);			
-			}
-			else if (_curMatchState==ECurMatchState::EMS_CoolDown)
-			{
-				PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);
-			}
-			else if (_curMatchState==ECurMatchState::EMS_GameEnd)
-			{
-				PlayerController->OnMatchStateSet(_curMatchState);
-			}
+			PlayerController->OnMatchStateSet(_curMatchState, CountStartTime);
 		}
 		
 		if (ACDAIController* AIController = Cast<ACDAIController> (*It))
