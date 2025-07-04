@@ -52,7 +52,8 @@ public:
 	//Using This function -> ProjectileWeapon
 	
 	//* Widget Set function
-	void SetHUDAmmo();
+	void SetWeaponAmmoHUD();
+	void SetWeaponInfoHUD();
 	void SetWeaponState(EWeaponState state);
 	void AddAmmo(int32 AmmoToAdd);
 	void ResetAmmo();

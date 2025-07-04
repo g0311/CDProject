@@ -20,7 +20,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	float InitialSpeed=15000.f;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(EditAnywhere)
 	float Damage=10.f;
 
 	UPROPERTY(EditAnywhere)

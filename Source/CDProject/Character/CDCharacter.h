@@ -12,11 +12,17 @@
 
 #define  MAXSPEED 470.f
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAmmoChanged, int, CurrentAmmo, int, CarriedAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInfoChanged, AWeapon*, CurWeapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, CurHealth);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnShieldChanged, float, CurShield);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnC4Interact, bool, IsDefusing, float, Time);
+
+
 UCLASS()
 class CDPROJECT_API ACDCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
-
 public:
 	// Sets default values for this character's properties
 	ACDCharacter();
@@ -197,7 +203,16 @@ private:
 public:
 	FORCEINLINE FRotator GetControlRotation() { return _controlRotation; }
 
+public:
+	//HUD
+	FOnWeaponAmmoChanged OnWeaponAmmoChangedDelegate;
+	FOnWeaponInfoChanged OnWeaponInfoChangedDelegate;
+	FOnHealthChanged OnHealthChangedDelegate;
+	FOnShieldChanged OnShieldChangedDelegate;
+	FOnC4Interact C4InteractDelegate;
 	
+	void InvokeHUDDelegate();
+
 private:
 	//GAS
     UPROPERTY(VisibleAnywhere, Category = "GAS")

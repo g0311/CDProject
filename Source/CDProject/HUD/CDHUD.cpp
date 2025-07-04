@@ -56,7 +56,6 @@ void ACDHUD::DrawHUD()
 			DrawCrosshair(HUDPackage.CrosshairBottom, Spread, HUDPackage.CrosshairColor);
 		}
 	}
-	
 }
 
 void ACDHUD::AddSniperScope()

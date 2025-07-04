@@ -77,7 +77,7 @@ void AShotgun::Reload()
 	{
 		Ammo+=ReloadAmount;
 		SpendCarriedAmmo(ReloadAmount);
-		SetHUDAmmo();
+		SetWeaponAmmoHUD();
 	}
 }
 
