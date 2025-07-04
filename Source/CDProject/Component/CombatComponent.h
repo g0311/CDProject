@@ -10,6 +10,9 @@
 #include "CDProject/Character/CDGameplayTag.h"
 #include "CombatComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrossHairInfoChanged, FHUDPackage, HudPackage);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScopeUIChanged);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CDPROJECT_API UCombatComponent : public UActorComponent
 {
@@ -74,6 +77,9 @@ public:
 	TSubclassOf<class AWeapon> _c4Weapon;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
+
+	FOnCrossHairInfoChanged OnCrossHairInfoChangedDelegate;
+	FOnScopeUIChanged OnScopeUIChangedDelegate;
 private:
 	virtual void BeginPlay() override;
 	

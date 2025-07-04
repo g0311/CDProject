@@ -4,7 +4,6 @@
 #include "CDCharacterAttributeSet.h"
 
 #include "CDCharacter.h"
-#include "CDProject/Controller/CDPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 void UCDCharacterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHealth)
@@ -14,13 +13,7 @@ void UCDCharacterAttributeSet::OnRep_Health(const FGameplayAttributeData& OldHea
 	{
 		if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(Owner))
 		{
-			if (APlayerController* PC = Cast<APlayerController>(CDCharacter->GetController()))
-			{
-				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PC))
-				{
-					CDPC->SetHUDHealth(GetHealth());
-				}
-			}
+			CDCharacter->OnHealthChangedDelegate.Broadcast(GetHealth());
 		}
 	}
 }
@@ -38,13 +31,14 @@ void UCDCharacterAttributeSet::OnRep_Shield(const FGameplayAttributeData& OldShi
 	{
 		if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(Owner))
 		{
-			if (APlayerController* PC = Cast<APlayerController>(CDCharacter->GetController()))
-			{
-				if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PC))
-				{
-					CDPC->SetHUDShield(GetShield());
-				}
-			}
+			CDCharacter->OnShieldChangedDelegate.Broadcast(GetShield());
+			// if (APlayerController* PC = Cast<APlayerController>(CDCharacter->GetController()))
+			// {
+			// 	if (ACDPlayerController* CDPC = Cast<ACDPlayerController>(PC))
+			// 	{
+			// 		CDPC->SetHUDShield(GetShield());
+			// 	}
+			// }
 		}
 	}
 }

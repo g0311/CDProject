@@ -29,7 +29,7 @@ void UCDEquipWeaponVisibleAnimNotify::Notify(USkeletalMeshComponent* MeshComp, U
 	}
 
 	if (combat->GetCurWeapon())
-		combat->GetCurWeapon()->SetHUDAmmo();
+		combat->GetCurWeapon()->SetWeaponAmmoHUD();
 	
 	Super::Notify(MeshComp, Animation);
 }

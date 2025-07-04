@@ -97,14 +97,53 @@ void ACDPlayerController::InitializeController()
 		
 		UE_LOG(LogTemp, Warning, TEXT("Add Player Overlay"));
 	}
-	
-	PS = Cast<ACDPlayerState>(GetPlayerState<ACDPlayerState>());
-	if (PS)
-	{
-		PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
-	}
+	ClientSetPlayerAlive_Implementation(true);
 	
 	ServerRPC_UpdateMatchState();
+}
+
+void ACDPlayerController::BindHUDWidget(class ACDCharacter* NewCharacter)
+{
+	//UnBind For Cur Character
+	ACDCharacter* CurCharacter = Cast<ACDCharacter>(GetViewTarget());
+	if (CurCharacter)
+	{
+		CurCharacter->OnWeaponAmmoChangedDelegate.RemoveAll(this);
+		CurCharacter->OnWeaponInfoChangedDelegate.RemoveAll(this);
+		CurCharacter->OnHealthChangedDelegate.RemoveAll(this);
+		CurCharacter->OnShieldChangedDelegate.RemoveAll(this);
+		CurCharacter->C4InteractDelegate.RemoveAll(this);
+		CurCharacter->GetCombatComponent()->OnCrossHairInfoChangedDelegate.RemoveAll(this);
+		CurCharacter->GetCombatComponent()->OnScopeUIChangedDelegate.RemoveAll(this);
+
+		PS = Cast<ACDPlayerState>(CurCharacter->GetPlayerState<ACDPlayerState>());
+		if (PS)
+		{
+			PS->OnGoldUpdated.RemoveAll(this);
+		}
+	}
+
+	//Bind Cur Character
+	if (NewCharacter)
+	{
+		NewCharacter->OnWeaponAmmoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponAmmo);
+		NewCharacter->OnWeaponInfoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponInfo);
+		NewCharacter->OnHealthChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDHealth);
+		NewCharacter->OnShieldChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDShield);
+		NewCharacter->C4InteractDelegate.AddDynamic(this, &ACDPlayerController::ShowC4DefusingProgress);
+		//NewCharacter->GetCombatComponent()->OnCrossHairInfoChangedDelegate.RemoveAll(this);
+		NewCharacter->GetCombatComponent()->OnScopeUIChangedDelegate.AddDynamic(this, &ACDPlayerController::ShowSniperScope);
+		
+		NewCharacter->InvokeHUDDelegate();
+		
+		PS = Cast<ACDPlayerState>(NewCharacter->GetPlayerState<ACDPlayerState>());
+		if (PS)
+		{
+			PS->OnGoldUpdated.AddDynamic(this, &ACDPlayerController::SetGold);
+			PS->OnGoldUpdated.Broadcast(PS->GetGold());
+		}
+		SetMinimap(NewCharacter);
+	}
 }
 
 void ACDPlayerController::ServerRPC_UpdateMatchState_Implementation()
@@ -268,10 +307,6 @@ void ACDPlayerController::SetHUDHealth(float Health)
 		FString HealthText=FString::Printf(TEXT("%d"), FMath::CeilToInt(Health));
 		CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
-	else
-	{
-		bInitializeHealth=true;
-	}
 }
 
 void ACDPlayerController::SetHUDShield(float Shield)
@@ -284,25 +319,19 @@ void ACDPlayerController::SetHUDShield(float Shield)
 		// FString HealthText=FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
 		// CDHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
-	else
-	{
-		bInitializeShield=true;
-	}
-	
 }
 
 
-void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo)
+void ACDPlayerController::SetHUDWeaponAmmo(int32 WeaponAmmo, int32 CarriedAmmo)
 {
 	if (CDHUD&&CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->WeaponAmmoAmount)
 	{
 		FString WeaponAmmoText = FString::Printf(TEXT("%d"), WeaponAmmo);
 		CDHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(WeaponAmmoText));
 		//CDHUD->AddCompass();//here!/ if you want to deactivate Compass UI, annotation this!
-	}
-	else
-	{
-		bInitializeWeaponAmmo=true;
+		
+		FString CarriedText = FString::Printf(TEXT("%d"), CarriedAmmo);
+        CDHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedText));
 	}
 }
 
@@ -326,24 +355,6 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 			else
 				CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(nullptr);
 		}
-	}
-	else
-	{
-		bInitializeWeaponInfo=true;
-	}
-}
-
-
-void ACDPlayerController::SetHUDWeaponCarriedAmmo(int32 CarriedAmmo)
-{
-	if (CDHUD&&CDHUD->CharacterOverlay && CDHUD->CharacterOverlay->CarriedAmmoAmount)
-	{
-		FString CarriedText = FString::Printf(TEXT("%d"), CarriedAmmo);
-		CDHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedText));
-	}
-	else
-	{
-		bInitializeCarriedAmmo=true;
 	}
 }
 
@@ -412,22 +423,16 @@ void ACDPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 			CDHUD->Announcement->AnnouncementCountdown->SetText(FText());
 		}
 	}
-	
 }
 
-void ACDPlayerController::SetMinimap()
+void ACDPlayerController::SetMinimap(class ACDCharacter* NewCharacter)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
-	APawn* CDPawn = GetPawn();
-	if (!CDPawn)return;
-	ACDCharacter* CDCharacter = Cast<ACDCharacter>(CDPawn);
-	if (!CDCharacter) return;
-	
 	if (CDHUD&&CDHUD->CharacterOverlay&&CDHUD->CharacterOverlay->MinimapBox)
 	{
 		if (CDHUD->CharacterOverlay->MiniMapImage)
 		{
-			UTextureRenderTarget2D* MiniMapRenderTarget=CDCharacter->GetMiniMapTarget();
+			UTextureRenderTarget2D* MiniMapRenderTarget=NewCharacter->GetMiniMapTarget();
 			FSlateBrush MiniMapBrush;
 			MiniMapBrush.SetResourceObject(MiniMapRenderTarget);
 			MiniMapBrush.ImageSize = FVector2D(128, 128);
@@ -580,10 +585,6 @@ void ACDPlayerController::SetGold(int32 NewGold)
 		FText GoldText = FText::AsNumber(HUDGoldCount); 
 		CDHUD->CharacterOverlay->Gold->SetText(GoldText);
 	}
-	else
-	{
-		bInitializeGold=true;
-	}
 }
 
 void ACDPlayerController::SetKDOverlayUI()
@@ -655,23 +656,6 @@ void ACDPlayerController::RetryShowStoreWidget(bool bActivate)
 {
 	ShowStoreWidget(bActivate);
 }
-
-//120 -> 119 -> 118
-void ACDPlayerController::InitializeHUD()
-{
-	if (_CharacterOverlay)
-	{
-		// if (bInitializeHealth)SetHUDHealth(HUDHealth, HUDMaxHealth);
-		// if (bInitializeCarriedAmmo)SetHUDCarriedAmmo(HUDCarriedAmmo);
-		// if (bInitializeWeaponAmmo)SetHUDWeaponAmmo(HUDWeaponAmmo);
-		//if (bInitializeWeaponAmmo)SetHUDWeaponInfo(HUDWeaponInfo);
-		//if (bInitializeShield)SetHUDShield(HUDShield);
-		// if (bInitializeKill)SetHUDKill(HUDKillCount);
-		// if (bInitializeDeath)SetHUDDeath(HUDDeathCount);
-	}
-}
-
-
 
 void ACDPlayerController::HideRoundScore(bool IsHide)
 {
@@ -773,20 +757,7 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			OwnedCharacter = CDCharacter;
 		}
 	}
-	
-	ACDCharacter* _character = Cast<ACDCharacter>(GetCharacter());
-	if (CDHUD && _character)
-	{
-		if (bInitializeHealth)
-		{
-			SetHUDHealth(_character->GetAttributeSet()->GetHealth());
-		}
-		if (bInitializeShield)
-		{
-			SetHUDShield(_character->GetAttributeSet()->GetShield());
-		}
-	}
-	SetMinimap();
+	SetMinimap(OwnedCharacter);
 	
 	FInputModeGameOnly InputModeData;
 	SetInputMode(InputModeData);
@@ -923,7 +894,7 @@ void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
 						}
 					}
 				}
-			}	
+			}
 		}
 	}
 	else
@@ -939,7 +910,10 @@ void ACDPlayerController::ClientSetPlayerAlive_Implementation(bool isAlive)
 		TeamCharacters.Empty();
 		CurPlayerIndex = 0;
 		if (OwnedCharacter)
+		{
 			SetViewTarget(OwnedCharacter);
+			BindHUDWidget(OwnedCharacter);
+		}
 	}
 }
 
@@ -955,9 +929,11 @@ void ACDPlayerController::LMouseDown()
 		if (TeamCharacters[CurPlayerIndex] && !TeamCharacters[CurPlayerIndex]->_isDead)
 		{
 			SetViewTarget(TeamCharacters[CurPlayerIndex]);
+			BindHUDWidget(TeamCharacters[CurPlayerIndex]);
+			//ADD HUD LOGIC
 			return;
 		}
-	} 
+	}
 	while (CurPlayerIndex != StartIndex);
 }
 

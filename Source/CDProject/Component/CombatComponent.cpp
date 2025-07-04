@@ -12,7 +12,6 @@
 #include "CDProject/Controller/CDPlayerController.h"
 #include "CDProject/Weapon/ProjectileC4.h"
 #include "CDServer/Player/Team.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "CDProject/Character/CDGameplayTag.h"
@@ -45,7 +44,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	//Need Line Trace For Distinguish Enemy and C4
 	if (_playerCharacter)
 	{
-		if (_playerCharacter->IsLocallyControlled() || _playerCharacter->HasAuthority())
+		if (_playerCharacter->IsLocallyControlled())
 		{
 			FHitResult Hit;
 			FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
@@ -700,11 +699,7 @@ void UCombatComponent::Aim(bool tf)
 				
 			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
 			{
-				ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
-				if(pc)
-				{
-					pc->ShowSniperScope();
-				}
+				OnScopeUIChangedDelegate.Broadcast();
 				SetWeaponVisible(!tf);
 			}
 		}
@@ -1036,10 +1031,10 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
 	if (!IsValid(this))
 		return;
-	if (_weaponIndex == -1)
+	if (idx == -1)
 		return;
 	
-	if (!_weapons[_weaponIndex])
+	if (!_weapons[idx])
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, idx]()
 		{
@@ -1049,21 +1044,22 @@ void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 		return;
 	} //Wait Until Weapon Replicated
 	
-	_weapons[_weaponIndex]->SetHUDAmmo();
+	_weapons[idx]->SetWeaponAmmoHUD();
+	_weapons[idx]->SetWeaponInfoHUD();
 	
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(_playerCharacter->GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(_playerCharacter->GetArmMesh()->GetAnimInstance());
 	
 	if (bodyAnim)
 	{
-		bodyAnim->PlayEquipMontage(_weapons[_weaponIndex]);
+		bodyAnim->PlayEquipMontage(_weapons[idx]);
 	}
 	if (armAnim)
 	{
-		armAnim->PlayEquipMontage(_weapons[_weaponIndex]);
+		armAnim->PlayEquipMontage(_weapons[idx]);
 	}
 	
-	_fireDelay = (_weapons[_weaponIndex]->FireDelay);
+	_fireDelay = (_weapons[idx]->FireDelay);
 }
 
 void UCombatComponent::NetMulticastGrenadeReady_Implementation()

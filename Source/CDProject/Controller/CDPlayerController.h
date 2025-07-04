@@ -21,21 +21,24 @@ public:
 	void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	void InitializeController();
 	//HUD
+
+	void BindHUDWidget(class ACDCharacter* NewCharacter);
 	
-	void SetHUDTime();
+	UFUNCTION()
 	void SetHUDHealth(float Health);
+	UFUNCTION()
 	void SetHUDShield(float Shield);
-	void SetHUDKill(float killcount);
-	void SetHUDDeath(float deathcount);
-	void SetHUDWeaponAmmo(int32 Ammo);
+	UFUNCTION()
+	void SetHUDWeaponAmmo(int32 WeaponAmmo, int32 CarriedAmmo);
+	UFUNCTION()
 	void SetHUDWeaponInfo(class AWeapon* weapon);
-	void SetHUDWeaponCarriedAmmo(int32 Ammo);
-	void SetHUDMatchCount(float CountdownTime);
-	void SetHUDAnnouncementCountdown(float Countdown);
-	void SetTeamScore();
-	void SetMinimap();
 	UFUNCTION()
 	void SetGold(int32 NewGold);
+
+	void SetHUDTime();
+	void SetHUDMatchCount(float CountdownTime);
+	void SetHUDAnnouncementCountdown(float Countdown);
+	void SetMinimap(class ACDCharacter* Character);
 	void SetKDOverlayUI();
 	void UpdateKDOverlayData();
 	void CreateKillLog(const FString& Killer, const FString& Victim);
@@ -47,13 +50,14 @@ public:
 	//bShowOverlay
 	void ShowStoreWidget(bool bShow);
 	void RetryShowStoreWidget(bool bActivate);
+	
 	//Weapon
+	UFUNCTION()
 	void ShowSniperScope();
+	UFUNCTION()
 	void ShowC4PlantingProgress(bool isPlanting, float duration = 0.f);
+	UFUNCTION()
 	void ShowC4DefusingProgress(bool isDefusing, float duration = 0.f);
-
-	//HUD initialize
-	void InitializeHUD();
 
 	//TeamMatch Controller
 	void HideRoundScore(bool IsHide);
@@ -162,16 +166,6 @@ private:
 	float HUDDeathCount;
 	UPROPERTY(Replicated)
 	FName HUDCharID;
-
-	//bool Initialize
-	bool bInitializeHealth=false;
-	bool bInitializeShield=false;
-	bool bInitializeKill=false;
-	bool bInitializeDeath=false;
-	bool bInitializeCarriedAmmo=false;
-	bool bInitializeWeaponAmmo=false;
-	bool bInitializeWeaponInfo=false;
-	bool bInitializeGold=false;
 
 private:
 	virtual void LeaveGame() /*override*/;

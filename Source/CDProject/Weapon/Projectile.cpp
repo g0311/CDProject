@@ -117,7 +117,7 @@ void AProjectile::ExplodeDamage()
 void AProjectile::Destroyed()
 {
 	Super::Destroyed();
-	if (ImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorLocation(), FRotator::ZeroRotator);
+	if (ImpactParticle) UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, GetActorLocation(), FRotator::ZeroRotator, FVector(10,10,10));
 	if (ImpactSound) UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 }
 

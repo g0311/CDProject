@@ -219,13 +219,6 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 	if (DamageEvent.DamageTypeClass->IsChildOf(UDamageType_Explode::StaticClass()))
 	{
 		HandleDamage(DamageAmount, EventInstigator, false);
-	
-		ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
-		if (ACPC)
-		{
-			ACPC->SetHUDHealth(AttributeSet->GetHealth());
-			ACPC->SetHUDShield(AttributeSet->GetShield());
-		}
 	}
 	else
 	{
@@ -289,14 +282,6 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		}
 		//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
 		HandleDamage(finalDamage, EventInstigator, bIsHeadShot);
-	
-		//for listen server
-		ACDPlayerController* ACPC = Cast<ACDPlayerController>(Controller);
-		if (ACPC)
-		{
-			ACPC->SetHUDHealth(AttributeSet->GetHealth());
-			ACPC->SetHUDShield(AttributeSet->GetShield());
-		}
 	}
 	
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -536,15 +521,6 @@ void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
 	_armMesh->SetVisibility(true);
-	if (IsLocallyControlled())
-	{
-		ACDPlayerController* ACPC = Cast<ACDPlayerController>(GetController());
-		if (IsValid(ACPC))
-		{
-			ACPC->SetHUDHealth(AttributeSet->GetHealth());
-			ACPC->SetHUDShield(AttributeSet->GetShield());
-		}
-	}
 	_isDead = false;
 }
 
@@ -818,7 +794,6 @@ void ACDCharacter::ServerGiveSheild_Implementation(const FWeaponStruct& WeaponDa
 		ACDPlayerState* PS = GetPlayerState<ACDPlayerState>();
 		if (ACPC && PS)
 		{
-			ACPC->SetHUDShield(AttributeSet->GetShield());
 			PS->SpendGold(WeaponData.Cost);
 		}
 	}
@@ -864,6 +839,21 @@ void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator contro
 {
 	_controlRotation = control;
 	_cameraRotation = camera;
+}
+
+void ACDCharacter::InvokeHUDDelegate()
+{
+	OnWeaponAmmoChangedDelegate.Broadcast(_combat->GetCurAmmo(), _combat->GetCarriedAmmo());
+	OnWeaponInfoChangedDelegate.Broadcast(_combat->GetCurWeapon());
+
+	bool IsPlantingOrDefusing =
+		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4) ||
+			_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4);
+	C4InteractDelegate.Broadcast(IsPlantingOrDefusing, 0.f);
+	//Have To Add Percentage..
+	
+	OnHealthChangedDelegate.Broadcast(GetAttributeSet()->GetHealth());
+	OnShieldChangedDelegate.Broadcast(GetAttributeSet()->GetShield());
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const

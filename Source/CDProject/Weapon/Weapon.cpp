@@ -6,11 +6,8 @@
 #include "Cartridge.h"
 #include "CDProject/Character/CDCharacter.h"
 #include "CDProject/Controller/CDPlayerController.h"
-#include "Components/WidgetComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
-#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "Sound/SoundCue.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -147,12 +144,12 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 
 void AWeapon::OnRep_Ammo()
 {
-	SetHUDAmmo();
+	SetWeaponAmmoHUD();
 }
 
 void AWeapon::OnRep_CarriedAmmo()
 {
-	SetHUDAmmo();
+	SetWeaponAmmoHUD();
 }
 
 void AWeapon::OnRep_WeaponState()
@@ -180,13 +177,13 @@ void AWeapon::OnRep_WeaponVisible()
 	GetWeaponMesh()->SetVisibility(WeaponVisible);
 	GetWeaponMesh3p()->SetVisibility(WeaponVisible);
 	if (WeaponVisible)
-		SetHUDAmmo();
+		SetWeaponAmmoHUD();
 }
 
 void AWeapon::SpendAmmo()
 {
 	Ammo=FMath::Clamp(Ammo-1,0,AmmoCapacity);
-	SetHUDAmmo();
+	SetWeaponAmmoHUD();
 }
 
 void AWeapon::ResetAmmo()
@@ -260,7 +257,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLif
 	DOREPLIFETIME(AWeapon, Ammo);
 	DOREPLIFETIME(AWeapon, CarriedAmmo);
 	DOREPLIFETIME(AWeapon, WeaponState);
-	
 }
 
 void AWeapon::OnRep_Owner()
@@ -280,7 +276,7 @@ void AWeapon::OnRep_Owner()
 	else
 	{
 		AttachToPlayer();
-		SetHUDAmmo();
+		SetWeaponAmmoHUD();
 	}
 }
 
@@ -332,24 +328,29 @@ void AWeapon::AttachToPlayer()
 	GetWeaponMesh3p()->SetOwnerNoSee(true);
 }
 
-void AWeapon::SetHUDAmmo()
+void AWeapon::SetWeaponAmmoHUD()
 {
 	if (OwnerCharacter == nullptr)
 	{
 		OwnerCharacter = Cast<ACDCharacter>(GetOwner());
 	}
-	if (OwnerCharacter && OwnerController == nullptr)
+	if (OwnerCharacter)
 	{
-		OwnerController = Cast<ACDPlayerController>(OwnerCharacter->GetController());
-	}
-	if (OwnerController)
-	{
-		OwnerController->SetHUDWeaponAmmo(Ammo);
-		OwnerController->SetHUDWeaponCarriedAmmo(CarriedAmmo);
-		OwnerController->SetHUDWeaponInfo(this);
+		OwnerCharacter->OnWeaponAmmoChangedDelegate.Broadcast(Ammo, CarriedAmmo);
 	}
 }
 
+void AWeapon::SetWeaponInfoHUD()
+{
+	if (OwnerCharacter == nullptr)
+	{
+		OwnerCharacter = Cast<ACDCharacter>(GetOwner());
+	}
+	if (OwnerCharacter)
+	{
+		OwnerCharacter->OnWeaponInfoChangedDelegate.Broadcast(this);
+	}
+}
 
 void AWeapon::SetWeaponState(EWeaponState state)
 {
@@ -378,7 +379,7 @@ void AWeapon::SetWeaponState(EWeaponState state)
 void AWeapon::AddAmmo(int32 AmmoToAdd)
 {
 	Ammo=FMath::Clamp(Ammo-AmmoToAdd,0,AmmoCapacity);
-	SetHUDAmmo();
+	SetWeaponAmmoHUD();
 }
 void AWeapon::Reload()
 {
@@ -387,5 +388,5 @@ void AWeapon::Reload()
 	 int32 ReloadAmount=FMath::Min(AmmoNeed, CarriedAmmo);
 	 Ammo+=ReloadAmount;
 	 SpendCarriedAmmo(ReloadAmount);
-	 SetHUDAmmo();
+	 SetWeaponAmmoHUD();
 }
