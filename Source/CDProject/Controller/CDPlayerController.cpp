@@ -131,7 +131,7 @@ void ACDPlayerController::BindHUDWidget(class ACDCharacter* NewCharacter)
 		NewCharacter->GetCombatComponent()->C4InteractDelegate.AddDynamic(this, &ACDPlayerController::ShowC4InteractProgress);
 		NewCharacter->GetCombatComponent()->OnWeaponAmmoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponAmmo);
 		NewCharacter->GetCombatComponent()->OnWeaponInfoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponInfo);
-		//NewCharacter->GetCombatComponent()->OnCrossHairInfoChangedDelegate.RemoveAll(this);
+		NewCharacter->GetCombatComponent()->OnCrossHairInfoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDCrossHair);
 		NewCharacter->GetCombatComponent()->OnScopeUIChangedDelegate.AddDynamic(this, &ACDPlayerController::ShowSniperScope);
 		
 		NewCharacter->InvokeHUDDelegate();
@@ -355,6 +355,15 @@ void ACDPlayerController::SetHUDWeaponInfo(AWeapon* Weapon)
 			else
 				CDHUD->CharacterOverlay->WeaponImage->SetBrushFromTexture(nullptr);
 		}
+	}
+}
+
+void ACDPlayerController::SetHUDCrossHair(FHUDPackage HudPackage)
+{
+	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
+	if (CDHUD)
+	{
+		CDHUD->SetHUDPackage(HudPackage);
 	}
 }
 

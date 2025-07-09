@@ -33,6 +33,8 @@ public:
 	UFUNCTION()
 	void SetHUDWeaponInfo(class AWeapon* weapon);
 	UFUNCTION()
+	void SetHUDCrossHair(FHUDPackage HudPackage);
+	UFUNCTION()
 	void SetGold(int32 NewGold);
 
 	void SetHUDTime();
