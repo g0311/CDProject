@@ -16,6 +16,19 @@ AC4Weapon::AC4Weapon()
 	WeaponType = EWeaponType::EWT_C4;
 }
 
+void AC4Weapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (!HasAuthority())
+		return;
+		
+	ACDCharacter* CDCharacter=Cast<ACDCharacter>(OtherActor);
+	if (CDCharacter && CDCharacter->GetTeam() == ETeam::ET_RedTeam && WeaponState ==  EWeaponState::EWS_Dropped)
+	{
+		CDCharacter->GetWeapon(this);
+	}
+}
+
 void AC4Weapon::Fire(const FVector& HitTarget)
 {
 	if (IsValid(_plantedSound))

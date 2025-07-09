@@ -5,6 +5,7 @@
 
 #include "Cartridge.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Component/CombatComponent.h"
 #include "CDProject/Controller/CDPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Net/UnrealNetwork.h"
@@ -114,7 +115,6 @@ void AWeapon::BeginPlay()
 	if (AreaSphere && HasAuthority())
 	{
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereBeginOverlap);
-		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 	}
 	EnableCustomDepth(false);
 	InitAmmoCount=Ammo;
@@ -134,12 +134,6 @@ void AWeapon::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	{
 		CDCharacter->GetWeapon(this);
 	}
-}
-
-void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	//PickUpSystem, Widget Down
 }
 
 void AWeapon::OnRep_Ammo()
@@ -334,9 +328,9 @@ void AWeapon::SetWeaponAmmoHUD()
 	{
 		OwnerCharacter = Cast<ACDCharacter>(GetOwner());
 	}
-	if (OwnerCharacter)
+	if (OwnerCharacter && OwnerCharacter->GetCombatComponent())
 	{
-		OwnerCharacter->OnWeaponAmmoChangedDelegate.Broadcast(Ammo, CarriedAmmo);
+		OwnerCharacter->GetCombatComponent()->OnWeaponAmmoChangedDelegate.Broadcast(Ammo, CarriedAmmo);
 	}
 }
 
@@ -346,9 +340,9 @@ void AWeapon::SetWeaponInfoHUD()
 	{
 		OwnerCharacter = Cast<ACDCharacter>(GetOwner());
 	}
-	if (OwnerCharacter)
+	if (OwnerCharacter && OwnerCharacter->GetCombatComponent())
 	{
-		OwnerCharacter->OnWeaponInfoChangedDelegate.Broadcast(this);
+		OwnerCharacter->GetCombatComponent()->OnWeaponInfoChangedDelegate.Broadcast(this);
 	}
 }
 

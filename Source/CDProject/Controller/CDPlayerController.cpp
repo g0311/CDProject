@@ -108,11 +108,11 @@ void ACDPlayerController::BindHUDWidget(class ACDCharacter* NewCharacter)
 	ACDCharacter* CurCharacter = Cast<ACDCharacter>(GetViewTarget());
 	if (CurCharacter)
 	{
-		CurCharacter->OnWeaponAmmoChangedDelegate.RemoveAll(this);
-		CurCharacter->OnWeaponInfoChangedDelegate.RemoveAll(this);
 		CurCharacter->OnHealthChangedDelegate.RemoveAll(this);
 		CurCharacter->OnShieldChangedDelegate.RemoveAll(this);
-		CurCharacter->C4InteractDelegate.RemoveAll(this);
+		CurCharacter->GetCombatComponent()->C4InteractDelegate.RemoveAll(this);
+		CurCharacter->GetCombatComponent()->OnWeaponAmmoChangedDelegate.RemoveAll(this);
+		CurCharacter->GetCombatComponent()->OnWeaponInfoChangedDelegate.RemoveAll(this);
 		CurCharacter->GetCombatComponent()->OnCrossHairInfoChangedDelegate.RemoveAll(this);
 		CurCharacter->GetCombatComponent()->OnScopeUIChangedDelegate.RemoveAll(this);
 
@@ -126,11 +126,11 @@ void ACDPlayerController::BindHUDWidget(class ACDCharacter* NewCharacter)
 	//Bind Cur Character
 	if (NewCharacter)
 	{
-		NewCharacter->OnWeaponAmmoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponAmmo);
-		NewCharacter->OnWeaponInfoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponInfo);
 		NewCharacter->OnHealthChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDHealth);
 		NewCharacter->OnShieldChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDShield);
-		NewCharacter->C4InteractDelegate.AddDynamic(this, &ACDPlayerController::ShowC4DefusingProgress);
+		NewCharacter->GetCombatComponent()->C4InteractDelegate.AddDynamic(this, &ACDPlayerController::ShowC4InteractProgress);
+		NewCharacter->GetCombatComponent()->OnWeaponAmmoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponAmmo);
+		NewCharacter->GetCombatComponent()->OnWeaponInfoChangedDelegate.AddDynamic(this, &ACDPlayerController::SetHUDWeaponInfo);
 		//NewCharacter->GetCombatComponent()->OnCrossHairInfoChangedDelegate.RemoveAll(this);
 		NewCharacter->GetCombatComponent()->OnScopeUIChangedDelegate.AddDynamic(this, &ACDPlayerController::ShowSniperScope);
 		
@@ -753,6 +753,7 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			}
 			
 			CDCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
+			CDCharacter->InvokeHUDDelegate();
 			
 			OwnedCharacter = CDCharacter;
 		}
@@ -996,6 +997,10 @@ void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
 	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
 	if (CDHUD == nullptr) return;
 
+	if (!CDHUD->C4InteractProgress)
+	{
+		CDHUD->AddC4Progress();
+	}
 	if (CDHUD && CDHUD->C4InteractProgress)
 	{
 		CDHUD->C4InteractProgress->Reset(false);
@@ -1008,5 +1013,34 @@ void ACDPlayerController::ShowC4DefusingProgress(bool isDefusing, float time)
 			CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
 		CDHUD->C4InteractProgress->SetProgressTime(time);
+	}
+}
+
+void ACDPlayerController::ShowC4InteractProgress(float time)
+{
+	CDHUD = CDHUD == nullptr ? Cast<ACDHUD>(GetHUD()) : CDHUD;
+	if (CDHUD == nullptr) return;
+
+	if (!CDHUD->C4InteractProgress)
+	{
+		CDHUD->AddC4Progress();
+	}
+	if (CDHUD && CDHUD->C4InteractProgress)
+	{
+		ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetCharacter());
+		if (CDCharacter)
+		{
+			bool isRedTeam = CDCharacter->GetTeam() == ETeam::ET_RedTeam;
+		    CDHUD->C4InteractProgress->Reset(isRedTeam);
+			if (time > 0.f)
+			{
+				CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Visible);
+			}
+			else
+			{
+				CDHUD->C4InteractProgress->SetVisibility(ESlateVisibility::Hidden);
+			}
+			CDHUD->C4InteractProgress->SetProgressTime(time);
+		}
 	}
 }

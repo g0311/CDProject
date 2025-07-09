@@ -17,7 +17,7 @@ class CDPROJECT_API UC4InteractProgressWidget : public UUserWidget
 public:
 	virtual void NativeDestruct() override;
 	
-	void Reset(bool isPlanting);
+	void Reset(bool isRedTeam);
 	void SetProgressTime(float Time);
 
 protected:
@@ -26,7 +26,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void SetInteractText(const FText& NewText);
-	void UpdateProgress();
+	void UpdateProgress(float CurTime);
 	void StopProgress();
 
 	UPROPERTY(meta = (BindWidget))
@@ -35,10 +35,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* _interactText;
 	
-	FTimerHandle _progressTimerHandle;
 	float _progress = 0.f;
 	float _targetTime = 1.f;
-	float _elapsedTime = 0.f;
 
 	UPROPERTY(EditAnywhere)
 	class USoundBase* _interactSound;

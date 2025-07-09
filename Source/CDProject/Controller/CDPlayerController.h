@@ -54,10 +54,14 @@ public:
 	//Weapon
 	UFUNCTION()
 	void ShowSniperScope();
+	
 	UFUNCTION()
 	void ShowC4PlantingProgress(bool isPlanting, float duration = 0.f);
 	UFUNCTION()
 	void ShowC4DefusingProgress(bool isDefusing, float duration = 0.f);
+	
+	UFUNCTION()
+	void ShowC4InteractProgress(float time = 0.f);
 
 	//TeamMatch Controller
 	void HideRoundScore(bool IsHide);

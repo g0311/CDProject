@@ -843,17 +843,14 @@ void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator contro
 
 void ACDCharacter::InvokeHUDDelegate()
 {
-	OnWeaponAmmoChangedDelegate.Broadcast(_combat->GetCurAmmo(), _combat->GetCarriedAmmo());
-	OnWeaponInfoChangedDelegate.Broadcast(_combat->GetCurWeapon());
-
-	bool IsPlantingOrDefusing =
-		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4) ||
-			_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4);
-	C4InteractDelegate.Broadcast(IsPlantingOrDefusing, 0.f);
-	//Have To Add Percentage..
-	
 	OnHealthChangedDelegate.Broadcast(GetAttributeSet()->GetHealth());
 	OnShieldChangedDelegate.Broadcast(GetAttributeSet()->GetShield());
+	
+	_combat->C4InteractDelegate.Broadcast(_combat->C4InteractTime);
+	_combat->OnWeaponAmmoChangedDelegate.Broadcast(_combat->GetCurAmmo(), _combat->GetCarriedAmmo());
+	_combat->OnWeaponInfoChangedDelegate.Broadcast(_combat->GetCurWeapon());
+	_combat->OnCrossHairInfoChangedDelegate.Broadcast(_combat->HUDPackage);
+	//_combat->OnScopeUIChangedDelegate.Broadcast();
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
