@@ -190,10 +190,13 @@ void AWeapon::Fire(const FVector& HitTarget)
 {
 	if (FireAnimation)
 	{
-		if (OwnerCharacter->IsLocallyControlled())
-			WeaponMesh->PlayAnimation(FireAnimation, false);
-		else
-			WeaponMesh3p->PlayAnimation(FireAnimation, false);
+		if (GetWorld())
+		{
+			if (GetWorld()->GetFirstPlayerController()->GetViewTarget() == OwnerCharacter)
+				WeaponMesh->PlayAnimation(FireAnimation, false);
+			else
+				WeaponMesh3p->PlayAnimation(FireAnimation, false);
+		}
 	}
 	if (CartridgeClass)
 	{

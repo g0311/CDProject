@@ -160,6 +160,7 @@ void UCombatComponent::DeadAction()
 {
 	DropAllWeapons();
 	_combatStateTags.Reset();
+	
 	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 	_weaponIndex = -1;
 }
@@ -375,7 +376,7 @@ void UCombatComponent::RequestFire()
 	
 	if (IsAmmoEmpty())
 	{
-		Aim(false);
+		ServerAim(false);
 		ServerReload();
 		return;
 	}
@@ -702,7 +703,7 @@ void UCombatComponent::Aim(bool tf)
 				
 			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
 			{
-				OnScopeUIChangedDelegate.Broadcast();
+				NetMulticastAim(tf);
 				SetWeaponVisible(!tf);
 			}
 		}
@@ -936,57 +937,48 @@ void UCombatComponent::DropWeapon()
 
 void UCombatComponent::SetHUDCrosshairs(float spread)
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex]) return;
 	
 	ACDCharacter* character = Cast<ACDCharacter>(GetOwner());
-	if (!character || !character->Controller || _weaponIndex == -1) return;
+	if (!character) return;
 
-	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
-	if (controller)
+	if (_weapons[_weaponIndex])
 	{
-		HUD = HUD == nullptr ? Cast<ACDHUD>(controller->GetHUD()) : HUD;
-		if (HUD)
+		HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
+		HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
+		HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
+		HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
+		HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
+	}
+	else
+	{
+		HUDPackage.CrosshairCenter = nullptr;
+		HUDPackage.CrosshairLeft = nullptr;
+		HUDPackage.CrosshairRight = nullptr;
+		HUDPackage.CrosshairBottom = nullptr;
+		HUDPackage.CrosshairTop = nullptr;
+	}
+	if (_aimedActor)
+	{
+		if (ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor))
 		{
-			if (_weapons[_weaponIndex])
+			if (character->GetTeam() == ETeam::ET_NoTeam || aimedCharacter->GetTeam() != character->GetTeam())
 			{
-				HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
-				HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
-				HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
-				HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
-				HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
+				HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
 			}
-			else
-			{
-				HUDPackage.CrosshairCenter = nullptr;
-				HUDPackage.CrosshairLeft = nullptr;
-				HUDPackage.CrosshairRight = nullptr;
-				HUDPackage.CrosshairBottom = nullptr;
-				HUDPackage.CrosshairTop = nullptr;
-			}
-			if (_aimedActor)
-			{
-				if (ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor))
-				{
-					if (character->GetTeam() == ETeam::ET_NoTeam || aimedCharacter->GetTeam() != character->GetTeam())
-					{
-						HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
-					}
-				}
-				else
-				{
-					HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
-				}
-			}
-			else
-			{
-				HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
-			}
-			HUDPackage.CrosshairSpread=spread;
-			OnCrossHairInfoChangedDelegate.Broadcast(HUDPackage);
-			//HUD->SetHUDPackage(HUDPackage);
+		}
+		else
+		{
+			HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
 		}
 	}
+	else
+	{
+		HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+	}
+	HUDPackage.CrosshairSpread=spread;
+	
+	OnCrossHairInfoChangedDelegate.Broadcast(HUDPackage);
 }
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
@@ -1017,8 +1009,7 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 
 	if (GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
 	{
-		Aim(false);
-		//Play Sniper Action?
+		ServerAim(false);
 	}
 }
 
@@ -1146,6 +1137,11 @@ void UCombatComponent::NetMulticastCancelReload_Implementation()
 
 	if (bodyAnim && bodyAnim->Montage_IsPlaying(bodyAnim->_shotgunReloadMontage))
 		bodyAnim->Montage_Stop(0.1f);
+}
+
+void UCombatComponent::NetMulticastAim_Implementation(bool IsAiming)
+{
+	OnScopeUIChangedDelegate.Broadcast(IsAiming, false);
 }
 
 void UCombatComponent::OnRep_C4InteractTime()

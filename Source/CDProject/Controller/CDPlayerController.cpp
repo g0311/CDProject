@@ -760,11 +760,10 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			{
 				CDCharacter->GetAbilitySystemComponent()->InitAbilityActorInfo(P, P);
 			}
-			
 			CDCharacter->GetSpringArmComponent()->bUsePawnControlRotation = true;
-			CDCharacter->InvokeHUDDelegate();
-			
 			OwnedCharacter = CDCharacter;
+
+			BindHUDWidget(OwnedCharacter);
 		}
 	}
 	SetMinimap(OwnedCharacter);
@@ -957,7 +956,7 @@ void ACDPlayerController::TabEnd()
 	ShowKDOverlay(false);
 }
 
-void ACDPlayerController::ShowSniperScope()
+void ACDPlayerController::ShowSniperScope(bool bIsAiming, bool bIsForce)
 {
 	CDHUD=CDHUD==nullptr?Cast<ACDHUD>(GetHUD()):CDHUD;
 	if (CDHUD && !CDHUD->SniperScope)
@@ -967,13 +966,21 @@ void ACDPlayerController::ShowSniperScope()
 	if (CDHUD&&CDHUD->SniperScope&&CDHUD->SniperScope->ScopeZoomIn)
 	{
 		ACDCharacter* CDCharacter=Cast<ACDCharacter>(GetCharacter());
-		if (CDCharacter->GetCombatComponent()->IsAiming()) 
+		CDHUD->SniperScope->SetVisibility(ESlateVisibility::Visible);
+		if (bIsAiming)
 		{
-			CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn);
+			CDHUD->SniperScope->SetVisibility(ESlateVisibility::Visible);
+			if (!bIsForce)
+				CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn, 0.0f);
+			else
+				CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn, 0.25f);
 		}
 		else
 		{
-			CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn, 0.f,1,EUMGSequencePlayMode::Reverse);
+			if (!bIsForce)
+				CDHUD->SniperScope->PlayAnimation(CDHUD->SniperScope->ScopeZoomIn, 0.25f,1,EUMGSequencePlayMode::Reverse);
+			else
+				CDHUD->SniperScope->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }

@@ -55,7 +55,7 @@ public:
 	
 	//Weapon
 	UFUNCTION()
-	void ShowSniperScope();
+	void ShowSniperScope(bool bIsAiming, bool bIsForce);
 	
 	UFUNCTION()
 	void ShowC4PlantingProgress(bool isPlanting, float duration = 0.f);

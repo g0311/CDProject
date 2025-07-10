@@ -14,7 +14,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAmmoChanged, int, CurrentA
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInfoChanged, AWeapon*, CurWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrossHairInfoChanged, FHUDPackage, HudPackage);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnC4Interact, float, Time);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScopeUIChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnScopeUIChanged, bool, bIsAiming, bool, bIsForce);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CDPROJECT_API UCombatComponent : public UActorComponent
@@ -190,6 +190,8 @@ private:
 	void NetMulticastGrenadeThrow();
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastAim(bool IsAiming);
 
 	UFUNCTION()
 	void OnRep_C4InteractTime();

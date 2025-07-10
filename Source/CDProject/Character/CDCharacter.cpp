@@ -731,10 +731,7 @@ void ACDCharacter::RequestAim()
 	if (!_combat)
 		return;
 	
-	// _isAim set -> server _isAim set => On_Rep
-	// 반응 시간 최적화?
 	bool nextAiming = !_combat->IsAiming();
-	_combat->Aim(nextAiming);
 	_combat->ServerAim(nextAiming);
 }
 
@@ -742,7 +739,7 @@ void ACDCharacter::RequestReload()
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->ServerReload();
 }
 
@@ -750,7 +747,7 @@ void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->RequestChange(weaponIndex);
 }
 
@@ -758,7 +755,7 @@ void ACDCharacter::RequestDropWeapon()
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->ServerDropWeapon();
 }
 
@@ -781,7 +778,7 @@ void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->GetWeapon(weapon, isForce);
 }
 
@@ -850,7 +847,7 @@ void ACDCharacter::InvokeHUDDelegate()
 	_combat->OnWeaponAmmoChangedDelegate.Broadcast(_combat->GetCurAmmo(), _combat->GetCarriedAmmo());
 	_combat->OnWeaponInfoChangedDelegate.Broadcast(_combat->GetCurWeapon());
 	_combat->OnCrossHairInfoChangedDelegate.Broadcast(_combat->HUDPackage);
-	//_combat->OnScopeUIChangedDelegate.Broadcast();
+	_combat->OnScopeUIChangedDelegate.Broadcast(_combat->IsAiming(), true);
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const
