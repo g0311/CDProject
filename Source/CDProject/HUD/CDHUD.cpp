@@ -22,39 +22,32 @@ void ACDHUD::DrawHUD()
 		UE_LOG(LogTemp, Error, TEXT("Canvas is NULL!!"));
 		return;
 	}
-	FVector2D ViewportSize;
-
-	if (GEngine->GameViewport)
+	const float SpreadFactor=5.f;
+	float CrosshairSpread=HUDPackage.CrosshairSpread*SpreadFactor;
+	if (HUDPackage.CrosshairCenter)
 	{
-		GEngine->GameViewport->GetViewportSize(ViewportSize);
-		const FVector2D ViewportCenter = ViewportSize * 0.5f;
-		const float SpreadFactor=5.f;
-		float CrosshairSpread=HUDPackage.CrosshairSpread*SpreadFactor;
-		if (HUDPackage.CrosshairCenter)
-		{
-			FVector2D Spread(0.f,0.f);
-			DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
-		}//Getvelociy isinair
-		if (HUDPackage.CrosshairRight)
-		{
-			FVector2D Spread(CrosshairSpread,0.f);
-			DrawCrosshair(HUDPackage.CrosshairRight, Spread, HUDPackage.CrosshairColor);
-		}
-		if (HUDPackage.CrosshairLeft)
-		{
-			FVector2D Spread(-CrosshairSpread,0.f);
-			DrawCrosshair(HUDPackage.CrosshairLeft, Spread, HUDPackage.CrosshairColor);
-		}
-		if (HUDPackage.CrosshairTop)
-		{
-			FVector2D Spread(0.f,-CrosshairSpread);
-			DrawCrosshair(HUDPackage.CrosshairTop, Spread, HUDPackage.CrosshairColor);
-		}
-		if (HUDPackage.CrosshairBottom)
-		{
-			FVector2D Spread(0.f,CrosshairSpread);
-			DrawCrosshair(HUDPackage.CrosshairBottom, Spread, HUDPackage.CrosshairColor);
-		}
+		FVector2D Spread(0.f,0.f);
+		DrawCrosshair(HUDPackage.CrosshairCenter, Spread, HUDPackage.CrosshairColor);
+	}//Getvelociy isinair
+	if (HUDPackage.CrosshairRight)
+	{
+		FVector2D Spread(CrosshairSpread,0.f);
+		DrawCrosshair(HUDPackage.CrosshairRight, Spread, HUDPackage.CrosshairColor);
+	}
+	if (HUDPackage.CrosshairLeft)
+	{
+		FVector2D Spread(-CrosshairSpread,0.f);
+		DrawCrosshair(HUDPackage.CrosshairLeft, Spread, HUDPackage.CrosshairColor);
+	}
+	if (HUDPackage.CrosshairTop)
+	{
+		FVector2D Spread(0.f,-CrosshairSpread);
+		DrawCrosshair(HUDPackage.CrosshairTop, Spread, HUDPackage.CrosshairColor);
+	}
+	if (HUDPackage.CrosshairBottom)
+	{
+		FVector2D Spread(0.f,CrosshairSpread);
+		DrawCrosshair(HUDPackage.CrosshairBottom, Spread, HUDPackage.CrosshairColor);
 	}
 }
 
@@ -212,7 +205,6 @@ void ACDHUD::BeginPlay()
 
 void ACDHUD::DrawCrosshair(UTexture2D* Texture, FVector2D Spread, FLinearColor CrosshairColor)
 {
-	
 	FVector2D ViewportSize;
 	if (GEngine->GameViewport)
 	{

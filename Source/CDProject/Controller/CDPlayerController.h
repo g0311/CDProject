@@ -33,6 +33,8 @@ public:
 	UFUNCTION()
 	void SetHUDWeaponInfo(class AWeapon* weapon);
 	UFUNCTION()
+	void SetHUDCrossHair(FHUDPackage HudPackage);
+	UFUNCTION()
 	void SetGold(int32 NewGold);
 
 	void SetHUDTime();
@@ -53,11 +55,15 @@ public:
 	
 	//Weapon
 	UFUNCTION()
-	void ShowSniperScope();
+	void ShowSniperScope(bool bIsAiming, bool bIsForce);
+	
 	UFUNCTION()
 	void ShowC4PlantingProgress(bool isPlanting, float duration = 0.f);
 	UFUNCTION()
 	void ShowC4DefusingProgress(bool isDefusing, float duration = 0.f);
+	
+	UFUNCTION()
+	void ShowC4InteractProgress(float time = 0.f);
 
 	//TeamMatch Controller
 	void HideRoundScore(bool IsHide);

@@ -731,10 +731,7 @@ void ACDCharacter::RequestAim()
 	if (!_combat)
 		return;
 	
-	// _isAim set -> server _isAim set => On_Rep
-	// 반응 시간 최적화?
 	bool nextAiming = !_combat->IsAiming();
-	_combat->Aim(nextAiming);
 	_combat->ServerAim(nextAiming);
 }
 
@@ -742,7 +739,7 @@ void ACDCharacter::RequestReload()
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->ServerReload();
 }
 
@@ -750,7 +747,7 @@ void ACDCharacter::RequestChangeWeapon(int weaponIndex)
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->RequestChange(weaponIndex);
 }
 
@@ -758,7 +755,7 @@ void ACDCharacter::RequestDropWeapon()
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->ServerDropWeapon();
 }
 
@@ -781,7 +778,7 @@ void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 {
 	if (!_combat)
 		return;
-	_combat->Aim(false);
+	_combat->ServerAim(false);
 	_combat->GetWeapon(weapon, isForce);
 }
 
@@ -843,17 +840,14 @@ void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator contro
 
 void ACDCharacter::InvokeHUDDelegate()
 {
-	OnWeaponAmmoChangedDelegate.Broadcast(_combat->GetCurAmmo(), _combat->GetCarriedAmmo());
-	OnWeaponInfoChangedDelegate.Broadcast(_combat->GetCurWeapon());
-
-	bool IsPlantingOrDefusing =
-		_combat->IsInCombatState(CombatTags::State_Combat_DefusingC4) ||
-			_combat->IsInCombatState(CombatTags::State_Combat_PlantingC4);
-	C4InteractDelegate.Broadcast(IsPlantingOrDefusing, 0.f);
-	//Have To Add Percentage..
-	
 	OnHealthChangedDelegate.Broadcast(GetAttributeSet()->GetHealth());
 	OnShieldChangedDelegate.Broadcast(GetAttributeSet()->GetShield());
+	
+	_combat->C4InteractDelegate.Broadcast(_combat->C4InteractTime);
+	_combat->OnWeaponAmmoChangedDelegate.Broadcast(_combat->GetCurAmmo(), _combat->GetCarriedAmmo());
+	_combat->OnWeaponInfoChangedDelegate.Broadcast(_combat->GetCurWeapon());
+	_combat->OnCrossHairInfoChangedDelegate.Broadcast(_combat->HUDPackage);
+	_combat->OnScopeUIChangedDelegate.Broadcast(_combat->IsAiming(), true);
 }
 
 UAbilitySystemComponent* ACDCharacter::GetAbilitySystemComponent() const

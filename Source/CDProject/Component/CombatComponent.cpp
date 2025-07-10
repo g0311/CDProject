@@ -54,8 +54,6 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			if (GetWorld()->LineTraceSingleByChannel(Hit, traceStart, traceEnd, ECC_Visibility, Params))
 			{
 				_aimedActor = Hit.GetActor();
-				// if(IsValid(_aimedActor))
-				// 	UE_LOG(LogTemp, Log, TEXT("aimed Actor Name: %s"), *_aimedActor->GetName());
 			}
 			else
 			{
@@ -81,6 +79,27 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 			ServerC4Defuse(false);
 		}
 	}
+
+	//Update C4 Interact Time
+	if (GetOwner()->HasAuthority() && bIsC4Interacting)
+	{
+		C4InteractTime += DeltaTime;
+		if (C4InteractTime >= 5.f)
+		{
+			ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwner());
+			if (CDCharacter)
+			{
+				if (CDCharacter->GetTeam() == ETeam::ET_RedTeam)
+				{
+					ServerC4Plant(true);
+				}
+				else
+				{
+					ServerC4Defuse(true);
+				}
+			}
+		}
+	}
 }
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -92,6 +111,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty
 	DOREPLIFETIME(UCombatComponent, _curSpread);
 	DOREPLIFETIME(UCombatComponent, _combatStateTags);
 	DOREPLIFETIME(UCombatComponent, _isC4Area);
+	DOREPLIFETIME(UCombatComponent, C4InteractTime);
+	DOREPLIFETIME(UCombatComponent, bIsC4Interacting);
 }
 
 void UCombatComponent::Reset(bool isDead)
@@ -123,15 +144,15 @@ void UCombatComponent::Reset(bool isDead)
 		{
 			TimerManager.ClearTimer(_clientFireTimerHandle);
 		}
-		if (TimerManager.IsTimerActive(_c4TimerHandle))
-		{
-			ServerC4Defuse(false);
-			ServerC4Plant(false);
-		}
 		if (TimerManager.IsTimerActive(_fireAimAbleTimerHandle))
 		{
 			TimerManager.ClearTimer(_fireAimAbleTimerHandle);
 		}
+	}
+	if (IsInCombatState(CombatTags::State_Combat_DefusingC4) || IsInCombatState(CombatTags::State_Combat_PlantingC4))
+	{
+		ServerC4Defuse(false);
+		ServerC4Plant(false);
 	}
 }
 
@@ -139,6 +160,7 @@ void UCombatComponent::DeadAction()
 {
 	DropAllWeapons();
 	_combatStateTags.Reset();
+	
 	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 	_weaponIndex = -1;
 }
@@ -354,7 +376,7 @@ void UCombatComponent::RequestFire()
 	
 	if (IsAmmoEmpty())
 	{
-		Aim(false);
+		ServerAim(false);
 		ServerReload();
 		return;
 	}
@@ -419,7 +441,7 @@ void UCombatComponent::RequestInteractStart()
 	{
 		if (_isC4Area)
 		{
-			ServerC4Plant(true);
+			ServerSetC4Interact();
 		}
 		return;
 	}
@@ -431,7 +453,8 @@ void UCombatComponent::RequestInteractStart()
 		{
 			if (c4->IsDefused() || _playerCharacter->GetTeam() == ETeam::ET_RedTeam)
 				return;
-			ServerC4Defuse(true);
+			
+			ServerSetC4Interact();
 		}
 	}
 }
@@ -530,7 +553,6 @@ void UCombatComponent::ServerAim_Implementation(bool tf)
 	Aim(tf);
 }
 
-
 void UCombatComponent::GetWeapon(AWeapon* weapon, bool isForceGet)
 { // Only Server Called Func
 	switch (weapon->GetWeaponType())
@@ -591,57 +613,39 @@ void UCombatComponent::ServerC4Plant_Implementation(bool isPlanting)
 	{
 		if (isPlanting && _isC4Area)
 		{
-			TWeakObjectPtr<UCombatComponent> WeakThis(this);
-			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([WeakThis]
-				{
-					if (!WeakThis.IsValid())
-						return;
-					WeakThis->RequestFire();
-					//In C4 Fire, GameMode Set Bomb Planted
-					WeakThis->ServerC4Plant(false);
-					WeakThis->GetWeapons()[WeakThis->GetWeaponIndex()] = nullptr;
-					WeakThis->ChangeToNextWeapon();
-				}),
-				_fireDelay, false);
-			NetMulticastC4Plant(true, _fireDelay);
-			InsertCombatState(CombatTags::State_Combat_PlantingC4);
+			RequestFire();
+			GetWeapons()[GetWeaponIndex()] = nullptr;
+			ChangeToNextWeapon();
+			ServerC4Plant(false);
 		}
 		else
 		{
-			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
-			NetMulticastC4Plant(false);
+			bIsC4Interacting = false;
+			C4InteractTime = -1.f;
 			RemoveCombatState(CombatTags::State_Combat_PlantingC4);
 		}
 	}
 }
 
-void UCombatComponent::ServerC4Defuse_Implementation(bool isDefusing)
+void UCombatComponent::ServerC4Defuse_Implementation(bool isDefused)
 {
 	if (_playerCharacter->GetTeam() == ETeam::ET_RedTeam)
 		return;
-	//Is Aiming C4
+
 	if (GetWorld())
 	{
-		if (isDefusing)
+		if (isDefused)
 		{
 			AProjectileC4* c4Projectile = Cast<AProjectileC4>(_aimedActor);
 			if (!c4Projectile)
 				return;
-			GetWorld()->GetTimerManager().SetTimer(_c4TimerHandle, FTimerDelegate::CreateLambda([this, c4Projectile]
-				{
-					if (IsValid(this))
-						ServerC4Defuse(false);
-					if (IsValid(c4Projectile))
-						c4Projectile->Defused();
-				}),
-				c4Projectile->GetDefusingtime(), false);
-			NetMulticastC4Defuse(true, c4Projectile->GetDefusingtime());
-			InsertCombatState(CombatTags::State_Combat_DefusingC4);
+			c4Projectile->Defused();
+			ServerC4Defuse(false);
 		}
 		else
 		{
-			GetWorld()->GetTimerManager().ClearTimer(_c4TimerHandle);
-			NetMulticastC4Defuse(false);
+			bIsC4Interacting = false;
+			C4InteractTime = -1.f;
 			RemoveCombatState(CombatTags::State_Combat_DefusingC4);
 		}
 	}
@@ -699,7 +703,7 @@ void UCombatComponent::Aim(bool tf)
 				
 			if (GetCurWeapon() && GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
 			{
-				OnScopeUIChangedDelegate.Broadcast();
+				NetMulticastAim(tf);
 				SetWeaponVisible(!tf);
 			}
 		}
@@ -756,6 +760,24 @@ void UCombatComponent::CreateC4Weapon()
 		{
 			_weapons[4]->SetOwner(_playerCharacter);
 			_weapons[4]->AttachToPlayer();
+		}
+	}
+}
+
+void UCombatComponent::ServerSetC4Interact_Implementation()
+{
+	bIsC4Interacting = true;
+	C4InteractTime = 0.f;
+	ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwner());
+	if (CDCharacter)
+	{
+		if (CDCharacter->GetTeam() == ETeam::ET_RedTeam)
+		{
+			InsertCombatState(CombatTags::State_Combat_PlantingC4);
+		}
+		else
+		{
+			InsertCombatState(CombatTags::State_Combat_PlantingC4);
 		}
 	}
 }
@@ -915,56 +937,48 @@ void UCombatComponent::DropWeapon()
 
 void UCombatComponent::SetHUDCrosshairs(float spread)
 {
-	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
-		return;
+	if (_weaponIndex == -1 || !_weapons[_weaponIndex]) return;
 	
 	ACDCharacter* character = Cast<ACDCharacter>(GetOwner());
-	if (!character || !character->Controller || _weaponIndex == -1) return;
+	if (!character) return;
 
-	ACDPlayerController* controller = Cast<ACDPlayerController>(character->Controller);
-	if (controller)
+	if (_weapons[_weaponIndex])
 	{
-		HUD = HUD == nullptr ? Cast<ACDHUD>(controller->GetHUD()) : HUD;
-		if (HUD)
+		HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
+		HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
+		HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
+		HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
+		HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
+	}
+	else
+	{
+		HUDPackage.CrosshairCenter = nullptr;
+		HUDPackage.CrosshairLeft = nullptr;
+		HUDPackage.CrosshairRight = nullptr;
+		HUDPackage.CrosshairBottom = nullptr;
+		HUDPackage.CrosshairTop = nullptr;
+	}
+	if (_aimedActor)
+	{
+		if (ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor))
 		{
-			if (_weapons[_weaponIndex])
+			if (character->GetTeam() == ETeam::ET_NoTeam || aimedCharacter->GetTeam() != character->GetTeam())
 			{
-				HUDPackage.CrosshairCenter = _weapons[_weaponIndex]->CrosshairCenter;
-				HUDPackage.CrosshairLeft = _weapons[_weaponIndex]->CrosshairLeft;
-				HUDPackage.CrosshairRight = _weapons[_weaponIndex]->CrosshairRight;
-				HUDPackage.CrosshairBottom = _weapons[_weaponIndex]->CrosshairBottom;
-				HUDPackage.CrosshairTop = _weapons[_weaponIndex]->CrosshairTop;
+				HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
 			}
-			else
-			{
-				HUDPackage.CrosshairCenter = nullptr;
-				HUDPackage.CrosshairLeft = nullptr;
-				HUDPackage.CrosshairRight = nullptr;
-				HUDPackage.CrosshairBottom = nullptr;
-				HUDPackage.CrosshairTop = nullptr;
-			}
-			if (_aimedActor)
-			{
-				if (ACDCharacter* aimedCharacter = Cast<ACDCharacter>(_aimedActor))
-				{
-					if (character->GetTeam() == ETeam::ET_NoTeam || aimedCharacter->GetTeam() != character->GetTeam())
-					{
-						HUDPackage.CrosshairColor = FLinearColor(1.0f, 0.f, 0.f, 1.f);
-					}
-				}
-				else
-				{
-					HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
-				}
-			}
-			else
-			{
-				HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
-			}
-			HUDPackage.CrosshairSpread=spread;
-			HUD->SetHUDPackage(HUDPackage);
+		}
+		else
+		{
+			HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
 		}
 	}
+	else
+	{
+		HUDPackage.CrosshairColor = FLinearColor(0.1f, 1.f, 0.f, 1.f);
+	}
+	HUDPackage.CrosshairSpread=spread;
+	
+	OnCrossHairInfoChangedDelegate.Broadcast(HUDPackage);
 }
 
 void UCombatComponent::NetMulticastFire_Implementation(FVector target)
@@ -995,8 +1009,7 @@ void UCombatComponent::NetMulticastFire_Implementation(FVector target)
 
 	if (GetCurWeapon()->GetWeaponType() == EWeaponType::EWT_Sniper)
 	{
-		Aim(false);
-		//Play Sniper Action?
+		ServerAim(false);
 	}
 }
 
@@ -1126,44 +1139,12 @@ void UCombatComponent::NetMulticastCancelReload_Implementation()
 		bodyAnim->Montage_Stop(0.1f);
 }
 
-void UCombatComponent::NetMulticastC4Plant_Implementation(bool tf, float duration)
+void UCombatComponent::NetMulticastAim_Implementation(bool IsAiming)
 {
-	if (!IsValid(this))
-		return;
-	if (!_playerCharacter)
-		return;
-	
-	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
-	if(!IsValid(pc))
-		return;
-	if (tf)
-	{
-		//show hud
-		pc->ShowC4PlantingProgress(true, duration);
-	}
-	else
-	{
-		//hide hud
-		pc->ShowC4PlantingProgress(false);
-	}
+	OnScopeUIChangedDelegate.Broadcast(IsAiming, false);
 }
 
-void UCombatComponent::NetMulticastC4Defuse_Implementation(bool tf, float duration)
+void UCombatComponent::OnRep_C4InteractTime()
 {
-	if (!IsValid(this))
-		return;
-	if (!_playerCharacter || !_playerCharacter->IsLocallyControlled())
-		return;
-
-	ACDPlayerController* pc = Cast<ACDPlayerController>(_playerCharacter->GetController());	
-	if(!IsValid(pc))
-		return;
-	if (tf)
-	{
-		pc->ShowC4DefusingProgress(true, duration);
-	}
-	else
-	{
-		pc->ShowC4DefusingProgress(false);
-	}
+	C4InteractDelegate.Broadcast(C4InteractTime);
 }

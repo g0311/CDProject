@@ -10,8 +10,11 @@
 #include "CDProject/Character/CDGameplayTag.h"
 #include "CombatComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAmmoChanged, int, CurrentAmmo, int, CarriedAmmo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponInfoChanged, AWeapon*, CurWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCrossHairInfoChanged, FHUDPackage, HudPackage);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnScopeUIChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnC4Interact, float, Time);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnScopeUIChanged, bool, bIsAiming, bool, bIsForce);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class CDPROJECT_API UCombatComponent : public UActorComponent
@@ -78,8 +81,16 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UCameraShakeBase> _fireCameraShakeClass;
 
+	FOnWeaponAmmoChanged OnWeaponAmmoChangedDelegate;
+	FOnWeaponInfoChanged OnWeaponInfoChangedDelegate;
 	FOnCrossHairInfoChanged OnCrossHairInfoChangedDelegate;
 	FOnScopeUIChanged OnScopeUIChangedDelegate;
+	FOnC4Interact C4InteractDelegate;
+	
+	UPROPERTY(ReplicatedUsing=OnRep_C4InteractTime)
+	float C4InteractTime = 0.f;
+	UPROPERTY(Replicated)
+	bool bIsC4Interacting = false;
 private:
 	virtual void BeginPlay() override;
 	
@@ -107,7 +118,7 @@ private:
 	FTimerHandle _fireAimAbleTimerHandle;
 	FTimerHandle _weaponVisibleTimerHandle;
 	FTimerHandle _weaponChangeTimerHandle;
-	FTimerHandle _c4TimerHandle;	
+	//FTimerHandle _c4TimerHandle;
 	
 	UPROPERTY(VisibleAnywhere)
 	AActor* _aimedActor;
@@ -144,7 +155,7 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerC4Plant(bool isPlanting);
 	UFUNCTION(Server, Reliable)
-	void ServerC4Defuse(bool isDefusing);
+	void ServerC4Defuse(bool isDefused);
 	UFUNCTION(Server, Reliable)
 	void ServerShotgunReload();
 	UFUNCTION(Server, Reliable)
@@ -155,6 +166,8 @@ public:
 	void ChangeToNextWeapon();
 	void CreateC4Weapon();
 
+	UFUNCTION(Server, Reliable)
+	void ServerSetC4Interact();
 private:
 	//Implementation
 	void Fire(FVector fireDir);
@@ -176,9 +189,10 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastGrenadeThrow();
 	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Plant(bool tf, float duration = 0.f);
-	UFUNCTION(NetMulticast, Reliable)
-	void NetMulticastC4Defuse(bool tf, float duration = 0.f);
-	UFUNCTION(NetMulticast, Reliable)
 	void NetMulticastCancelReload();
+	UFUNCTION(NetMulticast, Reliable)
+	void NetMulticastAim(bool IsAiming);
+
+	UFUNCTION()
+	void OnRep_C4InteractTime();
 };

@@ -8,13 +8,12 @@
 void UC4InteractProgressWidget::NativeDestruct()
 {
 	Super::NativeDestruct();
-	GetWorld()->GetTimerManager().ClearTimer(_progressTimerHandle);
 }
 
-void UC4InteractProgressWidget::Reset(bool isPlanting)
+void UC4InteractProgressWidget::Reset(bool isRedTeam)
 {
 	SetProgress(0.f);
-	SetInteractText(isPlanting ? FText::FromString("PLANTING...") : FText::FromString("DEFUSING..."));
+	SetInteractText(isRedTeam ? FText::FromString("PLANTING...") : FText::FromString("DEFUSING..."));
 }
 
 void UC4InteractProgressWidget::SetProgressTime(float Time)
@@ -22,20 +21,18 @@ void UC4InteractProgressWidget::SetProgressTime(float Time)
 	if (Time <= 0.f)
 	{
 		StopProgress();
+		return;
 	}
-	_targetTime = Time;
-	_elapsedTime = 0.f;
+	_targetTime = 5.f;
 	_progress = 0.f;
-	if (_interactSound)
-		_interactAudioComponent = UGameplayStatics::SpawnSound2D(this, _interactSound);
-	
-	GetWorld()->GetTimerManager().SetTimer(
-		_progressTimerHandle,
-		this,
-		&UC4InteractProgressWidget::UpdateProgress,
-		0.02f,
-		true
-	);
+	if (!_interactAudioComponent || !_interactAudioComponent->IsPlaying())
+	{
+		if (_interactSound)
+		{
+			_interactAudioComponent = UGameplayStatics::SpawnSound2D(this, _interactSound);
+		}
+	}
+	UpdateProgress(Time);
 }
 
 void UC4InteractProgressWidget::SetProgress(float Progress)
@@ -54,10 +51,9 @@ void UC4InteractProgressWidget::SetInteractText(const FText& NewText)
 	}
 }
 
-void UC4InteractProgressWidget::UpdateProgress()
+void UC4InteractProgressWidget::UpdateProgress(float CurTime)
 {
-	_elapsedTime += 0.02f;
-	_progress = FMath::Clamp(_elapsedTime / _targetTime, 0.f, 1.f);
+	_progress = FMath::Clamp(CurTime / _targetTime, 0.f, 1.f);
 	_interactProgressBar->SetPercent(_progress);
 
 	if (_progress >= 1.f)
@@ -68,7 +64,6 @@ void UC4InteractProgressWidget::UpdateProgress()
 
 void UC4InteractProgressWidget::StopProgress()
 {
-	GetWorld()->GetTimerManager().ClearTimer(_progressTimerHandle);
 	if (_interactAudioComponent)
 		_interactAudioComponent->Stop();
 }
