@@ -357,6 +357,13 @@ FVector UCombatComponent::CreateTraceDir(float spread)
 
 void UCombatComponent::RequestFire()
 {
+	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun &&
+	IsInCombatState(CombatTags::State_Combat_Reloading) &&
+	!IsAmmoEmpty())
+	{
+		ServerCancelReload();
+	}
+	
 	if (IsInCombatState(CombatTags::State_Combat_Reloading) || 
 		IsInCombatState(CombatTags::State_Combat_ChangingWeapon) || 
 		IsInCombatState(CombatTags::State_Combat_DefusingC4))
@@ -366,13 +373,6 @@ void UCombatComponent::RequestFire()
 
 	if (_weaponIndex == -1 || !_weapons[_weaponIndex])
 		return;
-	
-	if (GetCurWeaponType() == EWeaponType::EWT_Shotgun &&
-		IsInCombatState(CombatTags::State_Combat_Reloading) &&
-		!IsAmmoEmpty())
-	{
-		ServerCancelReload();
-	}
 	
 	if (IsAmmoEmpty())
 	{

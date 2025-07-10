@@ -32,7 +32,7 @@ void AShotgun::Fire(const FVector& HitTarget)
 		{
 			FVector End=TraceEndWithScatter(Start,HitTarget);
 			FHitResult FireHit;
-			WeaponTraceHit(Start, HitTarget, FireHit);
+			WeaponTraceHit(Start, End, FireHit);
 			ACDCharacter* CDCharacter=Cast<ACDCharacter>(FireHit.GetActor());
 			if (HasAuthority()&&CDCharacter)
 			{
@@ -53,17 +53,17 @@ void AShotgun::Fire(const FVector& HitTarget)
 					FireHit.ImpactPoint,
 					FireHit.ImpactNormal.Rotation());
 			}
-			for (auto HitPair:HitMap)
+		}
+		for (auto HitPair:HitMap)
+		{
+			if (HitPair.Key&&HasAuthority())
 			{
-				if (HitPair.Key&&HasAuthority())
-				{
-					UGameplayStatics::ApplyDamage(
-						HitPair.Key,
-						Damage*HitPair.Value,
-						InstigatorController,
-						this,
-						UDamageType::StaticClass());
-				}
+				UGameplayStatics::ApplyDamage(
+					HitPair.Key,
+					Damage*HitPair.Value,
+					InstigatorController,
+					this,
+					UDamageType::StaticClass());
 			}
 		}
 	}
