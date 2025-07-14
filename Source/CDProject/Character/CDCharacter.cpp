@@ -515,12 +515,15 @@ void ACDCharacter::Multicast_Hit_Implementation(class AController* instigatorCon
 
 void ACDCharacter::Multicast_Reset_Implementation(bool isAlive)
 {
-	_textRenderer->SetVisibility(true);
+	if (IsValid(_textRenderer))
+		_textRenderer->SetVisibility(true);
+	if (IsValid(_armMesh))
+		_armMesh->SetVisibility(true);
 	
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
 	GetMesh()->GetAnimInstance()->Montage_Stop(0.f);
-	_armMesh->SetVisibility(true);
+	
 	_isDead = false;
 }
 
@@ -780,6 +783,36 @@ void ACDCharacter::GetWeapon(AWeapon* weapon, bool isForce)
 		return;
 	_combat->ServerAim(false);
 	_combat->GetWeapon(weapon, isForce);
+}
+
+void ACDCharacter::TryPurchase_Implementation(const FWeaponStruct& WeaponData)
+{
+	ACDPlayerState* PS = Cast<ACDPlayerState>(GetPlayerState());
+	if (!PS) return;
+	if (PS && PS->GetGold() >= WeaponData.Cost)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can Purchase"));
+		GiveItemToPlayer(WeaponData);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't Purchase"));
+	}
+}
+
+void ACDCharacter::GiveItemToPlayer(const FWeaponStruct& WeaponData)
+{
+	if (!WeaponData.WeaponClass)
+	{
+		if (WeaponData.WeaponName == FName(TEXT("Shield")))
+		{
+			ServerGiveSheild(WeaponData);
+			return;
+		}
+		UE_LOG(LogTemp, Display, TEXT("No WeaponClass"));
+		return;
+	}
+	ServerGiveWeapon(WeaponData);
 }
 
 void ACDCharacter::ServerGiveSheild_Implementation(const FWeaponStruct& WeaponData)

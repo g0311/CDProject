@@ -909,13 +909,10 @@ void UCombatComponent::ChangeWeapon(int idx)
 	armAnim->GetEquipTime(_weapons[_weaponIndex]), false);
 
 	NetMulticastChangeWeapon(idx);
-	// if (_playerCharacter->HasAuthority())
-	// 	OnRep_WeaponID();
-	// //리슨 서버용
 }
 
 void UCombatComponent::DropWeapon()
-{ //avail visibility and update curWeaponIndex
+{
 	if (!_playerCharacter)
 		return;
 	if (_weaponIndex == -1 || _weaponIndex == 2 || !_weapons[_weaponIndex])
@@ -927,6 +924,16 @@ void UCombatComponent::DropWeapon()
 
 	NetMulticastDropWeapon(_weapons[_weaponIndex]);
 	_weapons[_weaponIndex]->Dropped(lookDirection);
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+	}
+	if (IsInCombatState(CombatTags::State_Combat_DefusingC4) || IsInCombatState(CombatTags::State_Combat_PlantingC4))
+	{
+		ServerC4Defuse(false);
+		ServerC4Plant(false);
+	}
+	
 	if (ARoundGameMode* gameMode = GetRoundGameMode())
 	{
 		gameMode->AddDestroyableActor(_weapons[_weaponIndex]);

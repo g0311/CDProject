@@ -30,17 +30,11 @@ void UShopOverlay::NativeConstruct()
 
 void UShopOverlay::OnShopButtonClicked(const FWeaponStruct& WeaponData)
 {
-	if (CanPurchase(WeaponData))
+	if (ACDCharacter* CDCharacter = Cast<ACDCharacter>(GetOwningPlayerPawn()); IsValid(CDCharacter))
 	{
-		GiveItemToPlayer(WeaponData);
-	}
-	else
-	{
-		return;
-	}
+		CDCharacter->TryPurchase(WeaponData);
+	}	
 }
-
-
 
 bool UShopOverlay::CanPurchase(const FWeaponStruct& WeaponData)
 {
