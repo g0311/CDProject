@@ -41,10 +41,10 @@ void URoomPage::NativeConstruct()
 		Dropdown_Map->AddOption(Mode);
 	}
 	Dropdown_Mode->SetSelectedIndex(0);
-	OnDropdownSelectionChanged(FString(), ESelectInfo::Type());
+	OnDropdownModeSelectionChanged(FString(), ESelectInfo::Type());
 	
-	Dropdown_Mode->OnSelectionChanged.AddDynamic(this, &URoomPage::OnDropdownSelectionChanged);
-	Dropdown_Map->OnSelectionChanged.AddDynamic(this, &URoomPage::OnDropdownSelectionChanged);
+	Dropdown_Mode->OnSelectionChanged.AddDynamic(this, &URoomPage::OnDropdownModeSelectionChanged);
+	Dropdown_Map->OnSelectionChanged.AddDynamic(this, &URoomPage::OnDropdownMapSelectionChanged);
 }
 
 void URoomPage::UpdatePlayerList(const FPlayerSessionInfoArray& Infos, const FString& RoomName, const FString& RoomMode, const FString& RoomMap)
@@ -157,7 +157,7 @@ void URoomPage::OnBlueTeamButtonClicked()
 	}
 }
 
-void URoomPage::OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+void URoomPage::OnDropdownModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
 	Dropdown_Map->ClearOptions();
 	for (auto map : MapData->GetMapsFromMode(Dropdown_Mode->GetSelectedOption()))
@@ -166,6 +166,18 @@ void URoomPage::OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Ty
 	}
 	Dropdown_Map->SetSelectedIndex(0);
 	
+	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
+	if (IsValid(LocalPlayerController))
+	{ 
+		if (ACDSessionPlayerController* CDPC = Cast<ACDSessionPlayerController>(LocalPlayerController); IsValid(CDPC))
+		{
+			CDPC->Server_UpdateSession(Dropdown_Mode->GetSelectedOption(), Dropdown_Map->GetSelectedOption());
+		}
+	}
+}
+
+void URoomPage::OnDropdownMapSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
 	APlayerController* LocalPlayerController = GEngine->GetFirstLocalPlayerController(GetWorld());
 	if (IsValid(LocalPlayerController))
 	{ 
