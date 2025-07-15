@@ -98,7 +98,7 @@ void AServer_GameMode::Logout(AController* Exiting)
     {
         UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Empty"));
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-        gameLiftSdkModule->ProcessEnding(); 
+        gameLiftSdkModule->ProcessEnding();
     }
 }
 

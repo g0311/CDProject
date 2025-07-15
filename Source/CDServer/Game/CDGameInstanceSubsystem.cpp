@@ -120,7 +120,8 @@ void UCDGameInstanceSubsystem::InitGameLift(const FServerParameters& ServerParam
     auto onProcessTerminate = [=]()
     {
         UE_LOG(CD_GAMEINSTANCE, Log, TEXT("Game Server Process is terminating"));
-        gameLiftSdkModule->ProcessEnding();
+        //gameLiftSdkModule->ProcessEnding();
+        FGenericPlatformMisc::RequestExit(false);
     };
     m_params.OnTerminate.BindLambda(onProcessTerminate);
 

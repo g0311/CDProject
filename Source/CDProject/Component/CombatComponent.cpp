@@ -1049,7 +1049,7 @@ void UCombatComponent::NetMulticastDropWeapon_Implementation(AWeapon* weapon)
 
 void UCombatComponent::NetMulticastChangeWeapon_Implementation(int idx)
 {
-	if (!IsValid(this))
+	if (!IsValid(this) || !IsValid(_playerCharacter))
 		return;
 	if (idx == -1)
 		return;
