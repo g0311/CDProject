@@ -96,6 +96,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
 	void UpdateTeamMarkers();
 	FVector2D ConvertWorldLocationToMinimapUV(const FVector& Vector, const FVector& CaptureOrigin, float OrthoWidth, float TextureSize);
 

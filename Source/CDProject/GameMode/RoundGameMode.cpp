@@ -70,7 +70,10 @@ void ARoundGameMode::HandleSeamlessTravelPlayer(AController*& C)
 	{
 		_maxClientCount = CDGameState->GetPlayerInfos().Items.Num();
 	}
-	
+	if (ACDPlayerController* PC = Cast<ACDPlayerController>(C))
+	{
+		PC->ServerRPC_UpdateMatchState();
+	}
 	_joinedClinetCount++;
 	if (GetCurMatchState() == ECurMatchState::EMS_None && _joinedClinetCount >= _maxClientCount)
 	{

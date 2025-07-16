@@ -8,7 +8,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "CDProject/Character/CDCharacter.h"
-#include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/DeathMatchGameMode.h"
@@ -88,17 +87,16 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 
 void ACDPlayerController::InitializeController()
 {
-	CDHUD=Cast<ACDHUD>(GetHUD());
-	if (IsLocalController())
-	{
-		if (CDHUD)
-			CDHUD->AddCharacterOverlay();
-		ShowAnnounceText(true);
-		
-		UE_LOG(LogTemp, Warning, TEXT("Add Player Overlay"));
-	}
+	// CDHUD=Cast<ACDHUD>(GetHUD());
+	// if (IsLocalController())
+	// {
+	// 	if (CDHUD)
+	// 	{
+	// 		CDHUD->AddCharacterOverlay();
+	// 		ShowAnnounceText(true);
+	// 	}
+	// }
 	ClientSetPlayerAlive_Implementation(true);
-	
 	ServerRPC_UpdateMatchState();
 }
 
@@ -175,6 +173,22 @@ void ACDPlayerController::BeginPlay()
 	if (IsLocalController())
 	{
 		InitializeController();
+	}
+}
+
+void ACDPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass)
+{
+	Super::ClientSetHUD_Implementation(NewHUDClass);
+
+	CDHUD=Cast<ACDHUD>(GetHUD());
+	if (CDHUD)
+	{
+		CDHUD->AddCharacterOverlay();
+		ShowAnnounceText(true);
+		if (MatchState != ECurMatchState::EMS_None)
+		{
+			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(TEXT("")));
+		}
 	}
 }
 
@@ -768,7 +782,6 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			BindHUDWidget(OwnedCharacter);
 		}
 	}
-	SetMinimap(OwnedCharacter);
 	
 	FInputModeGameOnly InputModeData;
 	SetInputMode(InputModeData);

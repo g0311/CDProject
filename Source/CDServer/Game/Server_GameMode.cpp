@@ -109,12 +109,6 @@ void AServer_GameMode::HandleSeamlessTravelPlayer(AController*& C)
     APlayerController* PC = Cast<APlayerController>(C);
     if (PC)
     {
-        PC->ClientSetHUD(HUDClass);
-        
-        if (PC->GetPawn())
-        {
-            PC->GetPawn()->Destroy();
-        }
         RestartPlayer(PC);
     }
 }
@@ -218,7 +212,8 @@ void AServer_GameMode::EndGame(WinState winState)
             else
             {
                 FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-                TerminateProcess(gameLiftSdkModule, 200);
+                gameLiftSdkModule->ProcessEnding();
+                //TerminateProcess(gameLiftSdkModule, 200);
                 if (IsRunningDedicatedServer())
                 {
                     FPlatformMisc::RequestExit(false);
@@ -238,7 +233,8 @@ void AServer_GameMode::EndGame(WinState winState)
     else
     {
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-        TerminateProcess(gameLiftSdkModule, 200);
+        gameLiftSdkModule->ProcessEnding();
+        //TerminateProcess(gameLiftSdkModule, 200);
         
         UWorld* World = GEngine->GetWorldContexts()[0].World();
         if (World)
