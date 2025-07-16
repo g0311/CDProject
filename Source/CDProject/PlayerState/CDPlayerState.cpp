@@ -59,6 +59,19 @@ void ACDPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(ACDPlayerState, Name);
 }
 
+void ACDPlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+
+	ACDPlayerState* NextPlayerState = Cast<ACDPlayerState>(PlayerState);
+	if (IsValid(NextPlayerState))
+	{
+		NextPlayerState->SetTeam(Team);
+		NextPlayerState->SetMatchTeam(MatchTeam);
+		NextPlayerState->SetUsername(Name);
+	}
+}
+
 void ACDPlayerState::AddKill()
 {
 	Kills++;

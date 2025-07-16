@@ -465,8 +465,10 @@ void ACDPlayerController::UpdateTeamMarkers()
 	if (!CDHUD)
 		CDHUD = Cast<ACDHUD>(GetHUD());
 	if (!CDHUD) return;
-	
 	UCharacterOverlay* CharacterOverlay = CDHUD->CharacterOverlay;
+	if (!CharacterOverlay || !CharacterOverlay->MiniMapImage)
+		return;
+	
 	for (APlayerState* playerState : GetWorld()->GetGameState()->PlayerArray)
 	{
 		if (!playerState) continue;

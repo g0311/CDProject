@@ -98,7 +98,7 @@ void AServer_GameMode::Logout(AController* Exiting)
     {
         UE_LOG(LogCD_ServerLog, Warning, TEXT("Session Empty"));
         FGameLiftServerSDKModule* gameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
-        TerminateProcess(gameLiftSdkModule, 200);
+        gameLiftSdkModule->ProcessEnding();
     }
 }
 
@@ -133,7 +133,6 @@ void AServer_GameMode::StartGame()
                 FString url = TEXT("/Game/Maps/") + SessionGameState->GetRoomMode() + TEXT("/") + SessionGameState->GetRoomMap();
                 UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
                 GetWorld()->ServerTravel(url);
-                //GetWorld()->SeamlessTravel(url);
             }
         }
     }

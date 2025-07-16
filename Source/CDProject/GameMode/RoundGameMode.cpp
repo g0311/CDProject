@@ -20,6 +20,7 @@
 #include "CDProject/Weapon/Weapon.h"
 #include "CDServer/Game/CDGameInstanceSubsystem.h"
 #include "CDServer/Game/CDSessionGameState.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 namespace MatchState
 {
@@ -243,6 +244,8 @@ void ARoundGameMode::RestartMatch(bool isInit)
 				AActor* playerStart = FindPlayerStart(Controller);
 				if (playerStart)
 				{
+				    Character->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+					Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 					Character->SetActorLocation(playerStart->GetActorLocation(), false, nullptr, ETeleportType::TeleportPhysics);
 					Character->SetActorRotation(playerStart->GetActorRotation());
 					Controller->SetControlRotation(playerStart->GetActorRotation());

@@ -66,7 +66,9 @@ private:
 	UFUNCTION()
 	void OnBlueTeamButtonClicked();
 	UFUNCTION()
-	void OnDropdownSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	void OnDropdownModeSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+	UFUNCTION()
+	void OnDropdownMapSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	TArray<TObjectPtr<class URoomPlayerLine>> WBP_Room_Player_Lines;
 };

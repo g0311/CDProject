@@ -184,6 +184,9 @@ private:
 public:
 	void GetWeapon(class AWeapon* weapon, bool isForce = false);
 	UFUNCTION(Server, Reliable)
+	void TryPurchase(const FWeaponStruct& WeaponData);
+	void GiveItemToPlayer(const FWeaponStruct& WeaponData);
+	UFUNCTION(Server, Reliable)
 	void ServerGiveSheild(const FWeaponStruct& WeaponData);
 	UFUNCTION(Server, Reliable)
 	void ServerGiveWeapon(const FWeaponStruct& WeaponData);

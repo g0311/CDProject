@@ -36,7 +36,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float Damage=20.f;
 	
-	void WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget,FHitResult& OutHit);
+	void WeaponTraceHit(const FVector& TraceStart, const FVector& End,FHitResult& OutHit);
 private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* BeamParticleSystem;
@@ -51,7 +51,7 @@ private:
 	float DistanceToSphere=800.f;
 	
 	UPROPERTY(EditAnyWhere)
-	float SphereRadius=75.f;
+	float SphereRadius=150.f;
 	
 	UPROPERTY(EditAnyWhere)
 	bool bUseScatter=false;

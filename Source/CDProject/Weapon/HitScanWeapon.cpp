@@ -188,37 +188,36 @@ FVector AHitScanWeapon::TraceEndWithScatter(const FVector& TraceStart, const FVe
 	return FVector(TraceStart + ToEndLoc * 80000.f / ToEndLoc.Size());
 }
 
-void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& HitTarget, FHitResult& OutHit)
+void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& End, FHitResult& OutHit)
 {
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		FVector End = bUseScatter ? TraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
- 
 		World->LineTraceSingleByChannel(
 			OutHit,
 			TraceStart,
 			End,
 			ECC_GameTraceChannel1
 		);
-		FVector BeamEnd = End;
-		if (OutHit.bBlockingHit)
+		const USkeletalMeshSocket* MuzzleFlashSocket=GetWeaponMesh()->GetSocketByName("MuzzleFlash");
+		if (MuzzleFlashSocket)
 		{
-			BeamEnd = OutHit.ImpactPoint;
-		}
-		if (BeamParticleSystem)
-		{
-			UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
-				World,
-				BeamParticleSystem,
-				TraceStart,
-				FRotator::ZeroRotator,
-				true
-			);
-			if (Beam)
+			FTransform SocketTransform=MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+			if (SocketTransform.IsValid())
 			{
-				Beam->SetVectorParameter(FName("Target"), BeamEnd);
-			}//Particle need BeamEnd
+				if (BeamParticleSystem)
+				{
+					UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+						World,
+						BeamParticleSystem,
+						SocketTransform
+					);
+					if (Beam)
+					{
+						Beam->SetVectorParameter(FName("Target"), End);
+					}
+				}
+			}
 		}
 	}
 }
