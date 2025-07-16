@@ -55,15 +55,15 @@ void AAProjectileBullet::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 		);
 	}
 	
-	DrawDebugSphere(
-		GetWorld(),
-		Hit.Location,
-		10,
-		20,
-		FColor::Blue,
-		false,
-		2.f
-	);
+	// DrawDebugSphere(
+	// 	GetWorld(),
+	// 	Hit.Location,
+	// 	10,
+	// 	20,
+	// 	FColor::Blue,
+	// 	false,
+	// 	2.f
+	// );
 	
 	// if (OtherActor)
 	// 	UE_LOG(LogTemp, Warning, TEXT("Bullet Collided Actor %s"), *OtherActor->GetName());

@@ -111,8 +111,15 @@ void ACDCharacter::BeginPlay()
 		SetTeam(Cast<ACDPlayerState>(GetPlayerState())->GetTeam());
 	}
 	
-	if (HasAuthority())
+	if (HasAuthority() && GetMesh())
+	{
+		GetMesh()->SetVisibility(false, true);
+		GetMesh()->bOwnerNoSee = true;
+		GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+		GetMesh()->bRenderCustomDepth = false;
+		GetMesh()->bVisibleInRayTracing = false;
 		UE_LOG(LogTemp, Log, TEXT("!Authority Char begin Play1%s"), *this->GetName());
+	}
 
 	OnRep_Team();
 	OnRep_UserName();
@@ -252,35 +259,43 @@ float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& Da
 		if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
 		{
 			const FPointDamageEvent* pointEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
-			USkeletalMeshComponent* MeshComp = GetMesh();
-			FName Bone = pointEvent->HitInfo.BoneName;
-			UE_LOG(LogTemp, Log, TEXT("Comp: %s, Bone: %s"), *pointEvent->HitInfo.Component->GetName(), *Bone.ToString());
-		
-			FName ParentBone = MeshComp->GetParentBone(Bone);
-			while (ParentBone != NAME_None)
+			if (IsValid(pointEvent->HitInfo.Component.Get()) && GetMesh())
 			{
-				if (ParentBone.ToString().Contains("head") ||
-					ParentBone.ToString().Contains("neck"))
-				{
-					finalDamage *= 2.f;
-					bIsHeadShot = true;
-					break;
-				}
-				if (ParentBone.ToString().Contains("upperarm"))
-				{
-					finalDamage *= 0.5f;
-					break;
-				}
-				if (ParentBone.ToString().Contains("thigh"))
-				{
-					finalDamage *= 0.75f;
-					break;
-				}
+				USkeletalMeshComponent* MeshComp = GetMesh();
+				FName Bone = pointEvent->HitInfo.BoneName;
 			
-				ParentBone = MeshComp->GetParentBone(ParentBone);
+				UE_LOG(LogTemp, Log, TEXT("Comp: %s, Bone: %s"), *pointEvent->HitInfo.Component->GetName(), *Bone.ToString());
+		
+				FName ParentBone = MeshComp->GetParentBone(Bone);
+				while (ParentBone != NAME_None)
+				{
+					if (ParentBone.ToString().Contains("head") ||
+						ParentBone.ToString().Contains("neck"))
+					{
+						finalDamage *= 2.f;
+						bIsHeadShot = true;
+						break;
+					}
+					if (ParentBone.ToString().Contains("upperarm"))
+					{
+						finalDamage *= 0.5f;
+						break;
+					}
+					if (ParentBone.ToString().Contains("thigh"))
+					{
+						finalDamage *= 0.75f;
+						break;
+					}
+			
+					ParentBone = MeshComp->GetParentBone(ParentBone);
+				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("TakeDamage: Missing component or mesh on server"));
 			}
 		}
-		//Effect 기반으로 변경 후, PostGameplayEffectExecute()에서 On Dead 호출하면 댐
+
 		HandleDamage(finalDamage, EventInstigator, bIsHeadShot);
 	}
 	
@@ -414,12 +429,17 @@ void ACDCharacter::Multicast_Dead_Implementation(class AController* instigatorCo
 {
 	UCDAnimInstance* bodyAnim = Cast<UCDAnimInstance>(GetMesh()->GetAnimInstance());
 	UCDAnimInstance* armAnim = Cast<UCDAnimInstance>(GetArmMesh()->GetAnimInstance());
-	_textRenderer->SetVisibility(false);
+
+	if (IsValid(_textRenderer))
+		_textRenderer->SetVisibility(false);
 	
 	if (IsLocallyControlled())
 	{
 		//UnVisible Arm Mesh
-		GetArmMesh()->SetVisibility(false);
+		if (GetArmMesh())
+		{
+			GetArmMesh()->SetVisibility(false);
+		}
 		ACDPlayerController* CDPlayerController = Cast<ACDPlayerController>(GetController());
 		if (IsValid(CDPlayerController))
 		{
