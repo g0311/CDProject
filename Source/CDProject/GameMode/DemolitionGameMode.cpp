@@ -31,23 +31,23 @@ void ADemolitionGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 		if(ACDPlayerState* BPState=NewPlayer->GetPlayerState<ACDPlayerState>(); IsValid(BPState))
 		{
-			if (BPState->GetPTeam()==ETeam::ET_ATeam)
-			{
-				BGameState->ATeam.AddUnique(BPState);
-				if (!BGameState->IsSecondHalf)
-					BPState->SetTeam(ETeam::ET_RedTeam);
-				else
-					BPState->SetTeam(ETeam::ET_BlueTeam);
-			}
-			else if (BPState->GetPTeam()==ETeam::ET_BTeam)
-			{
-				BGameState->BTeam.AddUnique(BPState);
-				if (!BGameState->IsSecondHalf)
-					BPState->SetTeam(ETeam::ET_BlueTeam);
-				else
-					BPState->SetTeam(ETeam::ET_RedTeam);
-			}
-			else
+			// if (BPState->GetPTeam()==ETeam::ET_ATeam)
+			// {
+			// 	BGameState->ATeam.AddUnique(BPState);
+			// 	if (!BGameState->IsSecondHalf)
+			// 		BPState->SetTeam(ETeam::ET_RedTeam);
+			// 	else
+			// 		BPState->SetTeam(ETeam::ET_BlueTeam);
+			// }
+			// else if (BPState->GetPTeam()==ETeam::ET_BTeam)
+			// {
+			// 	BGameState->BTeam.AddUnique(BPState);
+			// 	if (!BGameState->IsSecondHalf)
+			// 		BPState->SetTeam(ETeam::ET_BlueTeam);
+			// 	else
+			// 		BPState->SetTeam(ETeam::ET_RedTeam);
+			// }
+			// else
 			{
 				if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
 				{
@@ -451,28 +451,31 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 	Super::HandleMatchHasStarted();
 
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
-	InitiateBot();
-	if (BGameState)
-	{
-		for (auto PlayerState: BGameState->PlayerArray)//GameState->PlayerArray 가져올 수 있음.
-		{
-			ACDPlayerState* BPState=Cast<ACDPlayerState>(PlayerState);
-			if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
-			{
-				if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
-				{
-					BGameState->ATeam.AddUnique(BPState);
-					BPState->SetTeam(ETeam::ET_RedTeam);
-				}
-				else
-				{
-					BGameState->BTeam.AddUnique(BPState);
-					BPState->SetTeam(ETeam::ET_BlueTeam);
-				}
-			}
-		}
-		InitializeTeamCount();
-	}
+
+	//InitiateBot();
+
+	// if (BGameState)
+	// {
+	// 	for (auto PlayerState: BGameState->PlayerArray)//GameState->PlayerArray 가져올 수 있음.
+	// 	{
+	// 		ACDPlayerState* BPState=Cast<ACDPlayerState>(PlayerState);
+	// 		if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
+	// 		{
+	// 			if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
+	// 			{
+	// 				BGameState->ATeam.AddUnique(BPState);
+	// 				BPState->SetTeam(ETeam::ET_RedTeam);
+	// 			}
+	// 			else
+	// 			{
+	// 				BGameState->BTeam.AddUnique(BPState);
+	// 				BPState->SetTeam(ETeam::ET_BlueTeam);
+	// 			}
+	// 		}
+	// 	}
+	// 	InitializeTeamCount();
+	// }
+	InitializeTeamCount();
 }
 
 void ADemolitionGameMode::RestartMatch(bool isInit)
@@ -569,7 +572,7 @@ void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
 			}
 			if (VictimPlayerState->GetTeam() == ETeam::ET_RedTeam)
 			{
-				if (CurRound < MaxRound / 2)	
+				if (CurRound < MaxRound / 2)
 					BGameState->AliveATeam.Remove(VictimPlayerState);
 				else
 					BGameState->AliveBTeam.Remove(VictimPlayerState);
