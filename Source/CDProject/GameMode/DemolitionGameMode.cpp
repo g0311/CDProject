@@ -587,25 +587,41 @@ void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
 		}
 		if (GetCurMatchState() == ECurMatchState::EMS_InGame)
 		{
-			if (BGameState->AliveBTeam.Num()==0)
-			{
-				if (CurRound < MaxRound / 2)
+			if (CurRound < MaxRound / 2)
+			{ //전반부
+				if (BGameState->AliveBTeam.Num()==0)
+				{
 					RoundWin(true);
-				else
-					RoundWin(false);
-				
-				CountStartTime = GetWorld()->GetTimeSeconds();
-				SetCurMatchState(ECurMatchState::EMS_CoolDown);
+					CountStartTime = GetWorld()->GetTimeSeconds();
+					SetCurMatchState(ECurMatchState::EMS_CoolDown);
+				}
+				else if (BGameState->AliveATeam.Num()==0)
+				{
+					if (!bIsPlanted)
+					{
+						RoundWin(false);
+						CountStartTime = GetWorld()->GetTimeSeconds();
+						SetCurMatchState(ECurMatchState::EMS_CoolDown);
+					}
+				}
 			}
-			else if (BGameState->AliveATeam.Num()==0)
-			{
-				if (CurRound < MaxRound / 2)
-					RoundWin(false);
-				else
+			else
+			{ //후반부
+				if (BGameState->AliveBTeam.Num()==0)
+				{
+					if (!bIsPlanted)
+					{
+						RoundWin(false);
+						CountStartTime = GetWorld()->GetTimeSeconds();
+						SetCurMatchState(ECurMatchState::EMS_CoolDown);
+					}
+				}
+				else if (BGameState->AliveATeam.Num()==0)
+				{
 					RoundWin(true);
-				
-				CountStartTime = GetWorld()->GetTimeSeconds();
-				SetCurMatchState(ECurMatchState::EMS_CoolDown);
+					CountStartTime = GetWorld()->GetTimeSeconds();
+					SetCurMatchState(ECurMatchState::EMS_CoolDown);
+				}
 			}
 		}
 	}
