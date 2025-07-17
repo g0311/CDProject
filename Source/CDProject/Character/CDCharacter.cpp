@@ -223,6 +223,11 @@ void ACDCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 float ACDCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 	class AController* EventInstigator, AActor* DamageCauser)
 {
+	if (_isDead)
+	{
+		return Super::TakeDamage(0.f, DamageEvent, EventInstigator, DamageCauser);
+	}
+	
 	if (DamageEvent.DamageTypeClass->IsChildOf(UDamageType_Explode::StaticClass()))
 	{
 		HandleDamage(DamageAmount, EventInstigator, false);

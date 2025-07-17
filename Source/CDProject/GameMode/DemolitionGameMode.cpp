@@ -190,17 +190,21 @@ void ADemolitionGameMode::SetMatchTime(float c4ExplodeTime)
 	}
 }
 
-void ADemolitionGameMode::RoundWin(bool isRedTeam)
+void ADemolitionGameMode::RoundWin(bool isRedTeamWin)
 {
 	if (CurRound < MaxRound / 2)
 	{
 		if (Cast<ACDGameState>(GameState))
-			Cast<ACDGameState>(GameState)->UpdateTeamScore(isRedTeam);
+		{
+			Cast<ACDGameState>(GameState)->UpdateTeamScore(isRedTeamWin);
+		}
 	}
 	else
 	{
 		if (Cast<ACDGameState>(GameState))
-			Cast<ACDGameState>(GameState)->UpdateTeamScore(!isRedTeam);
+		{
+			Cast<ACDGameState>(GameState)->UpdateTeamScore(!isRedTeamWin);
+		}
 	}
 
 	for (TActorIterator<AController> It(GetWorld()); It; ++It)
@@ -211,25 +215,28 @@ void ADemolitionGameMode::RoundWin(bool isRedTeam)
 			ACDPlayerState* playerState = Cast<ACDPlayerState>(PC->PlayerState);
 			if (playerState)
 			{
-				if (isRedTeam)
+				if (isRedTeamWin)
 				{
-					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRedTeam)
+					if (playerState->GetTeam() == ETeam::ET_RedTeam)
 						playerState->AddGold(800);
-					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRedTeam)
+					else if (playerState->GetTeam() == ETeam::ET_BlueTeam)
 						playerState->AddGold(400);
 					UE_LOG(LogTemp, Display, TEXT("Red Team Win"));
 				}
 				else
 				{
-					if (playerState->GetTeam() == ETeam::ET_RedTeam && isRedTeam)
-						playerState->AddGold(800);
-					else if (playerState->GetTeam() == ETeam::ET_BlueTeam && !isRedTeam)
+					if (playerState->GetTeam() == ETeam::ET_RedTeam)
 						playerState->AddGold(400);
+					else if (playerState->GetTeam() == ETeam::ET_BlueTeam)
+						playerState->AddGold(800);
 					UE_LOG(LogTemp, Display, TEXT("Blue Team Win"));
 				}
 			}
 		}
 	}
+	bIsPlanted = false;
+	bIsDefused = false;
+	
 	CurRound++;
 }
 
@@ -421,13 +428,51 @@ void ADemolitionGameMode::SpawnBot()
     	BotCount--;
     }
 }
-
 void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 {
 	CountStartTime = GetWorld()->GetTimeSeconds();
-	if (NewState == ECurMatchState::EMS_CoolDown && bIsPlanted)
+	if (NewState == ECurMatchState::EMS_CoolDown)
 	{
-		RoundWin(true);
+		//여기서 조건 판단 후 Round Win Lose 정의
+		ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+		if (BGameState)
+		{
+			if (!bIsPlanted)
+			{//설치X
+				if (GetBlueTeamCount() == 0)
+				{
+					;
+				}
+				
+				if (GetRedTeamCount() == 0)
+				{
+					RoundWin(false);
+				}
+				else if (GetBlueTeamCount() == 0)
+				{
+					RoundWin(true);
+				}
+				else
+				{
+					RoundWin(false);
+				}
+			}
+			else
+			{//설치O
+				if (bIsDefused)
+				{
+					RoundWin(false);
+				}
+				else if (GetBlueTeamCount() == 0)
+				{
+					RoundWin(true);
+				}
+				else
+				{
+					RoundWin(true);
+				}
+			}
+		}
 	}
 	if (NewState == ECurMatchState::EMS_Waiting && CurRound == MaxRound / 2)
 	{
@@ -435,15 +480,22 @@ void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 	}
 	Super::SetCurMatchState(NewState, IsInit);
 }
-
-void ADemolitionGameMode::SetC4Planted(bool tf)
+void ADemolitionGameMode::SetC4Planted(float time)
 {
-	if (bIsPlanted && !tf)
+	if (GetCurMatchState() == ECurMatchState::EMS_InGame)
 	{
-		RoundWin(false);
-		SetMatchTime(0);
+		SetMatchTime(time);
+		bIsPlanted = true;
 	}
-	bIsPlanted = tf;
+}
+
+void ADemolitionGameMode::SetC4Defused()
+{
+	if (GetCurMatchState() == ECurMatchState::EMS_InGame)
+	{
+		bIsDefused = true;
+		SetCurMatchState(ECurMatchState::EMS_CoolDown);
+	}
 }
 
 void ADemolitionGameMode::HandleMatchHasStarted()
@@ -453,28 +505,6 @@ void ADemolitionGameMode::HandleMatchHasStarted()
 	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
 
 	//InitiateBot();
-
-	// if (BGameState)
-	// {
-	// 	for (auto PlayerState: BGameState->PlayerArray)//GameState->PlayerArray 가져올 수 있음.
-	// 	{
-	// 		ACDPlayerState* BPState=Cast<ACDPlayerState>(PlayerState);
-	// 		if (BPState&&BPState->GetTeam()==ETeam::ET_NoTeam)
-	// 		{
-	// 			if (BGameState->BTeam.Num()>=BGameState->ATeam.Num())
-	// 			{
-	// 				BGameState->ATeam.AddUnique(BPState);
-	// 				BPState->SetTeam(ETeam::ET_RedTeam);
-	// 			}
-	// 			else
-	// 			{
-	// 				BGameState->BTeam.AddUnique(BPState);
-	// 				BPState->SetTeam(ETeam::ET_BlueTeam);
-	// 			}
-	// 		}
-	// 	}
-	// 	InitializeTeamCount();
-	// }
 	InitializeTeamCount();
 }
 
@@ -572,56 +602,40 @@ void ADemolitionGameMode::PlayerEliminated(class AController* VictimController,
 			}
 			if (VictimPlayerState->GetTeam() == ETeam::ET_RedTeam)
 			{
-				if (CurRound < MaxRound / 2)
+				if (IsBeforeHalfSecond())
+				{
 					BGameState->AliveATeam.Remove(VictimPlayerState);
+				}
 				else
+				{
 					BGameState->AliveBTeam.Remove(VictimPlayerState);
+				}
 			}
 			else if (VictimPlayerState->GetTeam() == ETeam::ET_BlueTeam)
 			{
-				if (CurRound < MaxRound / 2)
+				if (IsBeforeHalfSecond())
+				{
 					BGameState->AliveBTeam.Remove(VictimPlayerState);
+				}
 				else
+				{
 					BGameState->AliveATeam.Remove(VictimPlayerState);
+				}
 			}
 		}
+		
 		if (GetCurMatchState() == ECurMatchState::EMS_InGame)
 		{
-			if (CurRound < MaxRound / 2)
-			{ //전반부
-				if (BGameState->AliveBTeam.Num()==0)
+			if (GetRedTeamCount() == 0)
+			{
+				if (!bIsPlanted)
 				{
-					RoundWin(true);
-					CountStartTime = GetWorld()->GetTimeSeconds();
 					SetCurMatchState(ECurMatchState::EMS_CoolDown);
-				}
-				else if (BGameState->AliveATeam.Num()==0)
-				{
-					if (!bIsPlanted)
-					{
-						RoundWin(false);
-						CountStartTime = GetWorld()->GetTimeSeconds();
-						SetCurMatchState(ECurMatchState::EMS_CoolDown);
-					}
 				}
 			}
-			else
-			{ //후반부
-				if (BGameState->AliveBTeam.Num()==0)
-				{
-					if (!bIsPlanted)
-					{
-						RoundWin(false);
-						CountStartTime = GetWorld()->GetTimeSeconds();
-						SetCurMatchState(ECurMatchState::EMS_CoolDown);
-					}
-				}
-				else if (BGameState->AliveATeam.Num()==0)
-				{
-					RoundWin(true);
-					CountStartTime = GetWorld()->GetTimeSeconds();
-					SetCurMatchState(ECurMatchState::EMS_CoolDown);
-				}
+			else if (GetBlueTeamCount() == 0)
+			{
+				SetCurMatchState(ECurMatchState::EMS_CoolDown);
 			}
 		}
 	}

@@ -791,6 +791,7 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 void ACDPlayerController::OnMatchStateSet(ECurMatchState State, float time)
 {
 	MatchState=State;
+	ServerRPC_UpdateMatchState();
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		CountStartTime = time;
@@ -800,7 +801,6 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, float time)
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		CountStartTime = time;
-		ServerRPC_UpdateMatchState();
 		ClientSetEnableInput(true);
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)

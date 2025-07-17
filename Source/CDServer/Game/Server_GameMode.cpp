@@ -207,6 +207,7 @@ void AServer_GameMode::EndGame(WinState winState)
                 {
                     FString url = TEXT("/Game/Maps/ServerDefaultMap");
                     UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
+                    World->ServerTravel(url);
                 }
             }
             else
