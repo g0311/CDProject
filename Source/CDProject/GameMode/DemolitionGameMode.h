@@ -23,15 +23,16 @@ public:
 	void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	virtual void HandleSeamlessTravelPlayer(AController*& C) override;
-	void SetMatchTime(float c4ExplodeTime);
-	void RoundWin(bool isRedTeam);
+	void SetMatchTime(float matchTime);
+	void RoundWin(bool isRedTeamWin);
 	void SetSecondHalf();
 	void SpawnBot();
 	void InitiateBot();
 	void KickBot();
 	virtual void SetCurMatchState(ECurMatchState NewState, bool IsInit = false) override;
 
-	void SetC4Planted(bool tf);
+	void SetC4Planted(float time);
+	void SetC4Defused();
 //
 protected:
 	virtual void HandleMatchHasStarted() override;
@@ -64,5 +65,6 @@ protected:
 private:
 	UPROPERTY(VisibleAnywhere)
 	bool bIsPlanted = false;
-	
+	UPROPERTY(VisibleAnywhere)
+	bool bIsDefused = false;
 };

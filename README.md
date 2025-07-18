@@ -29,7 +29,7 @@
 
 ## 시연
 
-- **데모 영상**: [NULL]()  
+- **데모 영상**: [LINK](https://youtu.be/5wetMnLOeJQ)  
 
 ---
 

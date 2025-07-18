@@ -4,28 +4,36 @@
 #include "MatchHistory.h"
 
 #include "MatchHistoryLine.h"
+#include "Components/Image.h"
 #include "Components/ScrollBox.h"
 #include "Components/TextBlock.h"
 
 void UMatchHistory::UpdateScrollBox(const TArray<FCDMatchData>& MatchDatas)
 {
 	ScrollBox_History->ClearChildren();
-
-	for (auto MatchData : MatchDatas)
+	
+	FLinearColor SemiTransparentRed = FLinearColor(1.f, 0.f, 0.f, 0.3f);
+	FLinearColor SemiTransparentBlue = FLinearColor(0.f, 0.f, 1.f, 0.3f);
+	FLinearColor SemiTransparentGreen = FLinearColor(0.f, 1.f, 0.f, 0.3f);
+	for (int i = MatchDatas.Num() - 1; i >= 0; i--)
 	{
+		auto MatchData = MatchDatas[i];
 		UMatchHistoryLine* HistoryLine = CreateWidget<UMatchHistoryLine>(this, MatchHistoryLineClass, TEXT(""));
 		ScrollBox_History->AddChild(HistoryLine);
-
+		
 		switch (MatchData.Iswin)
 		{
 		case -1:
 			HistoryLine->TextBlock_WinLose->SetText(FText::FromString(TEXT("LOSE")));
+			HistoryLine->Image_BackGround->SetBrushTintColor(FSlateColor(SemiTransparentRed));
 			break;
 		case 0:
 			HistoryLine->TextBlock_WinLose->SetText(FText::FromString(TEXT("DRAW")));
+			HistoryLine->Image_BackGround->SetBrushTintColor(FSlateColor(SemiTransparentBlue));
 			break;
 		case 1:
 			HistoryLine->TextBlock_WinLose->SetText(FText::FromString(TEXT("WIN")));
+			HistoryLine->Image_BackGround->SetBrushTintColor(FSlateColor(SemiTransparentGreen));
 			break;
 		default:
 			break;

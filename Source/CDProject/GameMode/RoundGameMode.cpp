@@ -70,7 +70,10 @@ void ARoundGameMode::HandleSeamlessTravelPlayer(AController*& C)
 	{
 		_maxClientCount = CDGameState->GetPlayerInfos().Items.Num();
 	}
-	
+	if (ACDPlayerController* PC = Cast<ACDPlayerController>(C))
+	{
+		PC->ServerRPC_UpdateMatchState();
+	}
 	_joinedClinetCount++;
 	if (GetCurMatchState() == ECurMatchState::EMS_None && _joinedClinetCount >= _maxClientCount)
 	{
@@ -156,6 +159,40 @@ void ARoundGameMode::OnCurMatchStateSet()
 			}
 		}
 	}
+}
+
+int ARoundGameMode::GetRedTeamCount()
+{
+	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if (BGameState)
+	{
+		if (IsBeforeHalfSecond())
+		{
+			return BGameState->AliveATeam.Num();
+		}
+		else
+		{
+			return BGameState->AliveBTeam.Num();
+		}
+	}
+	return -1;
+}
+
+int ARoundGameMode::GetBlueTeamCount()
+{
+	ACDGameState* BGameState=Cast<ACDGameState>(UGameplayStatics::GetGameState(this));
+	if (BGameState)
+	{
+		if (IsBeforeHalfSecond())
+		{
+			return BGameState->AliveBTeam.Num();
+		}
+		else
+		{
+			return BGameState->AliveATeam.Num();
+		}
+	}
+	return -1;
 }
 
 void ARoundGameMode::PlayerEliminated(class AController* VictimController,

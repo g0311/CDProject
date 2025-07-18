@@ -44,7 +44,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	//Need Line Trace For Distinguish Enemy and C4
 	if (_playerCharacter)
 	{
-		if (_playerCharacter->IsLocallyControlled())
+		if (_playerCharacter->IsLocallyControlled() || _playerCharacter->HasAuthority())
 		{
 			FHitResult Hit;
 			FVector traceStart = _playerCharacter->GetCamera()->GetComponentLocation();
@@ -777,7 +777,7 @@ void UCombatComponent::ServerSetC4Interact_Implementation()
 		}
 		else
 		{
-			InsertCombatState(CombatTags::State_Combat_PlantingC4);
+			InsertCombatState(CombatTags::State_Combat_DefusingC4);
 		}
 	}
 }

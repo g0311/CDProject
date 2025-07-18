@@ -15,6 +15,8 @@ class CDSERVER_API UMatchHistoryLine : public UUserWidget
 	GENERATED_BODY()
 public:
 	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<class UImage> Image_BackGround;
+	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UTextBlock> TextBlock_WinLose;
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<class UTextBlock> TextBlock_RoomMode;

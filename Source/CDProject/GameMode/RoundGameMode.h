@@ -62,13 +62,16 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void OnCurMatchStateSet();
+	bool IsBeforeHalfSecond() const {return (CurRound < MaxRound / 2);}
+
+	int GetRedTeamCount();
+	int GetBlueTeamCount();
 	
 	UPROPERTY(VisibleAnywhere)
 	TArray<AActor*> _createdActors;
 
 	TMap<FString, TArray<class APlayerStart*>> AvailStartPoints;
 private:
-	
 
 	UPROPERTY(visibleAnywhere)
 	ECurMatchState _curMatchState = ECurMatchState::EMS_None;

@@ -88,17 +88,16 @@ void ACDPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 
 void ACDPlayerController::InitializeController()
 {
-	CDHUD=Cast<ACDHUD>(GetHUD());
-	if (IsLocalController())
-	{
-		if (CDHUD)
-			CDHUD->AddCharacterOverlay();
-		ShowAnnounceText(true);
-		
-		UE_LOG(LogTemp, Warning, TEXT("Add Player Overlay"));
-	}
+	// CDHUD=Cast<ACDHUD>(GetHUD());
+	// if (IsLocalController())
+	// {
+	// 	if (CDHUD)
+	// 	{
+	// 		CDHUD->AddCharacterOverlay();
+	// 		ShowAnnounceText(true);
+	// 	}
+	// }
 	ClientSetPlayerAlive_Implementation(true);
-	
 	ServerRPC_UpdateMatchState();
 }
 
@@ -175,6 +174,22 @@ void ACDPlayerController::BeginPlay()
 	if (IsLocalController())
 	{
 		InitializeController();
+	}
+}
+
+void ACDPlayerController::ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass)
+{
+	Super::ClientSetHUD_Implementation(NewHUDClass);
+
+	CDHUD=Cast<ACDHUD>(GetHUD());
+	if (CDHUD)
+	{
+		CDHUD->AddCharacterOverlay();
+		ShowAnnounceText(true);
+		if (MatchState != ECurMatchState::EMS_None)
+		{
+			CDHUD->Announcement->AnnouncementText->SetText(FText::FromString(TEXT("")));
+		}
 	}
 }
 
@@ -453,7 +468,7 @@ void ACDPlayerController::SetMinimap(class ACDCharacter* NewCharacter)
 
 void ACDPlayerController::UpdateTeamMarkers()
 {
-    ACDCharacter* MyCharacter = Cast<ACDCharacter>(GetPawn());
+    ACDCharacter* MyCharacter = Cast<ACDCharacter>(GetViewTarget());
     if (!MyCharacter || !MyCharacter->GetCaptureTarget2D() || !GetWorld()) return;
 
     FVector CaptureOrigin = MyCharacter->GetCaptureTarget2D()->GetComponentLocation();
@@ -477,7 +492,7 @@ void ACDPlayerController::UpdateTeamMarkers()
         {
             if (OtherCharacter->GetTeam() == MyCharacter->GetTeam())
             {
-            	if (OtherCharacter->_isDead)
+            	if (OtherCharacter->GetAttributeSet()->GetHealth() == 0.f)
             		continue;
             	
                 CurrentTeamMembers.Add(OtherCharacter);
@@ -540,9 +555,12 @@ void ACDPlayerController::UpdateTeamMarkers()
     {
         if (!CurrentTeamMembers.Contains(Elem.Key))
         {
-            if (Elem.Value && Elem.Value->IsInViewport())
+            if (Elem.Value)
             {
-                Elem.Value->RemoveFromParent();
+            	UE_LOG(LogTemp, Warning, TEXT("Removing marker for %s"), *Elem.Key->GetName());
+            	//CharacterOverlay->MinimapBox->RemoveChild(Elem.Value);
+            	Elem.Value->RemoveFromParent();
+                //Elem.Value->RemoveFromParent();
             }
             PawnsToRemove.Add(Elem.Key);
         }
@@ -768,7 +786,6 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 			BindHUDWidget(OwnedCharacter);
 		}
 	}
-	SetMinimap(OwnedCharacter);
 	
 	FInputModeGameOnly InputModeData;
 	SetInputMode(InputModeData);
@@ -778,6 +795,7 @@ void ACDPlayerController::AcknowledgePossession(class APawn* P)
 void ACDPlayerController::OnMatchStateSet(ECurMatchState State, float time)
 {
 	MatchState=State;
+	ServerRPC_UpdateMatchState();
 	if (MatchState==ECurMatchState::EMS_Waiting)
 	{
 		CountStartTime = time;
@@ -787,7 +805,6 @@ void ACDPlayerController::OnMatchStateSet(ECurMatchState State, float time)
 	else if (MatchState==ECurMatchState::EMS_InGame)
 	{
 		CountStartTime = time;
-		ServerRPC_UpdateMatchState();
 		ClientSetEnableInput(true);
 	}
 	else if (MatchState==ECurMatchState::EMS_CoolDown)

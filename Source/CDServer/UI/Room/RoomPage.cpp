@@ -6,6 +6,7 @@
 #include "RoomPlayerLine.h"
 #include "CDServer/Data/Map/MapData.h"
 #include "CDServer/Data/Player/FPlayerSessionInfo.h"
+#include "CDServer/Game/CDSessionGameState.h"
 #include "CDServer/Player/CDLocalPlayerSubsystem.h"
 #include "CDServer/Player/CDSessionPlayerController.h"
 #include "Components/Button.h"
@@ -36,11 +37,24 @@ void URoomPage::NativeConstruct()
 		}
 	}
 	
-	for (auto Mode : MapData->GetModes())
+	if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 	{
-		Dropdown_Map->AddOption(Mode);
+		for (auto Mode : MapData->GetModes())
+		{
+			Dropdown_Map->AddOption(Mode);
+		}
+		Dropdown_Mode->SetSelectedOption(SessionGameState->GetRoomMode());
+		Dropdown_Map->SetSelectedOption(SessionGameState->GetRoomMap());
 	}
-	Dropdown_Mode->SetSelectedIndex(0);
+	else
+	{
+		for (auto Mode : MapData->GetModes())
+		{
+			Dropdown_Map->AddOption(Mode);
+		}
+		Dropdown_Mode->SetSelectedIndex(0);
+	}
+	
 	OnDropdownModeSelectionChanged(FString(), ESelectInfo::Type());
 	
 	Dropdown_Mode->OnSelectionChanged.AddDynamic(this, &URoomPage::OnDropdownModeSelectionChanged);

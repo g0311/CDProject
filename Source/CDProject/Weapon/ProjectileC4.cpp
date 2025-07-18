@@ -54,7 +54,8 @@ void AProjectileC4::Defused()
         	ADemolitionGameMode* DemolitionGameMode = Cast<ADemolitionGameMode>(GetWorld()->GetAuthGameMode());
         	if (DemolitionGameMode && DemolitionGameMode->GetCurMatchState() != ECurMatchState::EMS_CoolDown)
         	{
-        		DemolitionGameMode->SetC4Planted(false);
+        		//DemolitionGameMode->SetC4Planted(false);
+        		DemolitionGameMode->SetC4Defused();
         	}
         }
 	}
