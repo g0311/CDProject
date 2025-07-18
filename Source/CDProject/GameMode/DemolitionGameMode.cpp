@@ -439,11 +439,6 @@ void ADemolitionGameMode::SetCurMatchState(ECurMatchState NewState, bool IsInit)
 		{
 			if (!bIsPlanted)
 			{//설치X
-				if (GetBlueTeamCount() == 0)
-				{
-					;
-				}
-				
 				if (GetRedTeamCount() == 0)
 				{
 					RoundWin(false);

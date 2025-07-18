@@ -8,6 +8,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "CDProject/Character/CDCharacter.h"
+#include "CDProject/Character/CDCharacterAttributeSet.h"
 #include "CDProject/Component/CDSpringArmComponent.h"
 #include "CDProject/Component/CombatComponent.h"
 #include "CDProject/GameMode/DeathMatchGameMode.h"
@@ -467,7 +468,7 @@ void ACDPlayerController::SetMinimap(class ACDCharacter* NewCharacter)
 
 void ACDPlayerController::UpdateTeamMarkers()
 {
-    ACDCharacter* MyCharacter = Cast<ACDCharacter>(GetPawn());
+    ACDCharacter* MyCharacter = Cast<ACDCharacter>(GetViewTarget());
     if (!MyCharacter || !MyCharacter->GetCaptureTarget2D() || !GetWorld()) return;
 
     FVector CaptureOrigin = MyCharacter->GetCaptureTarget2D()->GetComponentLocation();
@@ -491,7 +492,7 @@ void ACDPlayerController::UpdateTeamMarkers()
         {
             if (OtherCharacter->GetTeam() == MyCharacter->GetTeam())
             {
-            	if (OtherCharacter->_isDead)
+            	if (OtherCharacter->GetAttributeSet()->GetHealth() == 0.f)
             		continue;
             	
                 CurrentTeamMembers.Add(OtherCharacter);
@@ -554,9 +555,12 @@ void ACDPlayerController::UpdateTeamMarkers()
     {
         if (!CurrentTeamMembers.Contains(Elem.Key))
         {
-            if (Elem.Value && Elem.Value->IsInViewport())
+            if (Elem.Value)
             {
-                Elem.Value->RemoveFromParent();
+            	UE_LOG(LogTemp, Warning, TEXT("Removing marker for %s"), *Elem.Key->GetName());
+            	//CharacterOverlay->MinimapBox->RemoveChild(Elem.Value);
+            	Elem.Value->RemoveFromParent();
+                //Elem.Value->RemoveFromParent();
             }
             PawnsToRemove.Add(Elem.Key);
         }
