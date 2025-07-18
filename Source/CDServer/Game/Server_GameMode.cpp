@@ -205,7 +205,7 @@ void AServer_GameMode::EndGame(WinState winState)
                 UWorld* World = GEngine->GetWorldContexts()[0].World();
                 if (World)
                 {
-                    FString url = TEXT("/Game/Maps/ServerDefaultMap");
+                    FString url = TEXT("/Game/Maps/ServerDefaultLevel");
                     UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
                     World->ServerTravel(url);
                 }
@@ -224,7 +224,7 @@ void AServer_GameMode::EndGame(WinState winState)
                     UWorld* World = GEngine->GetWorldContexts()[0].World();
                     if (World)
                     {
-                        FString url = TEXT("/Game/Maps/ServerDefaultMap");
+                        FString url = TEXT("/Game/Maps/ServerDefaultLevel");
                         UE_LOG(LogCD_ServerLog, Warning, TEXT("%s"), *url);
                     }
                 }

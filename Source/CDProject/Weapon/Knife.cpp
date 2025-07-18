@@ -59,7 +59,7 @@ void AKnife::Slash()
 	FHitResult Hit;
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Pawn, Params))
 	{
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f, 0, 1.f);
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.f, 0, 1.f);
 		AActor* HitActor = Hit.GetActor();
 		if (HitActor)
 		{

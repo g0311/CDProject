@@ -35,12 +35,15 @@ void ATransitionHUD::BeginPlay()
 
 void ATransitionHUD::UpdateRoomPage()
 {
-	if (GetWorld())
+	if (IsValid(this), IsValid(GetWorld()))
 	{
 		if (ACDSessionGameState* SessionGameState = GetWorld()->GetGameState<ACDSessionGameState>(); IsValid(SessionGameState))
 		{
 			FPlayerSessionInfoArray& Infos = SessionGameState->GetPlayerInfos();
-			RoomPage->UpdatePlayerList(Infos, SessionGameState->GetRoomName(),SessionGameState->GetRoomMode(), SessionGameState->GetRoomMap());
+			if (RoomPage)
+			{
+				RoomPage->UpdatePlayerList(Infos, SessionGameState->GetRoomName(),SessionGameState->GetRoomMode(), SessionGameState->GetRoomMap());
+			}
 		}
 	}
 }
