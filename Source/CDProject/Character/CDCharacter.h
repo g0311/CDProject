@@ -195,10 +195,8 @@ private:
 	//Network Property
 	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
 	FRotator _controlRotation;
-	UPROPERTY(VisibleAnywhere, Replicated, Category = "Network")
-	FRotator _cameraRotation;
 	UFUNCTION(Server, Reliable)
-	void ServerSetControlCameraRotation(FRotator control, FRotator camera);
+	void ServerSetControlRotation(FRotator control);
 	
 public:
 	FORCEINLINE FRotator GetControlRotation() { return _controlRotation; }

@@ -134,8 +134,7 @@ void ACDCharacter::Tick(float DeltaTime)
 	{
 		if (Controller != nullptr)
 			_controlRotation = Controller->GetControlRotation();
-		_cameraRotation = _camera->GetRelativeRotation();
-		ServerSetControlCameraRotation(_controlRotation, _cameraRotation);
+		ServerSetControlRotation(_controlRotation);
 	}
 	if (!this->IsLocallyControlled())
 	{
@@ -312,7 +311,6 @@ void ACDCharacter::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACDCharacter, _controlRotation);
-	DOREPLIFETIME(ACDCharacter, _cameraRotation);
 	DOREPLIFETIME(ACDCharacter, _team);
 	DOREPLIFETIME(ACDCharacter, UserName);
 }
@@ -890,10 +888,9 @@ void ACDCharacter::ServerGiveWeapon_Implementation(const FWeaponStruct& WeaponDa
 	}
 }
 
-void ACDCharacter::ServerSetControlCameraRotation_Implementation(FRotator control, FRotator camera)
+void ACDCharacter::ServerSetControlRotation_Implementation(FRotator control)
 {
 	_controlRotation = control;
-	_cameraRotation = camera;
 }
 
 void ACDCharacter::InvokeHUDDelegate()
